@@ -97,6 +97,8 @@ public class EncodingStack {
     /**
      * Base64 encoding utility to convert string to web compatible string which
      * will not interfere with parsers
+     * 
+     * http://stackoverflow.com/questions/13109588/base64-encoding-in-java
      *
      * @param value
      * @return String
@@ -116,6 +118,8 @@ public class EncodingStack {
     /**
      * Base64 decoding utility to decode the encoded string to normal text.
      *
+     * http://stackoverflow.com/questions/13109588/base64-encoding-in-java
+     * 
      * @param value
      * @return String
      */
@@ -141,6 +145,11 @@ public class EncodingStack {
         return al;
     }
 
+    /**
+     * 
+     * http://stackoverflow.com/questions/25284556/translate-crc8-from-c-to-java
+     * 
+     */
     private static final int[] CRC8_TABLE = {
         0x00, 0x5e, 0xbc, 0xe2, 0x61, 0x3f, 0xdd, 0x83, 0xc2, 0x9c, 0x7e, 0x20,
         0xa3, 0xfd, 0x1f, 0x41, 0x9d, 0xc3,
@@ -187,6 +196,11 @@ public class EncodingStack {
         return crc16(value.substring(offset, length));
     }
 
+    /**
+     * 
+     * http://stackoverflow.com/questions/18078264/transforming-c-source-crc16citt-function-to-java
+     * 
+     */
     private static final int[] CRC16_TABLE = {
         0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
         0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
@@ -244,6 +258,8 @@ public class EncodingStack {
      * x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1
      *
      * poly=0x04c11db7 init=0xffffffff refin=true refout=true xorout=0xffffffff
+     * 
+     * https://github.com/ggrandes/sandbox/blob/master/src/CRC32.java
      */
     private static final int[] CRC32_TABLE = {
         0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
@@ -335,6 +351,8 @@ public class EncodingStack {
      * x32+x31+x29+x27+x24+x23+x22+x21+x19+x17+x13+x12+x10+x9+x7+x4+x+1
      *
      * poly=0x42f0e1eba9ea3693 init=0x0 refin=false refout=false xorout=0x0
+     * 
+     * https://github.com/ggrandes/sandbox/blob/master/src/CRC64.java
      *
      */
     private static final long[] CRC64_TABLE = new long[]{
