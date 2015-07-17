@@ -21,18 +21,6 @@ java.lang.Exception
 java.util.concurrent.locks.Lock
 <<<<<<< HEAD
 =======
-||:elsu.io.FileChannelReader
-java.lang.StringBuilder
-java.lang.Thread
-java.nio.ByteBuffer
-java.nio.channels.SeekableByteChannel
-elsu.io.FileChannelReaderAbstract
-elsu.common.ASCIIByteBuffer
-elsu.io.FileProcessingType
-elsu.io.FileChannelReader
-java.lang.String
-java.lang.Exception
->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
 ||:elsu.common.ASCIIByteBuilder
 java.lang.StringBuilder
 java.lang.StringBuffer
@@ -102,11 +90,6 @@ java.text.DecimalFormat
 elsu.common.StringStack
 <<<<<<< HEAD
 =======
-||:elsu.io.FileProcessingType
-[Lelsu.io.FileProcessingType;
-java.lang.Enum
-elsu.io.FileProcessingType
->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
 ||:elsu.common.FileStack$1
 java.lang.Object
 java.io.FilenameFilter
@@ -229,13 +212,6 @@ java.lang.Enum
 elsu.database.DatabaseDataTypes
 <<<<<<< HEAD
 =======
-||:elsu.database.DatabaseParameter$1
-java.lang.Object
-elsu.database.DatabaseParameter
-elsu.database.DatabaseParameter$1
-java.lang.NoSuchFieldError
-elsu.database.DatabaseDataTypes
->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
 ||:elsu.database.DatabaseManager
 java.sql.SQLException
 java.lang.StringBuilder
@@ -320,26 +296,21 @@ elsu.common.DateStack
 java.lang.String
 java.sql.RowId
 <<<<<<< HEAD
-||:elsu.common.StringStack
-java.lang.String
-java.lang.Object
-elsu.common.StringStack
-java.lang.StringBuilder
-[C
-[B
-java.util.Random
-=======
->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
 ||:elsu.common.CollectionStack
-java.lang.Object
-java.lang.String
-elsu.common.CollectionStack
 java.lang.StringBuilder
+java.lang.Double
+java.lang.Byte
+java.lang.Character
+java.lang.Short
+java.lang.Float
 java.util.Map
+java.lang.Long
+java.lang.Object
 [Ljava.lang.String;
+[Ljava.lang.Object;
+elsu.common.CollectionStack
+java.lang.String
 java.lang.Integer
-<<<<<<< HEAD
-=======
 ||:elsu.common.StringStack
 java.lang.String
 java.lang.Object
@@ -371,10 +342,6 @@ java.sql.RowId
 [Ljava.lang.Byte;
 <<<<<<< HEAD
 =======
-||:elsu.support.XMLException
-elsu.support.XMLException
-java.lang.Exception
->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
 ||:elsu.io.FileChannelWriter
 java.lang.String
 elsu.io.FileChannelWriter
@@ -384,12 +351,6 @@ java.lang.Exception
 ||:elsu.support.XMLException
 elsu.support.XMLException
 java.lang.Exception
-||:elsu.common.GlobalStack
-java.lang.Object
-java.lang.System
-elsu.common.GlobalStack
-=======
->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
 ||:elsu.support.IEventPublisher
 java.lang.Object
 java.util.ArrayList
@@ -410,14 +371,6 @@ elsu.common.GlobalStack
 java.lang.Exception
 <<<<<<< HEAD
 =======
-||:elsu.support.EventPublisherAbstract
-java.lang.Object
-java.util.Iterator
-java.util.List
-elsu.support.IEventSubscriber
-elsu.support.IEventPublisher
-elsu.support.EventPublisherAbstract
->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
 ||:elsu.common.DateStack
 java.sql.Date
 java.sql.Time

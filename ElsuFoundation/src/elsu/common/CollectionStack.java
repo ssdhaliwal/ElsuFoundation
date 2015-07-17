@@ -37,4 +37,74 @@ public class CollectionStack {
         
         return result;
     }
+    
+    public static Object[] ArrayToObject(byte[] values) {
+        Object[] objects = new Object[values.length];
+        
+        for(int i = 0; i < values.length; i++) {
+            objects[i] = values[i];
+        }
+        
+        return objects;
+    }
+    
+    public static Object[] ArrayToObject(char[] values) {
+        Object[] objects = new Object[values.length];
+        
+        for(int i = 0; i < values.length; i++) {
+            objects[i] = values[i];
+        }
+        
+        return objects;
+    }
+    
+    public static Object[] ArrayToObject(short[] values) {
+        Object[] objects = new Object[values.length];
+        
+        for(int i = 0; i < values.length; i++) {
+            objects[i] = values[i];
+        }
+        
+        return objects;
+    }
+    
+    public static Object[] ArrayToObject(int[] values) {
+        Object[] objects = new Object[values.length];
+        
+        for(int i = 0; i < values.length; i++) {
+            objects[i] = values[i];
+        }
+        
+        return objects;
+    }
+    
+    public static Object[] ArrayToObject(long[] values) {
+        Object[] objects = new Object[values.length];
+        
+        for(int i = 0; i < values.length; i++) {
+            objects[i] = values[i];
+        }
+        
+        return objects;
+    }
+    
+    public static Object[] ArrayToObject(float[] values) {
+        Object[] objects = new Object[values.length];
+        
+        for(int i = 0; i < values.length; i++) {
+            objects[i] = values[i];
+        }
+        
+        return objects;
+    }
+    
+    public static Object[] ArrayToObject(double[] values) {
+        Object[] objects = new Object[values.length];
+        
+        for(int i = 0; i < values.length; i++) {
+            objects[i] = values[i];
+        }
+        
+        return objects;
+    }
 }
