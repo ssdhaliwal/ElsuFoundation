@@ -123,7 +123,7 @@ public class XMLReader {
         ArrayList<Node> al = null;
 
         // loop and get all the child nodes for this node
-        if (node.hasChildNodes()) {
+        if (node.hasAttributes()) {
             al = new ArrayList<>();
             NamedNodeMap nodes = node.getAttributes();
 

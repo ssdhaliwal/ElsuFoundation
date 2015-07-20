@@ -284,16 +284,18 @@ public class ConfigLoader {
 
                 // loop through the attributes array and append them to the
                 // string builder object
-                for (Object na : nAttributes) {
-                    // append the attribute details (key/text) to the string
-                    // builder object
-                    sb.append(" [ATTR=").append(((org.w3c.dom.Node) na).getNodeName())
-                            .append("//")
-                            .append(((org.w3c.dom.Node) na).getNodeValue())
-                            .append("]");
+                if (nAttributes != null) {
+                    for (Object na : nAttributes) {
+                        // append the attribute details (key/text) to the string
+                        // builder object
+                        sb.append(" [ATTR=").append(((org.w3c.dom.Node) na).getNodeName())
+                                .append("//")
+                                .append(((org.w3c.dom.Node) na).getNodeValue())
+                                .append("]");
 
-                    // yield processing to other threads
-                    Thread.yield();
+                        // yield processing to other threads
+                        Thread.yield();
+                    }
                 }
 
                 // return the string builder representation as a string
@@ -363,54 +365,54 @@ public class ConfigLoader {
 
                 // get unique identifier for linking; id overrides all, name
                 // is secondary, and class is if no id/name are defined
-                for (Object na : nAttributes) {
-                    if (((org.w3c.dom.Node) na).getNodeName().equals("id")) {
-                        uniqueAttrName = "id";
-                        uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                        break;
-                    } else if (((org.w3c.dom.Node) na).getNodeName().equals("name")) {
-                        uniqueAttrName = "name";
-                        uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                    } else if ((uniqueAttr.isEmpty()) && ((org.w3c.dom.Node) na).getNodeName().equals("class")) {
-                        uniqueAttrName = "class";
-                        uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                + "=" + ((org.w3c.dom.Node) na).getNodeValue();
+                if (nAttributes != null) {
+                    for (Object na : nAttributes) {
+                        if (((org.w3c.dom.Node) na).getNodeName().equals("id")) {
+                            uniqueAttrName = "id";
+                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
+                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
+                            break;
+                        } else if (((org.w3c.dom.Node) na).getNodeName().equals("name")) {
+                            uniqueAttrName = "name";
+                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
+                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
+                        } else if ((uniqueAttr.isEmpty()) && ((org.w3c.dom.Node) na).getNodeName().equals("class")) {
+                            uniqueAttrName = "class";
+                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
+                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
+                        }
                     }
-                }
 
-                // if uniqueAttr is now defined, increase the level 
-                if (!uniqueAttr.isEmpty()) {
-                    level++;
-                    _key[level - 1] = uniqueAttr;
-                    //System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level)));
-                }
-
-                // loop through the attributes array and append them to the
-                // string builder object
-                for (Object na : nAttributes) {
-                    // if unique attr is not still defined, then use the first 
-                    if (uniqueAttr.isEmpty()) {
-                        uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-
+                    // if uniqueAttr is now defined, increase the level 
+                    if (!uniqueAttr.isEmpty()) {
                         level++;
                         _key[level - 1] = uniqueAttr;
-                        //System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level)));
-                    } else {
-                        if ((uniqueAttrName.isEmpty()) || ((!uniqueAttrName.equals("id"))
-                                && (!uniqueAttrName.equals("name")) && (!uniqueAttrName.equals("class"))))  {
-                                // append the attribute details (key/text) to the string
-                            // builder object
-                            System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level))
-                                    + "." + ((org.w3c.dom.Node) na).getNodeName() + "=" + ((org.w3c.dom.Node) na).getNodeValue());
-                        }
-
                     }
 
-                    // yield processing to other threads
-                    Thread.yield();
+                // loop through the attributes array and append them to the
+                    // string builder object
+                    for (Object na : nAttributes) {
+                        // if unique attr is not still defined, then use the first 
+                        if (uniqueAttr.isEmpty()) {
+                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
+                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
+
+                            level++;
+                            _key[level - 1] = uniqueAttr;
+                        } else {
+                            if ((uniqueAttrName.isEmpty()) || ((!uniqueAttrName.equals("id"))
+                                    && (!uniqueAttrName.equals("name")) && (!uniqueAttrName.equals("class")))) {
+                                // append the attribute details (key/text) to the string
+                                // builder object
+                                System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.')
+                                        + "." + ((org.w3c.dom.Node) na).getNodeName() + "=" + ((org.w3c.dom.Node) na).getNodeValue());
+                            }
+
+                        }
+
+                        // yield processing to other threads
+                        Thread.yield();
+                    }
                 }
 
                 // return the string builder representation as a string
@@ -436,7 +438,7 @@ public class ConfigLoader {
             level = showNode.displayNodeAttributes(parent, level);
 
             // display all collected data to the user output
-            System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level)));
+            System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.'));
         }
 
         // parse the list of child nodes for the node being processed
@@ -456,7 +458,7 @@ public class ConfigLoader {
                 nodeText = " (TEXT=" + _xmlr.getNodeText((org.w3c.dom.Node) node)
                         + ")";
 
-                System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level))
+                System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.')
                         + ":" + _xmlr.getNodeText((org.w3c.dom.Node) node));
             }
 
