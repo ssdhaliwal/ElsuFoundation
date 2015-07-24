@@ -32,7 +32,7 @@ import org.apache.commons.lang3.*;
 public class ConfigLoader {
     // <editor-fold desc="class private storage">
 
-    private static int _MAXKEYLENGTH = 25;
+    private static int _MAXKEYLENGTH = 50;
 
     // static property for app.config store and extraction from jar file
     private static String _APPCONFIG = "config/app.config";
@@ -41,11 +41,8 @@ public class ConfigLoader {
     private static String _DTGFORMAT = "YYYMMDD HH24:mm:ss";
     // variable to store the xml document object from XMLReader class
     protected XMLReader _xmlr = null;
-    // store all application wide properties from app.config
-    private Map<String, String> _frameworkProperties = new HashMap<>();
-    // store all action specific configuration items from app.config
-    private Map<String, Object> _groupProperties = new HashMap<>();
-    private String[] _key = new String[ConfigLoader._MAXKEYLENGTH];
+    // store all properties from app.config
+    private Map<String, String> _configProperties = new HashMap<>();
     // </editor-fold>
 
     // <editor-fold desc="class constructor destructor">
@@ -118,10 +115,7 @@ public class ConfigLoader {
      */
     private void initializeConfig() throws Exception {
         // clear the storage hashMaps
-        getFrameworkProperties().clear();
-
-        // clear the storage hashMaps
-        getGroupProperties().clear();
+        getConfigProperties().clear();
     }
     // </editor-fold>
 
@@ -133,27 +127,12 @@ public class ConfigLoader {
      *
      * @return <code>hashMap</code> key/value set of all application properties
      */
-    public Map<String, String> getFrameworkProperties() {
-        return this._frameworkProperties;
+    public Map<String, String> getConfigProperties() {
+        return this._configProperties;
     }
 
-    public String getFrameworkProperty(String key) {
-        return getFrameworkProperties().get(key);
-    }
-
-    /**
-     * getActionProperties() method returns the hashMap containing the action
-     * properties key/value pair extracted from the app.config action attributes
-     * section
-     *
-     * @return <code>hashMap</code> key/value set of all action properties
-     */
-    public Map<String, Object> getGroupProperties() {
-        return this._groupProperties;
-    }
-
-    public Object getGroupProperty(String key) {
-        return (Object) getGroupProperties().get(key);
+    public String getConfigProperties(String key) {
+        return getConfigProperties().get(key);
     }
     // </editor-fold>
 
@@ -245,7 +224,7 @@ public class ConfigLoader {
      */
     private void showConfig() {
         showConfigNodes(_xmlr.getDocument(), 1);
-        dataConfigNodes(_xmlr.getDocument(), 1);
+        dataConfigNodes(_xmlr.getDocument(), "", 1);
 
         //System.out.println("------------");
         //org.w3c.dom.NodeList nl = _xmlr.getNodesByElement("connections");
@@ -350,126 +329,83 @@ public class ConfigLoader {
         }
     }
 
-    protected void dataConfigNodes(org.w3c.dom.Node parent, int level) {
-        // create a local class to display node value/text and associated
-        // node attributes
-        class SubShowNode {
-
-            // loop through the node attributes for the node passed
-            int displayNodeAttributes(org.w3c.dom.Node node, int level) {
-                String uniqueAttrName = "";
-                String uniqueAttr = "";
-
-                // retrieve node attributes (if any)
-                ArrayList nAttributes = _xmlr.getNodeAttributes(node);
-
-                // get unique identifier for linking; id overrides all, name
-                // is secondary, and class is if no id/name are defined
-                if (nAttributes != null) {
-                    for (Object na : nAttributes) {
-                        if (((org.w3c.dom.Node) na).getNodeName().equals("id")) {
-                            uniqueAttrName = "id";
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                            break;
-                        } else if (((org.w3c.dom.Node) na).getNodeName().equals("name")) {
-                            uniqueAttrName = "name";
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                        } else if ((uniqueAttr.isEmpty()) && ((org.w3c.dom.Node) na).getNodeName().equals("class")) {
-                            uniqueAttrName = "class";
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                        }
-                    }
-
-                    // if uniqueAttr is now defined, increase the level 
-                    if (!uniqueAttr.isEmpty()) {
-                        level++;
-                        _key[level - 1] = uniqueAttr;
-                    }
-
-                // loop through the attributes array and append them to the
-                    // string builder object
-                    for (Object na : nAttributes) {
-                        // if unique attr is not still defined, then use the first 
-                        if (uniqueAttr.isEmpty()) {
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-
-                            level++;
-                            _key[level - 1] = uniqueAttr;
-                        } else {
-                            if ((uniqueAttrName.isEmpty()) || ((!uniqueAttrName.equals("id"))
-                                    && (!uniqueAttrName.equals("name")) && (!uniqueAttrName.equals("class")))) {
-                                // append the attribute details (key/text) to the string
-                                // builder object
-                                System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.')
-                                        + "." + ((org.w3c.dom.Node) na).getNodeName() + "=" + ((org.w3c.dom.Node) na).getNodeValue());
-                            }
-
-                        }
-
-                        // yield processing to other threads
-                        Thread.yield();
-                    }
-                }
-
-                // return the string builder representation as a string
-                return level;
-            }
-        }
-
-        // declare the showNode class to allow methods to reference the display
-        // method to prevent duplicaion in code
-        SubShowNode showNode = new SubShowNode();
-
+    protected void dataConfigNodes(org.w3c.dom.Node parent, String nodePath, int level) {
         // retrieve the child nodes for processing
-        ArrayList nodes = _xmlr.getNodeChildren(parent);
-
-        // if node level is 1, then this is root node, display it with no
-        // indentation
-        if (level == 1) {
-            // display the parent node name
-            String data = StringUtils.repeat('~', level) + parent.getNodeName();
-            _key[level - 1] = parent.getNodeName();
-
-            // use the sub function to extract node attributes
-            level = showNode.displayNodeAttributes(parent, level);
-
-            // display all collected data to the user output
-            System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.'));
-        }
+        ArrayList<org.w3c.dom.Node> nodes = _xmlr.getNodeChildren(parent);
 
         // parse the list of child nodes for the node being processed
-        for (Object node : nodes) {
-            // display the parent node name
-            String nodeText = "";
-            String data = StringUtils.repeat('\t', level)
-                    + ((org.w3c.dom.Node) node).getNodeName();
-            _key[level - 1] = ((org.w3c.dom.Node) node).getNodeName();
+        ArrayList<org.w3c.dom.Node> nAttributes = null;
+        String nodePathHold = nodePath;
+        String nodeAttrKey = "";
+        for (org.w3c.dom.Node node : nodes) {
+            nodePath += "." + node.getNodeName();
+            nAttributes = _xmlr.getNodeAttributes(node);
 
-            // use the sub function to extract node attributes
-            int lastLevel = level;
-            level = showNode.displayNodeAttributes((org.w3c.dom.Node) node, level);
+            // loop through the attributes array and append them to the
+            // string builder object
+            nodeAttrKey = "";
+            if (nAttributes != null) {
+                // get id, name, class attribute if any
+                nodeAttrKey = getAttributeKey(nAttributes);
+
+                // get the key value for path
+                for (org.w3c.dom.Node na : nAttributes) {
+                    if (na.getNodeName().equals(nodeAttrKey)) {
+                        nodePath += "." + na.getNodeValue();
+                        break;
+                    }
+                }
+                
+                // first get the key or if none; set it to first value
+                for (org.w3c.dom.Node na : nAttributes) {
+                    // append the attribute details (key/text) to the string
+                    // builder object
+                    if (!na.getNodeName().equals(nodeAttrKey)) {
+                        System.out.println(nodePath + "." + na.getNodeName()
+                                + "=" + na.getNodeValue());
+                    }
+
+                    // yield processing to other threads
+                    Thread.yield();
+                }
+            }
 
             // if node has a text value, display the text
-            if (_xmlr.getNodeText((org.w3c.dom.Node) node) != null) {
-                nodeText = " (TEXT=" + _xmlr.getNodeText((org.w3c.dom.Node) node)
-                        + ")";
+            if (_xmlr.getNodeText(node) != null) {
+                System.out.println(nodePath
+                        + "=" + _xmlr.getNodeText(node));
 
-                System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.')
-                        + ":" + _xmlr.getNodeText((org.w3c.dom.Node) node));
+            } else {
+                //attrKey += "." + ((org.w3c.dom.Node) node).getNodeName();
             }
 
             // recall the function (recursion) to see if the node has child 
             // nodes and preocess them in hierarchial level
-            dataConfigNodes((org.w3c.dom.Node) node, (level + 1));
-            level = lastLevel;
+            dataConfigNodes(node, nodePath, (level + 1));
+            nodePath = nodePathHold;
 
             // yield processing to other threads
             Thread.yield();
         }
+    }
+
+    private String getAttributeKey(ArrayList<org.w3c.dom.Node> nodes) {
+        String result = "";
+
+        // attributes are in name order, so for class we keep looping
+        for (org.w3c.dom.Node na : nodes) {
+            if (na.getNodeName().equals("id")) {
+                result = "id";
+                break;
+            } else if (na.getNodeName().equals("name")) {
+                result = "name";
+                break;
+            } else if (na.getNodeName().equals("class")) {
+                result = "class";
+            }
+        }
+
+        return result;
     }
     // </editor-fold>
 
