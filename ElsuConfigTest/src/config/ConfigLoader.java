@@ -43,6 +43,9 @@ public class ConfigLoader {
     protected XMLReader _xmlr = null;
     // store all properties from app.config
     private Map<String, String> _configProperties = new HashMap<>();
+    // array of path strings which need to be removed from hashmap
+    private String[] _suppressPath = new String[]{"application.framework.attributes.key.",
+        "application.groups.group.", "application.groupExtensions."};
     // </editor-fold>
 
     // <editor-fold desc="class constructor destructor">
@@ -237,6 +240,10 @@ public class ConfigLoader {
         //    System.out.println("---" + nl.item(i).getNodeName());
         //    showConfigNodes(nl.item(i), 1);
         //}
+        
+        for (String key : getConfigProperties().keySet()) {
+            System.out.println(key + "=" + getConfigProperties(key));
+        }
     }
 
     /**
@@ -338,7 +345,7 @@ public class ConfigLoader {
         String nodePathHold = nodePath;
         String nodeAttrKey = "";
         for (org.w3c.dom.Node node : nodes) {
-            nodePath += "." + node.getNodeName();
+            nodePath += (nodePath.isEmpty() ? node.getNodeName() : "." + node.getNodeName());
             nAttributes = _xmlr.getNodeAttributes(node);
 
             // loop through the attributes array and append them to the
@@ -355,14 +362,15 @@ public class ConfigLoader {
                         break;
                     }
                 }
-                
+
                 // first get the key or if none; set it to first value
                 for (org.w3c.dom.Node na : nAttributes) {
                     // append the attribute details (key/text) to the string
                     // builder object
                     if (!na.getNodeName().equals(nodeAttrKey)) {
-                        System.out.println(nodePath + "." + na.getNodeName()
-                                + "=" + na.getNodeValue());
+                        addMap(nodePath + "." + na.getNodeName(), na.getNodeValue());
+                        //System.out.println(nodePath + "." + na.getNodeName()
+                        //        + "=" + na.getNodeValue());
                     }
 
                     // yield processing to other threads
@@ -372,11 +380,10 @@ public class ConfigLoader {
 
             // if node has a text value, display the text
             if (_xmlr.getNodeText(node) != null) {
-                System.out.println(nodePath
-                        + "=" + _xmlr.getNodeText(node));
+                        addMap(nodePath, _xmlr.getNodeText(node));
+                //System.out.println(nodePath
+                //        + "=" + _xmlr.getNodeText(node));
 
-            } else {
-                //attrKey += "." + ((org.w3c.dom.Node) node).getNodeName();
             }
 
             // recall the function (recursion) to see if the node has child 
@@ -406,6 +413,15 @@ public class ConfigLoader {
         }
 
         return result;
+    }
+    
+    private void addMap(String key, String value) {
+        // check and remove the values in _suppressPath variable
+        for(String suppress : _suppressPath) {
+            key = key.replaceFirst(suppress, "");
+        }
+        
+        getConfigProperties().put(key, value);
     }
     // </editor-fold>
 
