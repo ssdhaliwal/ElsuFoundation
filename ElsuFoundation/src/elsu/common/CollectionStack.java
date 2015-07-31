@@ -31,7 +31,7 @@ public class CollectionStack {
             offset++;
 
             if (offset < values.length) {
-                result += ",";
+                result += delimiter;
             }
         }
         
