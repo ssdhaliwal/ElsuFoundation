@@ -20,13 +20,23 @@ public abstract class AbstractEventPublisher implements IEventPublisher {
     }
 
     @Override
+    public void finalize() throws Throwable {
+        try {
+            _listeners.clear();
+        } catch (Exception exi) {
+        } finally {
+            super.finalize();
+        }
+    }
+
+    @Override
     public synchronized void notifyListeners(EventObject event, StatusType s,
-            Object o) {
+            String message, Object o) {
         Iterator i = _listeners.iterator();
 
         while (i.hasNext()) {
             try {
-                ((IEventSubscriber) i.next()).EventHandler(event, s, o);
+                ((IEventSubscriber) i.next()).EventHandler(event, s, message, o);
             } catch (Exception ex) {
                 System.out.println(getClass().toString() + ", notifyListeners(), "
                         + ex.getMessage());

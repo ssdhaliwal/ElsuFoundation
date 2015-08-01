@@ -100,9 +100,11 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
 
         while (this.getConnections().isEmpty()) {
             if (this.getConnectionsActive().size() == this._totalConnections) {
+                notifyListeners(new EventObject(this), StatusType.INFORMATION, "all db connnections in use, none available.", null);
                 idle(30000);
             } else {
                 initializeConnections();
+                notifyListeners(new EventObject(this), StatusType.INFORMATION, "db connections initialized.", null);
             }
         }
 
@@ -117,7 +119,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 String errMsg = getClass().toString() + ", getConnection(), "
                         + GlobalStack.LINESEPARATOR
                         + " connection is not valid!!";
-                notifyListeners(new EventObject(this), StatusType.ERROR, errMsg);
+                notifyListeners(new EventObject(this), StatusType.ERROR, errMsg, null);
 
                 // 20141130 SSD remove the connection and force close it
                 this.getConnections().remove(conn);
@@ -132,6 +134,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             }
         }
 
+        notifyListeners(new EventObject(this), StatusType.CONNECT, "db connection reserved", conn);
         return conn;
     }
 
@@ -168,6 +171,8 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         this.getConnectionsActive().remove(connection);
         this.getConnections().add(connection);
 
+        notifyListeners(new EventObject(this), StatusType.DISCONNECT, "db connection released", connection);
+
         // interrupt the wait for connections
         notify();
     }
@@ -193,6 +198,8 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             } catch (Exception exi) {
             }
         }
+
+        notifyListeners(new EventObject(this), StatusType.INFORMATION, "db connections validated", null);
     }
 
     public CachedRowSet getData(String sql, ArrayList params) throws
@@ -211,22 +218,24 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
 
                 rs = stmt.executeQuery();
                 crs.populate(rs);
+
+                notifyListeners(new EventObject(this), StatusType.SELECT, "CachedRowSet returned", crs);
             } catch (SQLException ex) {
                 notifyListeners(new EventObject(this), StatusType.ERROR,
                         getClass().toString() + ", getData(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                        + ex.getMessage(), sql);
                 throw new SQLException(ex);
             } catch (Exception ex) {
                 notifyListeners(new EventObject(this), StatusType.ERROR,
                         getClass().toString() + ", getData(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), StatusType.ERROR,
                     getClass().toString() + ", getData(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -258,22 +267,24 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
 
                 rs = stmt.executeQuery();
                 wrs.populate(rs);
+
+                notifyListeners(new EventObject(this), StatusType.SELECT, "WebRowSet returned", wrs);
             } catch (SQLException ex) {
                 notifyListeners(new EventObject(this), StatusType.ERROR,
                         getClass().toString() + ", getDataXML(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                        + ex.getMessage(), sql);
                 throw new SQLException(ex);
             } catch (Exception ex) {
                 notifyListeners(new EventObject(this), StatusType.ERROR,
                         getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), StatusType.ERROR,
                     getClass().toString() + ", getDataXML(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -312,22 +323,23 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 rs = DatabaseParameter.getResultSet(stmt, params);
 
                 wrs.populate(rs);
+                notifyListeners(new EventObject(this), StatusType.SELECT, "WebRowSet returned", wrs);
             } catch (SQLException ex) {
                 notifyListeners(new EventObject(this), StatusType.ERROR,
                         getClass().toString() + ", getDataXML(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                        + ex.getMessage(), sql);
                 throw new SQLException(ex);
             } catch (Exception ex) {
                 notifyListeners(new EventObject(this), StatusType.ERROR,
                         getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), StatusType.ERROR,
                     getClass().toString() + ", getDataXML(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -349,30 +361,24 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         PreparedStatement stmt = null;
 
         try {
-            try {
-                stmt = conn.prepareStatement(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+            stmt = conn.prepareStatement(sql);
+            DatabaseParameter.setParameterValue(stmt, params);
 
-                stmt.executeUpdate();
-                conn.commit();
-            } catch (SQLException ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", executeDirect(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
-                conn.rollback();
-                throw new SQLException(ex);
-            } catch (Exception ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", executeDirect(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
-                conn.rollback();
-                throw new Exception(ex);
-            }
+            stmt.executeUpdate();
+            conn.commit();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE, "executed successfully", sql);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirect(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            conn.rollback();
+            throw new SQLException(ex);
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), StatusType.ERROR,
                     getClass().toString() + ", executeDirect(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
             throw new Exception(ex);
         } finally {
@@ -384,44 +390,110 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         }
     }
 
-    public void executeDirectBatch(String sql, ArrayList params) throws
+    public PreparedStatement executeBatch(String sql) throws
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
 
-        try {
-            try {
-                stmt = conn.prepareStatement(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+        boolean isException = false;
 
-                stmt.executeUpdate();
-                conn.commit();
-            } catch (SQLException ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", executeDirectBatch(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
-                conn.rollback();
-                throw new SQLException(ex);
-            } catch (Exception ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", executeDirectBatch(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
-                conn.rollback();
-                throw new Exception(ex);
-            }
+        try {
+            stmt = conn.prepareStatement(sql);
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE, "statement prepare successful.", sql);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirectBatch(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            conn.rollback();
+
+            isException = true;
+            throw new SQLException(ex);
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), StatusType.ERROR,
                     getClass().toString() + ", executeDirectBatch(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
+
+            isException = true;
+            throw new Exception(ex);
+        } finally {
+            if (isException) {
+                if (stmt != null) {
+                    stmt.close();
+                }
+
+                this.releaseConnection(conn);
+            }
+
+            // return prepared statemetn
+            return stmt;
+        }
+    }
+
+    public void executeBatch(PreparedStatement stmt, ArrayList params) throws
+            Exception {
+        boolean isException = false;
+
+        try {
+            DatabaseParameter.setParameterValue(stmt, params);
+            stmt.executeUpdate();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE, "executed successfully", stmt);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirectBatch(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
+
+            isException = true;
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirectBatch(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
+
+            isException = true;
+            throw new Exception(ex);
+        } finally {
+            if (isException) {
+                if (stmt != null) {
+                    stmt.close();
+                }
+
+                this.releaseConnection(stmt.getConnection());
+            }
+        }
+    }
+
+    public void executeBatch(PreparedStatement stmt) throws
+            Exception {
+        try {
+            stmt.getConnection().commit();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE, "batch commit successful.", stmt);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirectBatch(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirectBatch(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
             throw new Exception(ex);
         } finally {
             if (stmt != null) {
                 stmt.close();
             }
 
-            this.releaseConnection(conn);
+            this.releaseConnection(stmt.getConnection());
         }
     }
 
@@ -432,33 +504,27 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         CallableStatement stmt = null;
 
         try {
-            try {
-                stmt = conn.prepareCall(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+            stmt = conn.prepareCall(sql);
+            DatabaseParameter.setParameterValue(stmt, params);
 
-                stmt.executeUpdate();
+            stmt.executeUpdate();
 
-                // load the output params into result by key
-                result = DatabaseParameter.getResult(stmt, params);
-                conn.commit();
-            } catch (SQLException ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", executeProcedure(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
-                conn.rollback();
-                throw new SQLException(ex);
-            } catch (Exception ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", executeProcedure(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
-                conn.rollback();
-                throw new Exception(ex);
-            }
+            // load the output params into result by key
+            result = DatabaseParameter.getResult(stmt, params);
+            conn.commit();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE, "executed successfully", result);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeProcedure(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            conn.rollback();
+            throw new SQLException(ex);
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), StatusType.ERROR,
                     getClass().toString() + ", executeProcedure(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
             throw new Exception(ex);
         } finally {
