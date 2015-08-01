@@ -34,13 +34,13 @@ public class DatabaseManager {
 
             initializeConnections();
         } catch (SQLException ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(), (connectionString="
-                    + connectionString + ", " + ex.getErrorCode()
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", constructor(), (connectionString="
+            //        + connectionString + ", " + ex.getErrorCode()
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", constructor(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         }
     }
@@ -57,13 +57,13 @@ public class DatabaseManager {
 
             initializeConnections();
         } catch (SQLException ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(),(connectionString="
-                    + connectionString + "), " + ex.getErrorCode()
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", constructor(),(connectionString="
+            //        + connectionString + "), " + ex.getErrorCode()
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(),"
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", constructor(),"
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         }
     }
@@ -83,17 +83,17 @@ public class DatabaseManager {
                 }
 
                 this.getConnections().add(conn);
-                Log4JManager.info(getClass().toString() + ", initializeConnections(), (connectionString="
-                        + this._connectionString + ") connected");
+                //Log4JManager.info(getClass().toString() + ", initializeConnections(), (connectionString="
+                //        + this._connectionString + ") connected");
             }
         } catch (SQLException ex) {
-            Log4JManager.error(getClass().toString() + ", initializeConnections(), (connectionString="
-                    + this._connectionString + "), " + ex.getErrorCode()
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", initializeConnections(), (connectionString="
+            //        + this._connectionString + "), " + ex.getErrorCode()
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", initializeConnections(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", initializeConnections(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         }
     }
@@ -121,12 +121,12 @@ public class DatabaseManager {
             Driver driver = (Driver) Class.forName(dbDriver).newInstance();
             DriverManager.registerDriver(driver);
 
-            Log4JManager.info("DatabaseManager, LoadDriver(), (" + dbDriver
-                    + ") driver loaded");
+            //Log4JManager.info("DatabaseManager, LoadDriver(), (" + dbDriver
+            //        + ") driver loaded");
         } catch (Exception ex) {
-            Log4JManager.error("DatabaseManager, LoadDriver(), (" + dbDriver
-                    + ") driver load error " + GlobalStack.LINESEPARATOR
-                    + ex.getMessage());
+            //Log4JManager.error("DatabaseManager, LoadDriver(), (" + dbDriver
+            //        + ") driver load error " + GlobalStack.LINESEPARATOR
+            //        + ex.getMessage());
             throw new Exception(ex);
         }
     }
@@ -150,9 +150,9 @@ public class DatabaseManager {
                 try {
                     initializeConnections();
                 } catch (Exception ex) {
-                    Log4JManager.error(getClass().toString() + ", getConnection(), "
-                            + GlobalStack.LINESEPARATOR
-                            + ex.getMessage());
+                    //Log4JManager.error(getClass().toString() + ", getConnection(), "
+                    //        + GlobalStack.LINESEPARATOR
+                    //        + ex.getMessage());
                     throw new Exception(ex);
                 }
             }
@@ -169,7 +169,7 @@ public class DatabaseManager {
                 String errMsg = getClass().toString() + ", getConnection(), "
                         + GlobalStack.LINESEPARATOR
                         + " connection is not valid!!";
-                Log4JManager.error(errMsg);
+                //Log4JManager.error(errMsg);
 
                 // 20141130 SSD remove the connection and force close it
                 this.getConnections().remove(conn);
@@ -264,18 +264,18 @@ public class DatabaseManager {
                 rs = stmt.executeQuery();
                 crs.populate(rs);
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", getData(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", getData(), "
+                //        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                //        + ex.getMessage());
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", getData(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", getData(), "
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", getData(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", getData(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -308,18 +308,18 @@ public class DatabaseManager {
                 rs = stmt.executeQuery();
                 wrs.populate(rs);
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", getDataXML(), "
+                //        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                //        + ex.getMessage());
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", getDataXML(), "
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", getDataXML(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -359,18 +359,18 @@ public class DatabaseManager {
 
                 wrs.populate(rs);
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", getDataXML(), "
+                //        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                //        + ex.getMessage());
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", getDataXML(), "
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", getDataXML(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -399,20 +399,20 @@ public class DatabaseManager {
                 stmt.executeUpdate();
                 conn.commit();
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirect(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", executeDirect(), "
+                //        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                //        + ex.getMessage());
                 conn.rollback();
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirect(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", executeDirect(), "
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
                 conn.rollback();
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", executeDirect(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", executeDirect(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             conn.rollback();
             throw new Exception(ex);
         } finally {
@@ -437,20 +437,20 @@ public class DatabaseManager {
                 stmt.executeUpdate();
                 conn.commit();
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
+                //        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                //        + ex.getMessage());
                 conn.rollback();
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
                 conn.rollback();
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             conn.rollback();
             throw new Exception(ex);
         } finally {
@@ -479,20 +479,20 @@ public class DatabaseManager {
                 result = DatabaseParameter.getResult(stmt, params);
                 conn.commit();
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", executeProcedure(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", executeProcedure(), "
+                //        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                //        + ex.getMessage());
                 conn.rollback();
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", executeProcedure(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error(getClass().toString() + ", executeProcedure(), "
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
                 conn.rollback();
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", executeProcedure(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            //Log4JManager.error(getClass().toString() + ", executeProcedure(), "
+            //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             conn.rollback();
             throw new Exception(ex);
         } finally {

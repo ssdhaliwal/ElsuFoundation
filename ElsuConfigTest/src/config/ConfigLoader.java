@@ -10,6 +10,7 @@ import elsu.support.*;
 import java.util.*;
 import java.io.*;
 import org.apache.commons.lang3.*;
+import org.apache.log4j.*;
 
 /**
  * ConfigLoader is the base class for factory. The core purpose is to load the
@@ -30,22 +31,30 @@ import org.apache.commons.lang3.*;
  * @version .51
  */
 public class ConfigLoader {
+
     // <editor-fold desc="class private storage">
-
-    private static int _MAXKEYLENGTH = 50;
-
     // static property for app.config store and extraction from jar file
+
     private static String _APPCONFIG = "config/app.config";
+
     // static property for data format across the application for display 
     // purposes
     private static String _DTGFORMAT = "YYYMMDD HH24:mm:ss";
+
     // variable to store the xml document object from XMLReader class
     protected XMLReader _xmlr = null;
+
     // store all properties from app.config
     private Map<String, String> _configProperties = new HashMap<>();
+
     // array of path strings which need to be removed from hashmap
     private String[] _suppressPath = new String[]{"application.framework.attributes.key.",
         "application.groups.group.", "application.groupExtensions."};
+
+    // system logger if configured
+    private String _logConfig = "log.config";
+    private String _logClass = "log.class";
+    private Log4JManager _log4JManager = null;
     // </editor-fold>
 
     // <editor-fold desc="class constructor destructor">
@@ -104,6 +113,21 @@ public class ConfigLoader {
 
             // load the config into application or service properties hashMaps
             initializeConfig();
+
+            // open log if provided
+            for (String key : getConfigProperties().keySet()) {
+                if (key.equals(_logConfig)) {
+                    try {
+                    initializeLogger(getConfigProperties().get(key).toString());
+                    } catch (Exception ex) {
+                        System.out.println("log4J configuration error, " + ex.getMessage());
+                    }
+                    
+                    break;
+                }
+            }
+            
+            logInfo("configuration loaded.");
         } catch (Exception ex) {
             // display exception to the user and exit
             System.out.println(getClass().toString() + "//" + ex.getMessage());
@@ -119,6 +143,7 @@ public class ConfigLoader {
     private void initializeConfig() throws Exception {
         // clear the storage hashMaps
         getConfigProperties().clear();
+        loadConfig(_xmlr.getDocument(), "", 1);
     }
     // </editor-fold>
 
@@ -227,7 +252,6 @@ public class ConfigLoader {
      */
     private void showConfig() {
         showConfigNodes(_xmlr.getDocument(), 1);
-        dataConfigNodes(_xmlr.getDocument(), "", 1);
 
         //System.out.println("------------");
         //org.w3c.dom.NodeList nl = _xmlr.getNodesByElement("connections");
@@ -240,7 +264,6 @@ public class ConfigLoader {
         //    System.out.println("---" + nl.item(i).getNodeName());
         //    showConfigNodes(nl.item(i), 1);
         //}
-        
         for (String key : getConfigProperties().keySet()) {
             System.out.println(key + "=" + getConfigProperties(key));
         }
@@ -336,7 +359,7 @@ public class ConfigLoader {
         }
     }
 
-    protected void dataConfigNodes(org.w3c.dom.Node parent, String nodePath, int level) {
+    protected void loadConfig(org.w3c.dom.Node parent, String nodePath, int level) {
         // retrieve the child nodes for processing
         ArrayList<org.w3c.dom.Node> nodes = _xmlr.getNodeChildren(parent);
 
@@ -380,7 +403,7 @@ public class ConfigLoader {
 
             // if node has a text value, display the text
             if (_xmlr.getNodeText(node) != null) {
-                        addMap(nodePath, _xmlr.getNodeText(node));
+                addMap(nodePath, _xmlr.getNodeText(node));
                 //System.out.println(nodePath
                 //        + "=" + _xmlr.getNodeText(node));
 
@@ -388,7 +411,7 @@ public class ConfigLoader {
 
             // recall the function (recursion) to see if the node has child 
             // nodes and preocess them in hierarchial level
-            dataConfigNodes(node, nodePath, (level + 1));
+            loadConfig(node, nodePath, (level + 1));
             nodePath = nodePathHold;
 
             // yield processing to other threads
@@ -414,18 +437,48 @@ public class ConfigLoader {
 
         return result;
     }
-    
+
     private void addMap(String key, String value) {
         // check and remove the values in _suppressPath variable
-        for(String suppress : _suppressPath) {
+        for (String suppress : _suppressPath) {
             key = key.replaceFirst(suppress, "");
         }
-        
+
         getConfigProperties().put(key, value);
     }
     // </editor-fold>
 
     // <editor-fold desc="class logging">
+    /**
+     *
+     */
+    private void initializeLogger(String log) throws Exception {
+            // log attribute value is defined, set the static variable to the 
+        // log property file location; also, check if path is provided as
+        // part of the file name - if yes, then ignore class path
+        String configFile;
+
+        if (!log.contains("\\") && !log.contains("/")) {
+            configFile
+                    = (new File(getClass().getName().replace(".", "\\"))).getParent()
+                    + "\\" + log;
+        } else {
+            configFile = log;
+        }
+
+        // check if the log property file exists, if not extract it 
+        extractConfigFile(configFile);
+
+        _log4JManager = new Log4JManager(configFile, getConfigProperties().get(this._logClass).toString(), "LogTest1011.log");
+    }
+
+    /**
+     *
+     */
+    public synchronized Logger getLogger() {
+        return this._log4JManager.getLogger();
+    }
+
     /**
      * logDebug(...) method is an interface method to Log4JManager logging
      * capability. This method is provided to allow multiple threads to log to
@@ -438,7 +491,7 @@ public class ConfigLoader {
      * the log file
      */
     public synchronized void logDebug(Object info) {
-        Log4JManager.debug(info.toString());
+        getLogger().debug(info.toString());
     }
 
     /**
@@ -453,7 +506,7 @@ public class ConfigLoader {
      * the log file
      */
     public synchronized void logError(Object info) {
-        Log4JManager.error(info.toString());
+        getLogger().error(info.toString());
     }
 
     /**
@@ -468,7 +521,7 @@ public class ConfigLoader {
      * the log file
      */
     public synchronized void logInfo(Object info) {
-        Log4JManager.info(info.toString());
+        getLogger().info(info.toString());
     }
     // </editor-fold>
 }

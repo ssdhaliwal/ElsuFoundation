@@ -15,9 +15,5 @@ public interface IEventPublisher {
 
     void removeEventListener(IEventSubscriber listener);
 
-    void notifyListeners(EventAbstract event);
-
-    void notifyListeners(EventAbstract event, Object o);
-
     void notifyListeners(EventAbstract event, StatusType s, Object o);
 }

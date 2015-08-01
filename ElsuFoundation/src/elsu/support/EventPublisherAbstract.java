@@ -20,30 +20,17 @@ public abstract class EventPublisherAbstract implements IEventPublisher {
     }
 
     @Override
-    public synchronized void notifyListeners(EventAbstract event) {
-        Iterator i = _listeners.iterator();
-
-        while (i.hasNext()) {
-            ((IEventSubscriber) i.next()).EventHandler(event);
-        }
-    }
-
-    @Override
-    public synchronized void notifyListeners(EventAbstract event, Object o) {
-        Iterator i = _listeners.iterator();
-
-        while (i.hasNext()) {
-            ((IEventSubscriber) i.next()).EventHandler(event, o);
-        }
-    }
-
-    @Override
     public synchronized void notifyListeners(EventAbstract event, StatusType s,
             Object o) {
         Iterator i = _listeners.iterator();
 
         while (i.hasNext()) {
-            ((IEventSubscriber) i.next()).EventHandler(event, s, o);
+            try {
+                ((IEventSubscriber) i.next()).EventHandler(event, s, o);
+            } catch (Exception ex) {
+                System.out.println(getClass().toString() + ", notifyListeners(), "
+                        + ex.getMessage());
+            }
         }
     }
 }

@@ -350,11 +350,11 @@ public class DatabaseParameter {
                     paramIndex++;
                 }
             } catch (SQLException ex) {
-                Log4JManager.error("DatabaseParameter, setParameterValue(), " + ex.getErrorCode()
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error("DatabaseParameter, setParameterValue(), " + ex.getErrorCode()
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             } catch (Exception ex) {
-                Log4JManager.error("DatabaseParameter, setParameterValue(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                //Log4JManager.error("DatabaseParameter, setParameterValue(), "
+                //        + GlobalStack.LINESEPARATOR + ex.getMessage());
             }
         }
     }
