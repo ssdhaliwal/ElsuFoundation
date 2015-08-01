@@ -7,8 +7,8 @@ import java.nio.channels.*;
 import java.nio.file.*;
 
 /**
- * FileChannelWriterAbstract() class extends the FileChanneAbstract to provide
- * concrete implementation for writing to file or files. Multiple threads can
+ * AbstractFileChannelWriter() class extends the FileChanneAbstract to provide
+ concrete implementation for writing to file or files. Multiple threads can
  * write to same file as the threads are synchronized through static shareWrite
  * method of base class.
  * <p>
@@ -18,7 +18,7 @@ import java.nio.file.*;
  *
  * @author ssd.administrator
  */
-public abstract class FileChannelWriterAbstract extends FileChannelAbstract {
+public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
 
     // local storage, stores the writer channel
     private volatile SeekableByteChannel _writerChannel = null;
@@ -29,14 +29,14 @@ public abstract class FileChannelWriterAbstract extends FileChannelAbstract {
     // local storage, append the data if file exists
     private volatile boolean _appendIfExists = true;
 
-    public FileChannelWriterAbstract(String fileMask, String fileLocation)
+    public AbstractFileChannelWriter(String fileMask, String fileLocation)
             throws Exception {
         super(fileMask, fileLocation);
 
         initialize();
     }
 
-    public FileChannelWriterAbstract(String fileMask, String fileLocation,
+    public AbstractFileChannelWriter(String fileMask, String fileLocation,
             boolean append) throws Exception {
         super(fileMask, fileLocation);
 
@@ -46,7 +46,7 @@ public abstract class FileChannelWriterAbstract extends FileChannelAbstract {
         initialize();
     }
 
-    public FileChannelWriterAbstract(String fileMask, String fileLocation,
+    public AbstractFileChannelWriter(String fileMask, String fileLocation,
             FileRolloverPeriodicityType rolloverPeriodicity) throws Exception {
         super(fileMask, fileLocation, rolloverPeriodicity, 0);
 

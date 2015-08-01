@@ -5,7 +5,7 @@
  */
 package elsuconfigtest;
 
-import config.*;
+import elsu.support.*;
 
 /**
  *
@@ -19,6 +19,10 @@ public class ElsuConfigTest {
     public static void main(String[] args) {
         try {
             ConfigLoader cl = new ConfigLoader();
+            
+            for(String key : cl.getProperties().keySet()) {
+                System.out.println(key + "=" + cl.getProperties().get(key).toString());
+            }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }

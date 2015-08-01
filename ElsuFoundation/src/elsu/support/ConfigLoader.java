@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package config;
+package elsu.support;
 
 import elsu.common.*;
 import elsu.support.*;
@@ -34,7 +34,6 @@ public class ConfigLoader {
 
     // <editor-fold desc="class private storage">
     // static property for app.config store and extraction from jar file
-
     private static String _APPCONFIG = "config/app.config";
 
     // static property for data format across the application for display 
@@ -45,10 +44,11 @@ public class ConfigLoader {
     protected XMLReader _xmlr = null;
 
     // store all properties from app.config
-    private Map<String, String> _configProperties = new HashMap<>();
+    private Map<String, String> _properties = new HashMap<>();
 
     // array of path strings which need to be removed from hashmap
     private String[] _suppressPath = new String[]{"application.framework.attributes.key.",
+        "application.elsuFramework.attributes.key.",
         "application.groups.group.", "application.groupExtensions."};
 
     // system logger if configured
@@ -69,7 +69,7 @@ public class ConfigLoader {
      * @throws Exception
      */
     public ConfigLoader() throws Exception {
-        this(ConfigLoader._APPCONFIG);
+        this(ConfigLoader._APPCONFIG, null);
     }
 
     /**
@@ -81,10 +81,21 @@ public class ConfigLoader {
      * formatted xml (starts with "<?xml ")
      *
      * @param configData is the XML data passed from the calling function.
+     * @param suppressPath is array of strings which should be removed from key
      * @throws Exception
      */
-    public ConfigLoader(String config) throws Exception {
+    public ConfigLoader(String config, String[] suppressPath) throws Exception {
         try {
+            // update suppress path before processing
+            if (suppressPath != null) {
+                this._suppressPath = suppressPath;
+            }
+
+            // if config is null, then use the default
+            if ((config == null) || (config.isEmpty())) {
+                config = ConfigLoader._APPCONFIG;
+            }
+            
             // check the format, if raw xml?
             if (config.startsWith("<?xml ")) {
                 // try to create the XML reader instance for XML document parsing
@@ -115,18 +126,18 @@ public class ConfigLoader {
             initializeConfig();
 
             // open log if provided
-            for (String key : getConfigProperties().keySet()) {
+            for (String key : getProperties().keySet()) {
                 if (key.equals(_logConfig)) {
                     try {
-                    initializeLogger(getConfigProperties().get(key).toString());
+                        initializeLogger(getProperties().get(key).toString());
                     } catch (Exception ex) {
                         System.out.println("log4J configuration error, " + ex.getMessage());
                     }
-                    
+
                     break;
                 }
             }
-            
+
             logInfo("configuration loaded.");
         } catch (Exception ex) {
             // display exception to the user and exit
@@ -142,7 +153,7 @@ public class ConfigLoader {
      */
     private void initializeConfig() throws Exception {
         // clear the storage hashMaps
-        getConfigProperties().clear();
+        getProperties().clear();
         loadConfig(_xmlr.getDocument(), "", 1);
     }
     // </editor-fold>
@@ -155,12 +166,24 @@ public class ConfigLoader {
      *
      * @return <code>hashMap</code> key/value set of all application properties
      */
-    public Map<String, String> getConfigProperties() {
-        return this._configProperties;
+    public Map<String, String> getProperties() {
+        return this._properties;
     }
 
-    public String getConfigProperties(String key) {
-        return getConfigProperties().get(key);
+    public String getProperty(String key) {
+        return getProperties().get(key);
+    }
+
+    public String getKeyByValue(String value) {
+        String result = "";
+
+        for (String key : getProperties().keySet()) {
+            if (getProperty(key).equals(value)) {
+                result = key;
+                break;
+            }
+        }
+        return result;
     }
     // </editor-fold>
 
@@ -264,9 +287,6 @@ public class ConfigLoader {
         //    System.out.println("---" + nl.item(i).getNodeName());
         //    showConfigNodes(nl.item(i), 1);
         //}
-        for (String key : getConfigProperties().keySet()) {
-            System.out.println(key + "=" + getConfigProperties(key));
-        }
     }
 
     /**
@@ -444,7 +464,8 @@ public class ConfigLoader {
             key = key.replaceFirst(suppress, "");
         }
 
-        getConfigProperties().put(key, value);
+        getProperties().put(key, value);
+        System.out.println(key + "=" + value);
     }
     // </editor-fold>
 
@@ -453,10 +474,11 @@ public class ConfigLoader {
      *
      */
     private void initializeLogger(String log) throws Exception {
-            // log attribute value is defined, set the static variable to the 
+        // log attribute value is defined, set the static variable to the 
         // log property file location; also, check if path is provided as
         // part of the file name - if yes, then ignore class path
         String configFile;
+        String logFileName = getProperty("log.filename");
 
         if (!log.contains("\\") && !log.contains("/")) {
             configFile
@@ -469,7 +491,12 @@ public class ConfigLoader {
         // check if the log property file exists, if not extract it 
         extractConfigFile(configFile);
 
-        _log4JManager = new Log4JManager(configFile, getConfigProperties().get(this._logClass).toString(), "LogTest1011.log");
+        // if log.filename is empty, then assign a temporary one
+        if ((logFileName == null) || (logFileName.isEmpty())) {
+            logFileName = System.getProperty("log.filename");
+        }
+        
+        _log4JManager = new Log4JManager(configFile, getProperties().get(this._logClass).toString(), logFileName);
     }
 
     /**
