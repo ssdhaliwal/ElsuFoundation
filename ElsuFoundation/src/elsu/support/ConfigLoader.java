@@ -44,11 +44,10 @@ public class ConfigLoader {
     protected XMLReader _xmlr = null;
 
     // store all properties from app.config
-    private Map<String, String> _properties = new HashMap<>();
+    private Map<String, Object> _properties = new HashMap<>();
 
     // array of path strings which need to be removed from hashmap
     private String[] _suppressPath = new String[]{"application.framework.attributes.key.",
-        "application.elsuFramework.attributes.key.",
         "application.groups.group.", "application.groupExtensions."};
 
     // system logger if configured
@@ -159,6 +158,20 @@ public class ConfigLoader {
     // </editor-fold>
 
     // <editor-fold desc="class getter/setters">
+    public static String getConfigPath() {
+        return _APPCONFIG;
+    }
+    public static void setConfigPath(String path) {
+        _APPCONFIG = path;
+    }
+    
+    public static String getDTGFormat() {
+        return _DTGFORMAT;
+    }
+    public static void setDTGFormat(String format) {
+        _DTGFORMAT = format;
+    }
+    
     /**
      * getApplicationProperties() method returns the hashMap containing the
      * application properties key/value pair extracted from the app.config
@@ -166,11 +179,11 @@ public class ConfigLoader {
      *
      * @return <code>hashMap</code> key/value set of all application properties
      */
-    public Map<String, String> getProperties() {
+    public Map<String, Object> getProperties() {
         return this._properties;
     }
 
-    public String getProperty(String key) {
+    public Object getProperty(String key) {
         return getProperties().get(key);
     }
 
@@ -478,7 +491,7 @@ public class ConfigLoader {
         // log property file location; also, check if path is provided as
         // part of the file name - if yes, then ignore class path
         String configFile;
-        String logFileName = getProperty("log.filename");
+        String logFileName = getProperty("log.filename").toString();
 
         if (!log.contains("\\") && !log.contains("/")) {
             configFile
