@@ -94,7 +94,7 @@ public class ConfigLoader {
             if ((config == null) || (config.isEmpty())) {
                 config = ConfigLoader._APPCONFIG;
             }
-            
+
             // check the format, if raw xml?
             if (config.startsWith("<?xml ")) {
                 // try to create the XML reader instance for XML document parsing
@@ -161,17 +161,19 @@ public class ConfigLoader {
     public static String getConfigPath() {
         return _APPCONFIG;
     }
+
     public static void setConfigPath(String path) {
         _APPCONFIG = path;
     }
-    
+
     public static String getDTGFormat() {
         return _DTGFORMAT;
     }
+
     public static void setDTGFormat(String format) {
         _DTGFORMAT = format;
     }
-    
+
     /**
      * getApplicationProperties() method returns the hashMap containing the
      * application properties key/value pair extracted from the app.config
@@ -185,6 +187,29 @@ public class ConfigLoader {
 
     public Object getProperty(String key) {
         return getProperties().get(key);
+    }
+
+    public List<String> getClassSet() {
+        List<String> result = new ArrayList<>();
+
+        for (String key : getProperties().keySet()) {
+            if (key.endsWith(".class")) {
+                result.add(key);
+            }
+        }
+        
+        return result;
+    }
+    public List<String> getClassSet(String partialKey) {
+        List<String> result = new ArrayList<>();
+
+        for (String key : getProperties().keySet()) {
+            if ((key.startsWith(partialKey)) && key.endsWith(".class")) {
+                result.add(key);
+            }
+        }
+        
+        return result;
     }
 
     public String getKeyByValue(String value) {
@@ -508,7 +533,7 @@ public class ConfigLoader {
         if ((logFileName == null) || (logFileName.isEmpty())) {
             logFileName = System.getProperty("log.filename");
         }
-        
+
         _log4JManager = new Log4JManager(configFile, getProperties().get(this._logClass).toString(), logFileName);
     }
 
