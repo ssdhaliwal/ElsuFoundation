@@ -335,7 +335,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 stmt = conn.prepareCall(sql);
 
                 // add output cursor type to params
-                params.add(new DatabaseParameter("paramcursor", DatabaseDataTypes.dtcursor, true));
+                params.add(new DatabaseParameter("paramcursor", DatabaseDataType.dtcursor, true));
                 DatabaseParameter.setParameterValue(stmt, params);
 
                 stmt.execute();

@@ -14,45 +14,45 @@ import java.sql.*;
  */
 public class DatabaseStack {
 
-    public static DatabaseDataTypes getDataType(Object o) {
-        DatabaseDataTypes result = DatabaseDataTypes.dtstring;
+    public static DatabaseDataType getDataType(Object o) {
+        DatabaseDataType result = DatabaseDataType.dtstring;
 
         if (o == null) {
-            result = DatabaseDataTypes.dtnull;
+            result = DatabaseDataType.dtnull;
         } else if (o.getClass().equals(BigDecimal.class)) {
-            result = DatabaseDataTypes.dtbigDecimal;
+            result = DatabaseDataType.dtbigDecimal;
         } else if (o.getClass().equals(Blob.class)) {
-            result = DatabaseDataTypes.dtblob;
+            result = DatabaseDataType.dtblob;
         } else if (o.getClass().equals(Boolean.class)) {
-            result = DatabaseDataTypes.dtboolean;
+            result = DatabaseDataType.dtboolean;
         } else if (o.getClass().equals(Byte.class)) {
-            result = DatabaseDataTypes.dtboolean;
+            result = DatabaseDataType.dtboolean;
         } else if (o.getClass().equals(Byte[].class)) {
-            result = DatabaseDataTypes.dtbyteArray;
+            result = DatabaseDataType.dtbyteArray;
         } else if (o.getClass().equals(Clob.class)) {
-            result = DatabaseDataTypes.dtclob;
+            result = DatabaseDataType.dtclob;
         } else if (o.getClass().equals(java.sql.Date.class)) {
-            result = DatabaseDataTypes.dtdate;
+            result = DatabaseDataType.dtdate;
         } else if (o.getClass().equals(Double.class)) {
-            result = DatabaseDataTypes.dtdouble;
+            result = DatabaseDataType.dtdouble;
         } else if (o.getClass().equals(Float.class)) {
-            result = DatabaseDataTypes.dtfloat;
+            result = DatabaseDataType.dtfloat;
         } else if (o.getClass().equals(Integer.class)) {
-            result = DatabaseDataTypes.dtint;
+            result = DatabaseDataType.dtint;
         } else if (o.getClass().equals(Long.class)) {
-            result = DatabaseDataTypes.dtlong;
+            result = DatabaseDataType.dtlong;
         } else if (o.getClass().equals(String.class)) {
-            result = DatabaseDataTypes.dtstring;
+            result = DatabaseDataType.dtstring;
         } else if (o.getClass().equals(RowId.class)) {
-            result = DatabaseDataTypes.dtrowid;
+            result = DatabaseDataType.dtrowid;
         } else if (o.getClass().equals(Short.class)) {
-            result = DatabaseDataTypes.dtshort;
+            result = DatabaseDataType.dtshort;
         } else if (o.getClass().equals(String.class)) {
-            result = DatabaseDataTypes.dtstring;
+            result = DatabaseDataType.dtstring;
         } else if (o.getClass().equals(Time.class)) {
-            result = DatabaseDataTypes.dttime;
+            result = DatabaseDataType.dttime;
         } else if (o.getClass().equals(java.sql.Timestamp.class)) {
-            result = DatabaseDataTypes.dttimestamp;
+            result = DatabaseDataType.dttimestamp;
         }
 
         return result;
