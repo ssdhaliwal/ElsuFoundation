@@ -9,8 +9,6 @@ import java.util.*;
  */
 public interface IEventPublisher {
 
-    List<IEventSubscriber> _listeners = new ArrayList<>();
-
     void addEventListener(IEventSubscriber listener);
 
     void removeEventListener(IEventSubscriber listener);

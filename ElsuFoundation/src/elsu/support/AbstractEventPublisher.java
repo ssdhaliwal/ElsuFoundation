@@ -9,6 +9,8 @@ import java.util.*;
  */
 public abstract class AbstractEventPublisher implements IEventPublisher {
 
+    List<IEventSubscriber> _listeners = new ArrayList<>();
+
     @Override
     public synchronized void addEventListener(IEventSubscriber listener) {
         _listeners.add(listener);
@@ -32,14 +34,19 @@ public abstract class AbstractEventPublisher implements IEventPublisher {
     @Override
     public synchronized void notifyListeners(EventObject event, StatusType s,
             String message, Object o) {
-        Iterator i = _listeners.iterator();
+        // if listeners are not setup, then just output to console
+        if (_listeners.size() == 0) {
+            System.out.println(s.name() + ":" + message);
+        } else {
+            Iterator i = _listeners.iterator();
 
-        while (i.hasNext()) {
-            try {
-                ((IEventSubscriber) i.next()).EventHandler(event, s, message, o);
-            } catch (Exception ex) {
-                System.out.println(getClass().toString() + ", notifyListeners(), "
-                        + ex.getMessage());
+            while (i.hasNext()) {
+                try {
+                    ((IEventSubscriber) i.next()).EventHandler(event, s, message, o);
+                } catch (Exception ex) {
+                    System.out.println(getClass().toString() + ", notifyListeners(), "
+                            + ex.getMessage());
+                }
             }
         }
     }
