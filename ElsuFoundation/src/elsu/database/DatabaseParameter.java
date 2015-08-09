@@ -4,7 +4,7 @@ import elsu.common.*;
 import elsu.support.*;
 import java.util.*;
 import java.sql.*;
-import elsu.database.DatabaseDataTypes.*;
+import elsu.database.DatabaseDataType.*;
 import java.math.BigDecimal;
 import oracle.jdbc.OracleTypes;
 import oracle.sql.*;
@@ -16,7 +16,7 @@ import oracle.sql.*;
 public class DatabaseParameter {
 
     public String _name = null;
-    public DatabaseDataTypes _type = DatabaseDataTypes.dtstring;
+    public DatabaseDataType _type = DatabaseDataType.dtstring;
     public boolean _input = true;
     public boolean _output = false;
     public Object _value = null;
@@ -25,13 +25,13 @@ public class DatabaseParameter {
     public DatabaseParameter() {
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, Object value) {
+    public DatabaseParameter(String name, DatabaseDataType type, Object value) {
         this._name = name;
         this._type = type;
         this._value = value;
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, Object value,
+    public DatabaseParameter(String name, DatabaseDataType type, Object value,
             String format) {
         this._name = name;
         this._type = type;
@@ -39,7 +39,7 @@ public class DatabaseParameter {
         this._format = format;
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, boolean output) {
+    public DatabaseParameter(String name, DatabaseDataType type, boolean output) {
         this._name = name;
         this._type = type;
         this._output = output;
@@ -49,7 +49,7 @@ public class DatabaseParameter {
         }
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, boolean input,
+    public DatabaseParameter(String name, DatabaseDataType type, boolean input,
             boolean output, Object value) {
         this._name = name;
         this._type = type;
@@ -58,7 +58,7 @@ public class DatabaseParameter {
         this._value = value;
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, boolean input,
+    public DatabaseParameter(String name, DatabaseDataType type, boolean input,
             boolean output, Object value, String format) {
         this._name = name;
         this._type = type;
@@ -126,7 +126,7 @@ public class DatabaseParameter {
         return result;
     }
 
-    public DatabaseDataTypes getType() {
+    public DatabaseDataType getType() {
         return this._type;
     }
 
@@ -161,200 +161,192 @@ public class DatabaseParameter {
     }
 
     public static void setParameterValue(PreparedStatement stmt,
-            ArrayList params) {
+            ArrayList params) throws Exception {
         int paramIndex = 1;
 
         if (params != null) {
-            try {
-                for (Object o : params) {
-                    DatabaseParameter dbpm = (DatabaseParameter) o;
+            for (Object o : params) {
+                DatabaseParameter dbpm = (DatabaseParameter) o;
 
-                    // if null pointer, special case
-                    switch (dbpm.getType()) {
-                        case dtarray:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                ArrayDescriptor ad = ArrayDescriptor.createDescriptor("STR_ARRAY_TYP", stmt.getConnection());
-                                ARRAY ar = new ARRAY(ad, stmt.getConnection(), dbpm.getValue());
-                                stmt.setArray(paramIndex, ar);
-                            }
-                            break;
-                        case dtbigDecimal:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setBigDecimal(paramIndex, (BigDecimal) dbpm.getValue());
-                            }
-                            break;
-                        case dtblob:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setBlob(paramIndex, (Blob) dbpm.getValue());
-                            }
-                            break;
-                        case dtboolean:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setBoolean(paramIndex, (Boolean) dbpm.getValue());
-                            }
-                            break;
-                        case dtbyte:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setByte(paramIndex, (Byte) dbpm.getValue());
-                            }
-                            break;
-                        case dtbyteArray:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setBytes(paramIndex, (byte[]) dbpm.getValue());
-                            }
-                            break;
-                        case dtclob:
+                // if null pointer, special case
+                switch (dbpm.getType()) {
+                    case dtarray:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            ArrayDescriptor ad = ArrayDescriptor.createDescriptor("STR_ARRAY_TYP", stmt.getConnection());
+                            ARRAY ar = new ARRAY(ad, stmt.getConnection(), dbpm.getValue());
+                            stmt.setArray(paramIndex, ar);
+                        }
+                        break;
+                    case dtbigDecimal:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBigDecimal(paramIndex, (BigDecimal) dbpm.getValue());
+                        }
+                        break;
+                    case dtblob:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBlob(paramIndex, (Blob) dbpm.getValue());
+                        }
+                        break;
+                    case dtboolean:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBoolean(paramIndex, (Boolean) dbpm.getValue());
+                        }
+                        break;
+                    case dtbyte:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setByte(paramIndex, (Byte) dbpm.getValue());
+                        }
+                        break;
+                    case dtbyteArray:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBytes(paramIndex, (byte[]) dbpm.getValue());
+                        }
+                        break;
+                    case dtclob:
 //                        File file = new File("1.wma");  
 //                        fis = new FileInputStream(file);  
 //                        stmt.setBinaryStream(1,fis,fis.available();  
 //                        fis.close();  
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setClob(paramIndex, (Clob) dbpm.getValue());
+                        }
+                        break;
+                    case dtcursor:
+                        throw new Exception(
+                                "invalid datatype return (SYS_REFCURSOR)!");
+                    case dtdate:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setDate(paramIndex,
+                                    DateStack.convertDate2SQLDate(
+                                            dbpm.getValue().toString(),
+                                            "MM/dd/yyyy H:m:s"));
+                        }
+                        break;
+                    case dtdouble:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setLong(paramIndex, ((BigDecimal) dbpm.getValue()).longValue());
                             } else {
-                                stmt.setClob(paramIndex, (Clob) dbpm.getValue());
+                                stmt.setDouble(paramIndex, (Double) dbpm.getValue());
                             }
-                            break;
-                        case dtcursor:
-                            throw new Exception(
-                                    "invalid datatype return (SYS_REFCURSOR)!");
-                        case dtdate:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        }
+                        break;
+                    case dtfloat:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setFloat(paramIndex, ((BigDecimal) dbpm.getValue()).floatValue());
                             } else {
-                                stmt.setDate(paramIndex,
-                                        DateStack.convertDate2SQLDate(
-                                                dbpm.getValue().toString(),
-                                                "MM/dd/yyyy H:m:s"));
+                                stmt.setFloat(paramIndex, (Float) dbpm.getValue());
                             }
-                            break;
-                        case dtdouble:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        }
+                        break;
+                    case dtint:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setInt(paramIndex, ((BigDecimal) dbpm.getValue()).intValue());
                             } else {
-                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
-                                    stmt.setLong(paramIndex, ((BigDecimal) dbpm.getValue()).longValue());
-                                } else {
-                                    stmt.setDouble(paramIndex, (Double) dbpm.getValue());
-                                }
+                                stmt.setInt(paramIndex, (Integer) dbpm.getValue());
                             }
-                            break;
-                        case dtfloat:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        }
+                        break;
+                    case dtlong:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setFloat(paramIndex, ((BigDecimal) dbpm.getValue()).floatValue());
                             } else {
-                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
-                                    stmt.setFloat(paramIndex, ((BigDecimal) dbpm.getValue()).floatValue());
-                                } else {
-                                    stmt.setFloat(paramIndex, (Float) dbpm.getValue());
-                                }
+                                stmt.setLong(paramIndex, (Long) dbpm.getValue());
                             }
-                            break;
-                        case dtint:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        }
+                        break;
+                    case dtrowid:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setRowId(paramIndex, (RowId) dbpm.getValue());
+                        }
+                        break;
+                    case dtshort:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setShort(paramIndex, ((BigDecimal) dbpm.getValue()).shortValue());
                             } else {
-                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
-                                    stmt.setInt(paramIndex, ((BigDecimal) dbpm.getValue()).intValue());
-                                } else {
-                                    stmt.setInt(paramIndex, (Integer) dbpm.getValue());
-                                }
+                                stmt.setShort(paramIndex, (Short) dbpm.getValue());
                             }
-                            break;
-                        case dtlong:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
-                                    stmt.setFloat(paramIndex, ((BigDecimal) dbpm.getValue()).floatValue());
-                                } else {
-                                    stmt.setLong(paramIndex, (Long) dbpm.getValue());
-                                }
-                            }
-                            break;
-                        case dtrowid:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setRowId(paramIndex, (RowId) dbpm.getValue());
-                            }
-                            break;
-                        case dtshort:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
-                                    stmt.setShort(paramIndex, ((BigDecimal) dbpm.getValue()).shortValue());
-                                } else {
-                                    stmt.setShort(paramIndex, (Short) dbpm.getValue());
-                                }
-                            }
-                            break;
-                        case dtstream:
+                        }
+                        break;
+                    case dtstream:
                             //                        File file = new File("1.wma");  
-                            //                        fis = new FileInputStream(file);  
-                            //                        stmt.setBinaryStream(1,fis,fis.available();  
-                            //                        fis.close();  
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setString(paramIndex, (String) dbpm.getValue());
-                            }
-                            break;
-                        case dtstring:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setString(paramIndex, (String) dbpm.getValue());
-                            }
-                            break;
-                        case dttime:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setDate(paramIndex,
-                                        DateStack.convertDate2SQLDate(
-                                                dbpm.getValue().toString(),
-                                                "MM/dd/yyyy H:m:s"));
-                            }
-                            break;
-                        case dttimestamp:
-                            //stmt.setTimestamp(paramIndex, DateStack.convertDate2SQLTimestamp(dbpm.getValue().toString(), "MM/dd/yyyy H:m:s"));
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setTimestamp(paramIndex,
-                                        (java.sql.Timestamp) dbpm.getValue());
-                            }
-                            break;
-                        default:
-                            if (dbpm.getValue() == null) {
-                                stmt.setNull(paramIndex, java.sql.Types.NULL);
-                            } else {
-                                stmt.setString(paramIndex, (String) dbpm.getValue());
-                            }
-                            break;
-                    }
-
-                    paramIndex++;
+                        //                        fis = new FileInputStream(file);  
+                        //                        stmt.setBinaryStream(1,fis,fis.available();  
+                        //                        fis.close();  
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setString(paramIndex, (String) dbpm.getValue());
+                        }
+                        break;
+                    case dtstring:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setString(paramIndex, (String) dbpm.getValue());
+                        }
+                        break;
+                    case dttime:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setDate(paramIndex,
+                                    DateStack.convertDate2SQLDate(
+                                            dbpm.getValue().toString(),
+                                            "MM/dd/yyyy H:m:s"));
+                        }
+                        break;
+                    case dttimestamp:
+                        //stmt.setTimestamp(paramIndex, DateStack.convertDate2SQLTimestamp(dbpm.getValue().toString(), "MM/dd/yyyy H:m:s"));
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setTimestamp(paramIndex,
+                                    (java.sql.Timestamp) dbpm.getValue());
+                        }
+                        break;
+                    default:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setString(paramIndex, (String) dbpm.getValue());
+                        }
+                        break;
                 }
-            } catch (SQLException ex) {
-                Log4JManager.error("DatabaseParameter, setParameterValue(), " + ex.getErrorCode()
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
-            } catch (Exception ex) {
-                Log4JManager.error("DatabaseParameter, setParameterValue(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+
+                paramIndex++;
             }
         }
     }
@@ -665,7 +657,7 @@ public class DatabaseParameter {
         }
     }
 
-    public void setType(DatabaseDataTypes value) {
+    public void setType(DatabaseDataType value) {
         this._type = value;
     }
 

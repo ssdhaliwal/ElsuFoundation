@@ -1,0 +1,947 @@
+From e0bb54aea396e3beddd3c71474f3c83828dc59c2 Mon Sep 17 00:00:00 2001
+From: ssdhaliwal <serajdhaliwal@gmail.com>
+Date: Sat, 18 Jul 2015 09:55:08 -0400
+Subject: [PATCH] moved syncprovider to database package to centralize the
+ global classes.
+
+---
+ ElsuFoundation/build/built-jar.properties          |   4 -
+ .../syncprovider/DummyRowSetSyncProvider.class     | Bin 0 -> 2130 bytes
+ .../syncprovider/internal/DummyRowSetReader.class  | Bin 0 -> 576 bytes
+ .../syncprovider/internal/DummyRowSetWriter.class  | Bin 0 -> 880 bytes
+ ElsuFoundation/build/depcache/dependencies.txt     | 511 ++++++++++-----------
+ ElsuFoundation/dist/ElsuFoundation.jar             | Bin 153290 -> 157730 bytes
+ .../nbproject/private/private.properties           |   2 +-
+ .../syncprovider/DummyRowSetSyncProvider.java      |  82 ++++
+ .../syncprovider/internal/DummyRowSetReader.java   |  22 +
+ .../syncprovider/internal/DummyRowSetWriter.java   |  38 ++
+ 10 files changed, 394 insertions(+), 265 deletions(-)
+ delete mode 100644 ElsuFoundation/build/built-jar.properties
+ create mode 100644 ElsuFoundation/build/classes/elsu/database/syncprovider/DummyRowSetSyncProvider.class
+ create mode 100644 ElsuFoundation/build/classes/elsu/database/syncprovider/internal/DummyRowSetReader.class
+ create mode 100644 ElsuFoundation/build/classes/elsu/database/syncprovider/internal/DummyRowSetWriter.class
+ create mode 100644 ElsuFoundation/src/elsu/database/syncprovider/DummyRowSetSyncProvider.java
+ create mode 100644 ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetReader.java
+ create mode 100644 ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetWriter.java
+
+diff --git a/ElsuFoundation/build/built-jar.properties b/ElsuFoundation/build/built-jar.properties
+deleted file mode 100644
+index 64e94bb..0000000
+--- a/ElsuFoundation/build/built-jar.properties
++++ /dev/null
+@@ -1,4 +0,0 @@
+-#Fri, 17 Jul 2015 17:39:24 +0000
+-
+-
+-M\:\\Github\\ElsuFoundation\\ElsuFoundation=
+diff --git a/ElsuFoundation/build/classes/elsu/database/syncprovider/DummyRowSetSyncProvider.class b/ElsuFoundation/build/classes/elsu/database/syncprovider/DummyRowSetSyncProvider.class
+new file mode 100644
+index 0000000000000000000000000000000000000000..089dd5f101ce1f17f16537d1d136224b22e705be
+GIT binary patch
+literal 2130
+zcmb7FU31$+6g}%NIjS5xZW2mcid&%APO#F_Kxx`QNScz?O+uWw<SDbUcY<0+GLoD$
+zJn%z!;ScZtGj%gVXUaSOgC~Z+z;Jh^I>IPrc(8W&>Ylylo_nwS+h4!D1n?oYbrdk4
+z#it_}$7fkA$o2Cq7UjC6<1UtU+`|_dR&?l?m*)E#9_Yvghq{J`8dkGd(=mp14PR>5
+zU?_OPwRoo~T+edst(7GPcAp`)=-8gmZNJGoJ&}I)`yajU|4e~F+i?YN3zy+s{V_k_
+zPfhQej=A9+HiW;S-pom-L)Y@9Q#In`I)|R{O|NU2n=ZFK-ts9V?>thz1Us|Sb)5r?
+zZkIHQ3Tk$^y=OLj*RuDN%Ym@lj=ReD1;gmhLBM;px4$dHWo}!x<<B!D%atZWYSC$v
+zTfT1DB5>K{yB)F=>rRW3=9D^}Lu1PS+VU7~)J4bZnQiX#UG53fJF;7^c$rJR{r#gL
+z+XmU!L%zf;w<r8pM@fIYT!~8{Pi|4Q7|w@|u}Yq}2P(z84-_m!NZfO&PD+UthA~op
+zi85+9J+~z&`zNGMc}0qpmzjFXzSB`J7y)t(pSPYo<lRsl{qED2=*ohTL}L_Y__hhJ
+z*X=s4?`?IJbRE&O#36%DzF~JUjHrVwAiW5<EL*Z57f%tkCVR}lJ9wAD<gHp5q!uko
+z?G&tmw^5?2*Sf+k1;I+?1=Vz=wcW>}<$Dzam!(hgT5ZO_6_hkI3~XXcL({+`Ofk&9
+zrW-7qnw&Z~+7`hO7`T9o{~sI_(!g7|#Blj!z9OR&Z9AH;|MVHujV4x>x8xsnMag#j
+zQmCb9*QCH-F<gI5s;6j7eJ&Z8mSZ;5hs63en6QE}tKki_X2??U7dzae20HtX;ZQ~z
+zq5KIZ^wS6ujQT|R-_ulSQuW5^yT~ws49;T`Z_xf6eJ~SvlYUeKwI?~%O8uZ#s<~RJ
+z;I!(5p$4Ppdvy8^N!kH7tH)r~Vxo^^wV3K7T`gw%(5ltv$Ueu2G{1npeT*}G7_`mN
+zcC?TD&xB3jDm||tOV3M45i^~*6o}0v^`wkGP0x?X<9+flf_NySLMN&zra~?zt&&T+
+z`V7gRXcJtVQO2tgaC!iq#s@KAV;DRY3$8&%lqy6c=ZC>FvEUh83&GR0O4^C^k3*bi
+zBgn*n^L6@vOQ^70Bz}T0g$t=4kb8l#?PBp5XMdHVCY7k8v;wz~#vJmvqwbpwFyVcK
+z#tqC8gO3!7<w<E!73jM~znere2zENng&3OAJ3bktD#ezmCJUM2T$dx4BnP?PiY=}-
+ZEb)T~_@uaVvEcMDcs&+;n`kC*=WiOb%jf_A
+
+literal 0
+HcmV?d00001
+
+diff --git a/ElsuFoundation/build/classes/elsu/database/syncprovider/internal/DummyRowSetReader.class b/ElsuFoundation/build/classes/elsu/database/syncprovider/internal/DummyRowSetReader.class
+new file mode 100644
+index 0000000000000000000000000000000000000000..3654022b2e014807e4975706330c3fc3f7a12f70
+GIT binary patch
+literal 576
+zcmbVJJx>Bb5Pi$nA)+WKek2xlXyF!ySYT{K6O)TZF!X!JMwcvixOa!}v#d-k`~m(b
+z<Ln)=z}Q&q%)Xg<GxK&ozurFpoMNwnJhmKcJ7_xCVJMxeK*bjf`PR{Zp>P=vB}2_s
+zfxJz|o-_}_(-f(@p)d467-jJyScsog#Bk<H9VL7yV&REM@@O9T6BAC=P#Ug+Seig+
+z-c82ic`tnF%eW^6r8*2{L$@yR7!F$QNKD0yN6(sPWj70I$8J`l@md;&{lDuNDpxaK
+zPGS`Xk%L{r{V*}UyjE62^VbR|c4QSrlo;Co62Y)xdvGm+M}Fsxq#x6uWhI$lhV8W0
+zD(v68Kda&pIr<iQefpyudD@4pLx_`S<cr5|V6SPqOxC7>8dk_wvjSAGN{A6&qb8Qz
+grjxU=Wnv>GHnZe{XsPSek^~W@Kz@@>J#EqW23V_zB>(^b
+
+literal 0
+HcmV?d00001
+
+diff --git a/ElsuFoundation/build/classes/elsu/database/syncprovider/internal/DummyRowSetWriter.class b/ElsuFoundation/build/classes/elsu/database/syncprovider/internal/DummyRowSetWriter.class
+new file mode 100644
+index 0000000000000000000000000000000000000000..293ae879110fd3bff18789633835b6c4d83b9e7b
+GIT binary patch
+literal 880
+zcmbV}K~EDw6vzK>DP5>26-yBm662+4;v5WesPQ72m~1p!f{C};?L-G>ck1l6h418r
+zlZgjD03XWuW_JTkB_Z*!Z}z=;??1o!&&8kL=K!8#r-cP<hS&=6AjCsL^QF#o@rtm}
+z+dU#QUfZD}tVTLh@5gDZ+@XvOSJon%NOL5e_IX`w6yJ1C*pHOS$6_c88OvOW{4`5O
+z&QA1DIia&cxl9^yFiz9cPj)&`#b>9v*yqy|o2I%TwBDQ~YE)>O<sr5SOU@b-%j7#@
+zqZb{^i4^${BL;G!MwTV}9+vp*&UKrF<*7g7fQbm(mB2}<PyxKFq58XDJcKkxIl@+{
+zb!{IL4(!+^>aF%}bpN@`Gtan!MKlR}|78cEUEb5k?5p??AFG6Y>G@Jc<m@z8g~&%*
+z96FihGVyjvQ<+IvzjEngbZI9ZA>b$Hm*w|g<dq3IhMWmr$ycBJ0-f<sfF+K88)##h
+z<4V<l7H)AyoHx144?it)uFVg2W(L`{a_}}cH+cLGf2%i3Y~Co*t||6dIPfI%6g#Cv
+vx7w^J`~~h}jpHoOJ#=cZ7rf)eg2vBM_R5UMGit%5T7Y$Q=hQaJ$@_l+m`tnf
+
+literal 0
+HcmV?d00001
+
+diff --git a/ElsuFoundation/build/depcache/dependencies.txt b/ElsuFoundation/build/depcache/dependencies.txt
+index 2f5e144..98c2105 100644
+--- a/ElsuFoundation/build/depcache/dependencies.txt
++++ b/ElsuFoundation/build/depcache/dependencies.txt
+@@ -1,26 +1,49 @@
+-||:elsu.support.IEventSubscriber
++||:elsu.support.XMLReader
++javax.xml.xpath.XPathExpression
++org.w3c.dom.NodeList
++javax.xml.xpath.XPathConstants
++org.w3c.dom.Element
++java.util.ArrayList
++java.io.StringReader
++org.w3c.dom.Node
++javax.xml.parsers.DocumentBuilderFactory
++javax.xml.xpath.XPathFactory
++org.w3c.dom.Document
++java.util.Collections
++elsu.support.XMLReader
++javax.xml.parsers.DocumentBuilder
++org.xml.sax.InputSource
++java.lang.Exception
++java.util.Enumeration
++org.w3c.dom.NamedNodeMap
++elsu.support.XMLException
++javax.xml.xpath.XPath
+ java.lang.Object
+-elsu.support.IEventSubscriber
++java.lang.String
+ ||:elsu.support.EventAbstract
+ elsu.support.EventAbstract
+ java.util.EventObject
+-||:elsu.io.FileChannelAbstract
++||:elsu.database.syncprovider.internal.DummyRowSetReader
++java.lang.Object
++javax.sql.RowSetReader
++elsu.database.syncprovider.internal.DummyRowSetReader
++java.sql.SQLException
++||:elsu.common.ExtensionFilter
++java.lang.Object
++java.io.FilenameFilter
++java.lang.String
++elsu.common.ExtensionFilter
++||:elsu.io.FileChannelReader
+ java.lang.StringBuilder
+-java.util.concurrent.locks.ReentrantLock
+-java.util.concurrent.TimeUnit
++java.lang.Thread
+ java.nio.ByteBuffer
+ java.nio.channels.SeekableByteChannel
+-elsu.io.FileChannelAbstract
+-java.util.Calendar
+-java.lang.Throwable
+-java.text.SimpleDateFormat
++elsu.io.FileChannelReaderAbstract
++elsu.common.ASCIIByteBuffer
+ elsu.io.FileProcessingType
+-java.lang.Object
+-elsu.io.FileRolloverPeriodicityType
++elsu.io.FileChannelReader
++java.lang.String
+ java.lang.Exception
+-java.util.concurrent.locks.Lock
+-<<<<<<< HEAD
+-=======
+ ||:elsu.common.ASCIIByteBuilder
+ java.lang.StringBuilder
+ java.lang.StringBuffer
+@@ -37,20 +60,50 @@ java.lang.String
+ java.lang.Integer
+ java.util.Arrays
+ elsu.common.ASCIIByteBuilder
+-<<<<<<< HEAD
+-||:elsu.io.FileChannelReader
+-java.lang.StringBuilder
+-java.lang.Thread
+-java.nio.ByteBuffer
+-java.nio.channels.SeekableByteChannel
+-elsu.io.FileChannelReaderAbstract
+-elsu.common.ASCIIByteBuffer
++||:elsu.io.FileProcessingType
++[Lelsu.io.FileProcessingType;
++java.lang.Enum
+ elsu.io.FileProcessingType
+-elsu.io.FileChannelReader
+-java.lang.String
++||:elsu.database.DatabaseParameter
++java.sql.SQLException
++java.sql.Types
++java.lang.StringBuilder
++oracle.sql.ArrayDescriptor
++java.util.ArrayList
++java.sql.PreparedStatement
++oracle.sql.ARRAY
++java.util.Map
++java.lang.Long
++java.sql.Blob
++java.sql.Timestamp
++java.lang.Boolean
++java.lang.Byte
++java.sql.Clob
++[B
++java.util.Iterator
++java.lang.Float
++elsu.database.DatabaseDataTypes
++elsu.database.DatabaseParameter$1
++java.util.HashMap
++java.sql.CallableStatement
++elsu.support.Log4JManager
+ java.lang.Exception
+-=======
+->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
++elsu.database.DatabaseParameter
++java.sql.ResultSet
++java.math.BigDecimal
++java.lang.Integer
++oracle.jdbc.OracleTypes
++elsu.common.GlobalStack
++java.lang.Short
++java.lang.Double
++java.lang.Object
++elsu.common.DateStack
++java.lang.String
++java.sql.RowId
++||:elsu.common.StatusType
++elsu.common.StatusType
++java.lang.Enum
++[Lelsu.common.StatusType;
+ ||:elsu.io.FileChannelTextReader
+ java.lang.StringBuilder
+ java.lang.Thread
+@@ -63,48 +116,38 @@ elsu.io.FileChannelTextReader
+ java.lang.String
+ elsu.common.GlobalStack
+ java.lang.Exception
+-||:elsu.io.FileChannelReaderAbstract
+-java.nio.file.Paths
++||:elsu.support.EventPublisherAbstract
++java.lang.Object
++java.util.Iterator
++java.util.List
++elsu.support.IEventSubscriber
++elsu.support.IEventPublisher
++elsu.support.EventPublisherAbstract
++||:elsu.common.CollectionStack
+ java.lang.StringBuilder
+-elsu.io.FileChannelAbstract
+-java.util.ArrayList
+-elsu.io.FileChannelReaderAbstract
+-elsu.io.FileProcessingType
+-elsu.common.FileStack
++java.lang.Double
++java.lang.Byte
++java.lang.Character
++java.lang.Short
++java.lang.Float
++java.util.Map
+ java.lang.Long
+-java.nio.ByteBuffer
+-java.nio.file.StandardOpenOption
+-java.util.Collections
+-java.lang.Throwable
+-java.util.EnumSet
+-java.nio.file.attribute.FileAttribute
+-java.nio.file.Files
+-java.lang.Exception
+ java.lang.Object
++[Ljava.lang.String;
++[Ljava.lang.Object;
++elsu.common.CollectionStack
+ java.lang.String
+-java.nio.channels.SeekableByteChannel
+-||:elsu.common.NumberStack
++java.lang.Integer
++||:elsu.common.GlobalStack
+ java.lang.Object
+-elsu.common.NumberStack
+-java.text.DecimalFormat
+-elsu.common.StringStack
+-<<<<<<< HEAD
+-=======
+-||:elsu.common.FileStack$1
++java.lang.System
++elsu.common.GlobalStack
++||:elsu.database.DatabaseParameter$1
+ java.lang.Object
+-java.io.FilenameFilter
+-java.lang.String
+-elsu.common.FileStack$1
+-java.lang.StringBuilder
+-java.io.File
+-elsu.common.FileStack
+-<<<<<<< HEAD
+-||:elsu.io.FileProcessingType
+-[Lelsu.io.FileProcessingType;
+-java.lang.Enum
+-elsu.io.FileProcessingType
+-=======
+->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
++elsu.database.DatabaseParameter
++elsu.database.DatabaseParameter$1
++java.lang.NoSuchFieldError
++elsu.database.DatabaseDataTypes
+ ||:elsu.common.EncodingStack
+ elsu.common.EncodingStack
+ java.lang.StringBuilder
+@@ -118,6 +161,32 @@ java.lang.Object
+ org.apache.commons.codec.binary.Base64
+ java.lang.String
+ java.lang.Integer
++||:elsu.database.DatabaseManager
++java.sql.SQLException
++java.lang.StringBuilder
++java.sql.DriverManager
++java.sql.Driver
++java.util.ArrayList
++java.sql.PreparedStatement
++java.lang.Class
++javax.sql.rowset.WebRowSet
++java.util.Map
++java.lang.Throwable
++java.util.Iterator
++elsu.database.DatabaseDataTypes
++elsu.database.DatabaseManager
++elsu.support.Log4JManager
++java.sql.CallableStatement
++java.lang.Exception
++elsu.database.DatabaseParameter
++java.sql.ResultSet
++elsu.common.GlobalStack
++javax.sql.rowset.RowSetFactory
++java.lang.Object
++javax.sql.rowset.RowSetProvider
++java.sql.Connection
++java.lang.String
++javax.sql.rowset.CachedRowSet
+ ||:elsu.common.FileStack
+ java.lang.StringBuilder
+ java.io.File
+@@ -134,10 +203,82 @@ java.io.FileReader
+ java.lang.String
+ java.io.BufferedReader
+ java.lang.Exception
+-||:elsu.common.StatusType
+-elsu.common.StatusType
+-java.lang.Enum
+-[Lelsu.common.StatusType;
++||:elsu.support.IEventSubscriber
++java.lang.Object
++elsu.support.IEventSubscriber
++||:elsu.support.XMLException
++elsu.support.XMLException
++java.lang.Exception
++||:elsu.database.syncprovider.internal.DummyRowSetWriter
++java.lang.Object
++javax.sql.rowset.spi.TransactionalWriter
++elsu.database.syncprovider.internal.DummyRowSetWriter
++java.sql.SQLException
++||:elsu.common.FileStack$1
++java.lang.Object
++java.io.FilenameFilter
++java.lang.String
++elsu.common.FileStack$1
++java.lang.StringBuilder
++java.io.File
++elsu.common.FileStack
++||:elsu.support.IEventPublisher
++java.lang.Object
++java.util.ArrayList
++elsu.support.IEventPublisher
++||:elsu.common.StringStack
++java.lang.String
++java.lang.Object
++elsu.common.StringStack
++java.lang.StringBuilder
++[C
++[B
++java.util.Random
++||:elsu.common.NumberStack
++java.lang.Object
++elsu.common.NumberStack
++java.text.DecimalFormat
++elsu.common.StringStack
++||:elsu.io.FileChannelReaderAbstract
++java.nio.file.Paths
++java.lang.StringBuilder
++elsu.io.FileChannelAbstract
++java.util.ArrayList
++elsu.io.FileChannelReaderAbstract
++elsu.io.FileProcessingType
++elsu.common.FileStack
++java.lang.Long
++java.nio.ByteBuffer
++java.nio.file.StandardOpenOption
++java.util.Collections
++java.lang.Throwable
++java.util.EnumSet
++java.nio.file.attribute.FileAttribute
++java.nio.file.Files
++java.lang.Exception
++java.lang.Object
++java.lang.String
++java.nio.channels.SeekableByteChannel
++||:elsu.io.FileChannelAbstract
++java.lang.StringBuilder
++java.util.concurrent.locks.ReentrantLock
++java.util.concurrent.TimeUnit
++java.nio.ByteBuffer
++java.nio.channels.SeekableByteChannel
++elsu.io.FileChannelAbstract
++java.util.Calendar
++java.lang.Throwable
++java.text.SimpleDateFormat
++elsu.io.FileProcessingType
++java.lang.Object
++elsu.io.FileRolloverPeriodicityType
++java.lang.Exception
++java.util.concurrent.locks.Lock
++||:elsu.io.FileChannelWriter
++java.lang.String
++elsu.io.FileChannelWriter
++elsu.io.FileChannelWriterAbstract
++java.lang.Exception
+ ||:elsu.io.FileChannelWriterAbstract
+ java.lang.StringBuilder
+ java.nio.file.Files
+@@ -156,97 +297,26 @@ java.lang.Integer
+ java.lang.Exception
+ java.nio.file.Paths
+ java.nio.file.StandardOpenOption
+-||:elsu.common.ASCIIByteBuffer
+-java.lang.StringBuilder
+-java.lang.StringBuffer
+-java.lang.Double
+-java.lang.StringIndexOutOfBoundsException
+-java.lang.Float
+-[B
+-java.lang.System
+-java.lang.Long
+-java.lang.IndexOutOfBoundsException
+-elsu.common.ASCIIByteBuffer
+-java.lang.CharSequence
+-java.lang.Object
+-java.lang.String
+-java.lang.Integer
+-java.util.Arrays
+-||:elsu.common.FileStack$1fileScanner
+-java.lang.Object
+-java.lang.String
+-[Ljava.io.File;
+-java.util.ArrayList
+-java.io.File
+-elsu.common.FileStack
+-elsu.common.FileStack$1fileScanner
+-||:elsu.io.FileRolloverPeriodicityType
+-[Lelsu.io.FileRolloverPeriodicityType;
+-java.lang.Enum
+-elsu.io.FileRolloverPeriodicityType
+-||:elsu.support.XMLReader
+-javax.xml.xpath.XPathExpression
+-org.w3c.dom.NodeList
+-javax.xml.xpath.XPathConstants
+-org.w3c.dom.Element
+-java.util.ArrayList
+-java.io.StringReader
+-org.w3c.dom.Node
+-javax.xml.parsers.DocumentBuilderFactory
+-javax.xml.xpath.XPathFactory
+-org.w3c.dom.Document
+-java.util.Collections
+-elsu.support.XMLReader
+-javax.xml.parsers.DocumentBuilder
+-org.xml.sax.InputSource
+-java.lang.Exception
+-java.util.Enumeration
+-org.w3c.dom.NamedNodeMap
+-elsu.support.XMLException
+-javax.xml.xpath.XPath
+-java.lang.Object
+-java.lang.String
+ ||:elsu.database.DatabaseDataTypes
+ java.lang.Enum
+ [Lelsu.database.DatabaseDataTypes;
+ elsu.database.DatabaseDataTypes
+-<<<<<<< HEAD
+-=======
+-||:elsu.database.DatabaseManager
+-java.sql.SQLException
+-java.lang.StringBuilder
+-java.sql.DriverManager
+-java.sql.Driver
+-java.util.ArrayList
+-java.sql.PreparedStatement
+-java.lang.Class
+-javax.sql.rowset.WebRowSet
+-java.util.Map
+-java.lang.Throwable
+-java.util.Iterator
+-elsu.database.DatabaseDataTypes
+-elsu.database.DatabaseManager
+-elsu.support.Log4JManager
+-java.sql.CallableStatement
+-java.lang.Exception
+-elsu.database.DatabaseParameter
+-java.sql.ResultSet
+-elsu.common.GlobalStack
+-javax.sql.rowset.RowSetFactory
++||:elsu.database.syncprovider.DummyRowSetSyncProvider
+ java.lang.Object
+-javax.sql.rowset.RowSetProvider
+-java.sql.Connection
++javax.sql.rowset.spi.SyncProviderException
++java.io.Serializable
++elsu.database.syncprovider.internal.DummyRowSetReader
++java.lang.Class
++elsu.database.syncprovider.DummyRowSetSyncProvider
++elsu.database.syncprovider.internal.DummyRowSetWriter
++javax.sql.rowset.spi.SyncProvider
++||:elsu.io.FileChannelTextWriter
+ java.lang.String
+-javax.sql.rowset.CachedRowSet
+-<<<<<<< HEAD
+-||:elsu.database.DatabaseParameter$1
+-java.lang.Object
+-elsu.database.DatabaseParameter
+-elsu.database.DatabaseParameter$1
+-java.lang.NoSuchFieldError
+-elsu.database.DatabaseDataTypes
+-=======
+->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
++java.lang.StringBuilder
++elsu.io.FileChannelTextWriter
++elsu.io.FileChannelWriter
++elsu.common.GlobalStack
++java.lang.Exception
+ ||:elsu.support.Log4JManager
+ java.lang.StringBuilder
+ java.io.File
+@@ -259,67 +329,46 @@ java.util.Iterator
+ org.apache.log4j.PropertyConfigurator
+ java.lang.Object
+ java.lang.String
+-||:elsu.database.DatabaseParameter
+-java.sql.SQLException
+-java.sql.Types
+-java.lang.StringBuilder
+-oracle.sql.ArrayDescriptor
+-java.util.ArrayList
+-java.sql.PreparedStatement
+-oracle.sql.ARRAY
+-java.util.Map
+-java.lang.Long
+-java.sql.Blob
+-java.sql.Timestamp
+-java.lang.Boolean
+-java.lang.Byte
+-java.sql.Clob
+-[B
+-java.util.Iterator
+-java.lang.Float
+-elsu.database.DatabaseDataTypes
+-elsu.database.DatabaseParameter$1
+-java.util.HashMap
+-java.sql.CallableStatement
+-elsu.support.Log4JManager
+-java.lang.Exception
+-elsu.database.DatabaseParameter
+-java.sql.ResultSet
+-java.math.BigDecimal
+-java.lang.Integer
+-oracle.jdbc.OracleTypes
+-elsu.common.GlobalStack
+-java.lang.Short
+-java.lang.Double
++||:elsu.common.FileStack$1fileScanner
+ java.lang.Object
+-elsu.common.DateStack
+ java.lang.String
+-java.sql.RowId
+-<<<<<<< HEAD
+-||:elsu.common.CollectionStack
++[Ljava.io.File;
++java.util.ArrayList
++java.io.File
++elsu.common.FileStack
++elsu.common.FileStack$1fileScanner
++||:elsu.common.ASCIIByteBuffer
+ java.lang.StringBuilder
++java.lang.StringBuffer
+ java.lang.Double
+-java.lang.Byte
+-java.lang.Character
+-java.lang.Short
++java.lang.StringIndexOutOfBoundsException
+ java.lang.Float
+-java.util.Map
++[B
++java.lang.System
+ java.lang.Long
++java.lang.IndexOutOfBoundsException
++elsu.common.ASCIIByteBuffer
++java.lang.CharSequence
+ java.lang.Object
+-[Ljava.lang.String;
+-[Ljava.lang.Object;
+-elsu.common.CollectionStack
+ java.lang.String
+ java.lang.Integer
+-||:elsu.common.StringStack
+-java.lang.String
+-java.lang.Object
++java.util.Arrays
++||:elsu.io.FileRolloverPeriodicityType
++[Lelsu.io.FileRolloverPeriodicityType;
++java.lang.Enum
++elsu.io.FileRolloverPeriodicityType
++||:elsu.common.DateStack
++java.sql.Date
++java.sql.Time
++java.sql.Timestamp
++elsu.common.DateStack
++java.util.Calendar
++java.text.SimpleDateFormat
+ elsu.common.StringStack
+-java.lang.StringBuilder
+-[C
+-[B
+-java.util.Random
+->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
++java.lang.Object
++java.lang.String
++java.util.Date
++java.lang.Exception
+ ||:elsu.database.DatabaseStack
+ java.sql.Date
+ java.lang.Long
+@@ -340,61 +389,3 @@ java.lang.Object
+ java.lang.String
+ java.sql.RowId
+ [Ljava.lang.Byte;
+-<<<<<<< HEAD
+-=======
+-||:elsu.io.FileChannelWriter
+-java.lang.String
+-elsu.io.FileChannelWriter
+-elsu.io.FileChannelWriterAbstract
+-java.lang.Exception
+-<<<<<<< HEAD
+-||:elsu.support.XMLException
+-elsu.support.XMLException
+-java.lang.Exception
+-||:elsu.support.IEventPublisher
+-java.lang.Object
+-java.util.ArrayList
+-elsu.support.IEventPublisher
+-<<<<<<< HEAD
+-=======
+-||:elsu.common.GlobalStack
+-java.lang.Object
+-java.lang.System
+-elsu.common.GlobalStack
+->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
+-||:elsu.io.FileChannelTextWriter
+-java.lang.String
+-java.lang.StringBuilder
+-elsu.io.FileChannelTextWriter
+-elsu.io.FileChannelWriter
+-elsu.common.GlobalStack
+-java.lang.Exception
+-<<<<<<< HEAD
+-=======
+-||:elsu.common.DateStack
+-java.sql.Date
+-java.sql.Time
+-java.sql.Timestamp
+-elsu.common.DateStack
+-java.util.Calendar
+-java.text.SimpleDateFormat
+-elsu.common.StringStack
+-java.lang.Object
+-java.lang.String
+-java.util.Date
+-java.lang.Exception
+-<<<<<<< HEAD
+-||:elsu.support.EventPublisherAbstract
+-java.lang.Object
+-java.util.Iterator
+-java.util.List
+-elsu.support.IEventSubscriber
+-elsu.support.IEventPublisher
+-elsu.support.EventPublisherAbstract
+-=======
+->>>>>>> 2b591c62fee265f932de52992c9263557fc169b9
+-||:elsu.common.ExtensionFilter
+-java.lang.Object
+-java.io.FilenameFilter
+-java.lang.String
+-elsu.common.ExtensionFilter
+diff --git a/ElsuFoundation/dist/ElsuFoundation.jar b/ElsuFoundation/dist/ElsuFoundation.jar
+index 316a9366f3ce19474c3abaa6e477efad4c9d0bcf..ad621c1b0442808e20989b12931901e93f619237 100644
+GIT binary patch
+delta 5542
+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
+
+delta 1605
+zcmY*ZZA_C_6u$Sgw1t%xYe88pr8ZPy8!Z?jL`yd_P1MDxxJ777X=q`D8u#U9UEFlj
+zWD9D*hMi<O6N!dI=Ws#ooc{60GQLboWZCAngeAl!V;H-*Ws0)hd)^LwNe+GbJm>q|
+zv@e}Iav?W=>t>BMk1+#d?OmCk{FR!vuFRLUALY1b-nhGgJ@J<#a4i1j9?wEVtSghe
+zle0o2T$2U5a{5f^T=e;iZlz}O`X7S^eNQ!klXaJ>H6miLAwFRwrXule0fGA;AN3PB
+zG&~FhwvHvV1jf=|=n3rqVOueQ@ys~`f%hIBQGD|MO;euKq?uQlq?WRl@Cx!uz2N3$
+ztBC7p<PjaAn_=$s5Xv0m&6GbCJj+iM5%=&KUq=n5{6l<;i@5G-o-h+K&hl@REE61x
+z6f~m;%VJW&1{<lV)D{Q4qM&{koaUr%E`tH3+T&+oiY84>dEjkD4OM|ApZr?uVMgH^
+zo`;EIjkpX}G(oMr4aS<lFE@<+P2iOa#oJA=niy*U>Ih5+z=oXx$hCCr7Wd*{)hIWX
+zan2yv_{-=E!ZKM6gW|jPfR3?b#J?oz)#u^KAkYHvyp*hUBrU@`L9kH4SxJv}3c7xm
+zE%|<2higLFh)p4}g1)`Ux`drbhp4c@kj`7*;Ac#l<B2DA=3pELLQqL<Ov=bdL-;rZ
+zbQ|<E3u0(A86I<BXLC0HK1sfq7GyDAYz8}prX~5;_kvu4H6hWY9IH4i$c>rgWX3_A
+zl*&%ty5)Iihn6vEc2y^TKfr@wc!oj;M5y-g9Ao&pmKWjSST^MY!E1J!Io>n#l7*z&
+z@9sH&*E1%qOqKMA9V0EUib`LpiC+G#nlWiEmDklW>9rKo<y?=u-CT!1wt$g>qBn0(
+zImBtCtxyI1x>E`2Zsd!wGLl`7FCvCsAD)+T@!d$a`EDt798;vyZk~f9LZT}71HF5~
+zMT|*vs;Z3iV!9Oy@xWPbLSHP~mG96|ufZsOG=!<|`ReD=--f4Jv#BrdNPK7%<4RKx
+zaN#TIT0;%2?K|&VV`fa6dN*@FDGhjMxfbiAu#^te7!|YZo1T{n@I*Abfpbz?_opIV
+z)PfG@xcDb^DiwcZ*q^pACQaQ?;Gg**6FLkcNDfT(UW$na@!C_saD0Y8z3?DDmHc(H
+z<W1nhpZ|X-8NoxL6-{l~$L((u#MMF!w!!M<@*(zo{n_?@U`*O_)yg~VBHcDOEXE-b
+zM9wWA46Lo?j7d|kXM3sQY{y$IU~$UKN!{Kn!{RW~)W;ch0`97U(uL<`?VUS5D3VH3
+k`;J%Q>2`RIrXOz?&EN3i-F9%B%2_!p5vf1fBsypR0YoJ(A^-pY
+
+diff --git a/ElsuFoundation/nbproject/private/private.properties b/ElsuFoundation/nbproject/private/private.properties
+index 67d6e05..1b40253 100644
+--- a/ElsuFoundation/nbproject/private/private.properties
++++ b/ElsuFoundation/nbproject/private/private.properties
+@@ -3,4 +3,4 @@ do.depend=true
+ do.jar=true
+ javac.debug=true
+ javadoc.preview=true
+-user.properties.file=C:\\Users\\dhaliwal-admin\\AppData\\Roaming\\NetBeans\\8.0.2\\build.properties
++user.properties.file=C:\\Users\\ss.dhaliwal\\AppData\\Roaming\\NetBeans\\8.0.2\\build.properties
+diff --git a/ElsuFoundation/src/elsu/database/syncprovider/DummyRowSetSyncProvider.java b/ElsuFoundation/src/elsu/database/syncprovider/DummyRowSetSyncProvider.java
+new file mode 100644
+index 0000000..64359c0
+--- /dev/null
++++ b/ElsuFoundation/src/elsu/database/syncprovider/DummyRowSetSyncProvider.java
+@@ -0,0 +1,82 @@
++/*
++ * To change this license header, choose License Headers in Project Properties.
++ * To change this template file, choose Tools | Templates
++ * and open the template in the editor.
++ */
++package elsu.database.syncprovider;
++
++import com.sun.rowset.internal.*;
++import elsu.database.syncprovider.internal.*;
++import java.io.*;
++import java.sql.SQLException;
++import java.sql.Savepoint;
++import javax.sql.*;
++import javax.sql.rowset.spi.*;
++
++/**
++ *
++ * @author dhaliwal-admin
++ */
++public class DummyRowSetSyncProvider extends SyncProvider implements Serializable {
++    private static final long serialVersionUID = -5411660486872857600L;
++
++    private RowSetReader _reader;
++    private TransactionalWriter _writer;
++
++    private String _providerID = "ac.support.syncprovider.DummyRowSetSyncProvider";
++    private String _vendorName = "Open Source (Action Objects)";
++    private String _versionNumber = "1.0";
++
++    public DummyRowSetSyncProvider() {
++        this._providerID = this.getClass().getName();
++        this._reader = new DummyRowSetReader();
++        this._writer = new DummyRowSetWriter();
++    }
++
++    @Override
++    public String getProviderID() {
++        return this._providerID;
++    }
++
++    @Override
++    public RowSetReader getRowSetReader() {
++        return this._reader;
++    }
++
++    @Override
++    public RowSetWriter getRowSetWriter() {
++        return this._writer;
++    }
++
++    @Override
++    public int getProviderGrade() {
++        return SyncProvider.GRADE_CHECK_MODIFIED_AT_COMMIT;
++    }
++
++    @Override
++    public void setDataSourceLock(int datasource_lock) throws SyncProviderException {
++        if(datasource_lock != SyncProvider.DATASOURCE_NO_LOCK ) {
++          throw new SyncProviderException("lock type not supported.");
++        }
++    }
++
++    @Override
++    public int getDataSourceLock() throws SyncProviderException {
++        return SyncProvider.GRADE_CHECK_MODIFIED_AT_COMMIT;
++    }
++
++    @Override
++    public int supportsUpdatableView() {
++        return SyncProvider.NONUPDATABLE_VIEW_SYNC;
++    }
++
++    @Override
++    public String getVersion() {
++        return this._versionNumber;
++    }
++
++    @Override
++    public String getVendor() {
++        return this._vendorName;
++    }
++}
+diff --git a/ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetReader.java b/ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetReader.java
+new file mode 100644
+index 0000000..936935d
+--- /dev/null
++++ b/ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetReader.java
+@@ -0,0 +1,22 @@
++/*
++ * To change this license header, choose License Headers in Project Properties.
++ * To change this template file, choose Tools | Templates
++ * and open the template in the editor.
++ */
++package elsu.database.syncprovider.internal;
++
++import java.sql.*;
++import javax.sql.*;
++
++/**
++ *
++ * @author dhaliwal-admin
++ */
++public class DummyRowSetReader implements RowSetReader {
++    
++    @Override
++    public void readData(RowSetInternal caller) throws SQLException {
++        return;
++    }
++
++}
+diff --git a/ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetWriter.java b/ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetWriter.java
+new file mode 100644
+index 0000000..6eb19d7
+--- /dev/null
++++ b/ElsuFoundation/src/elsu/database/syncprovider/internal/DummyRowSetWriter.java
+@@ -0,0 +1,38 @@
++/*
++ * To change this license header, choose License Headers in Project Properties.
++ * To change this template file, choose Tools | Templates
++ * and open the template in the editor.
++ */
++package elsu.database.syncprovider.internal;
++
++import java.sql.*;
++import javax.sql.*;
++import javax.sql.rowset.spi.*;
++
++/**
++ *
++ * @author dhaliwal-admin
++ */
++public class DummyRowSetWriter implements TransactionalWriter {
++    
++    @Override
++    public void commit() throws SQLException {
++        return;
++    }
++
++    @Override
++    public void rollback() throws SQLException {
++        return;
++    }
++
++    @Override
++    public void rollback(Savepoint s) throws SQLException {
++        return;
++    }
++
++    @Override
++    public boolean writeData(RowSetInternal caller) throws SQLException {
++        return true;
++    }
++
++}
+-- 
+1.9.5.msysgit.0
+

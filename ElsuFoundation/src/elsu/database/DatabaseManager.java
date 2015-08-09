@@ -13,7 +13,7 @@ import javax.sql.rowset.*;
  * 20141128 SSD updated exceptions
  */
 // http://docs.oracle.com/javase/tutorial/jdbc/basics/retrieving.html
-public class DatabaseManager {
+public class DatabaseManager extends AbstractEventPublisher implements IEventPublisher {
 
     private volatile ArrayList<Connection> _connections
             = new ArrayList<>();
@@ -26,76 +26,45 @@ public class DatabaseManager {
 
     public DatabaseManager(String dbDriver, String connectionString,
             int totalConnections) throws Exception {
-        try {
-            this._totalConnections = totalConnections;
-            this._connectionString = connectionString;
+        this._totalConnections = totalConnections;
+        this._connectionString = connectionString;
 
-            LoadDriver(dbDriver);
+        LoadDriver(dbDriver);
 
-            initializeConnections();
-        } catch (SQLException ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(), (connectionString="
-                    + connectionString + ", " + ex.getErrorCode()
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
-            throw new Exception(ex);
-        } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
-            throw new Exception(ex);
-        }
+        initializeConnections();
     }
 
     public DatabaseManager(String dbDriver, String connectionString,
             int totalConnections, String user, String password) throws Exception {
-        try {
-            this._totalConnections = totalConnections;
-            this._connectionString = connectionString;
-            this._user = user;
-            this._password = password;
+        this._totalConnections = totalConnections;
+        this._connectionString = connectionString;
+        this._user = user;
+        this._password = password;
 
-            LoadDriver(dbDriver);
+        LoadDriver(dbDriver);
 
-            initializeConnections();
-        } catch (SQLException ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(),(connectionString="
-                    + connectionString + "), " + ex.getErrorCode()
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
-            throw new Exception(ex);
-        } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", constructor(),"
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
-            throw new Exception(ex);
-        }
+        initializeConnections();
     }
 
     private synchronized void initializeConnections() throws Exception {
         Connection conn;
 
-        try {
-            int i = this.getConnections().size()
-                    + this.getConnectionsActive().size();
-            for (; i < this._totalConnections; i++) {
-                if (this._user.isEmpty() && this._password.isEmpty()) {
-                    conn = DriverManager.getConnection(this._connectionString);
-                } else {
-                    conn = DriverManager.getConnection(this._connectionString,
-                            this._user, this._password);
-                }
-
-                this.getConnections().add(conn);
-                Log4JManager.info(getClass().toString() + ", initializeConnections(), (connectionString="
-                        + this._connectionString + ") connected");
+        int i = this.getConnections().size()
+                + this.getConnectionsActive().size();
+        for (; i < this._totalConnections; i++) {
+            if (this._user.isEmpty() && this._password.isEmpty()) {
+                conn = DriverManager.getConnection(this._connectionString);
+            } else {
+                conn = DriverManager.getConnection(this._connectionString,
+                        this._user, this._password);
             }
-        } catch (SQLException ex) {
-            Log4JManager.error(getClass().toString() + ", initializeConnections(), (connectionString="
-                    + this._connectionString + "), " + ex.getErrorCode()
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
-            throw new Exception(ex);
-        } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", initializeConnections(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
-            throw new Exception(ex);
+
+            this.getConnections().add(conn);
         }
+
+        notifyListeners(new EventObject(this), StatusType.INFORMATION,
+                        getClass().toString() + ", initializeConnections(), "
+                        + "successful.", null);
     }
 
     @Override
@@ -116,19 +85,13 @@ public class DatabaseManager {
     }
 
     // load driver
-    public static void LoadDriver(String dbDriver) throws Exception {
-        try {
-            Driver driver = (Driver) Class.forName(dbDriver).newInstance();
-            DriverManager.registerDriver(driver);
+    public void LoadDriver(String dbDriver) throws Exception {
+        Driver driver = (Driver) Class.forName(dbDriver).newInstance();
+        DriverManager.registerDriver(driver);
 
-            Log4JManager.info("DatabaseManager, LoadDriver(), (" + dbDriver
-                    + ") driver loaded");
-        } catch (Exception ex) {
-            Log4JManager.error("DatabaseManager, LoadDriver(), (" + dbDriver
-                    + ") driver load error " + GlobalStack.LINESEPARATOR
-                    + ex.getMessage());
-            throw new Exception(ex);
-        }
+        notifyListeners(new EventObject(this), StatusType.INFORMATION,
+                        getClass().toString() + ", LoadDriver(), "
+                        + dbDriver + " loaded successfully.", null);
     }
 
     public ArrayList<Connection> getConnections() {
@@ -145,16 +108,15 @@ public class DatabaseManager {
 
         while (this.getConnections().isEmpty()) {
             if (this.getConnectionsActive().size() == this._totalConnections) {
+                notifyListeners(new EventObject(this), StatusType.INFORMATION,
+                        getClass().toString() + ", getConnection(), "
+                        + "all db connnections in use, none available.", null);
                 idle(30000);
             } else {
-                try {
-                    initializeConnections();
-                } catch (Exception ex) {
-                    Log4JManager.error(getClass().toString() + ", getConnection(), "
-                            + GlobalStack.LINESEPARATOR
-                            + ex.getMessage());
-                    throw new Exception(ex);
-                }
+                initializeConnections();
+                notifyListeners(new EventObject(this), StatusType.INFORMATION,
+                        getClass().toString() + ", getConnection(), "
+                        + "db connections initialized.", null);
             }
         }
 
@@ -167,9 +129,8 @@ public class DatabaseManager {
                 this.getConnectionsActive().add(conn);
             } else {
                 String errMsg = getClass().toString() + ", getConnection(), "
-                        + GlobalStack.LINESEPARATOR
                         + " connection is not valid!!";
-                Log4JManager.error(errMsg);
+                notifyListeners(new EventObject(this), StatusType.ERROR, errMsg, null);
 
                 // 20141130 SSD remove the connection and force close it
                 this.getConnections().remove(conn);
@@ -184,6 +145,9 @@ public class DatabaseManager {
             }
         }
 
+        notifyListeners(new EventObject(this), StatusType.CONNECT,
+                getClass().toString() + ", getConnection(), "
+                + "db connection reserved", conn);
         return conn;
     }
 
@@ -220,6 +184,10 @@ public class DatabaseManager {
         this.getConnectionsActive().remove(connection);
         this.getConnections().add(connection);
 
+        notifyListeners(new EventObject(this), StatusType.DISCONNECT,
+                getClass().toString() + ", releaseConnection(), "
+                + "db connection released", connection);
+
         // interrupt the wait for connections
         notify();
     }
@@ -245,6 +213,10 @@ public class DatabaseManager {
             } catch (Exception exi) {
             }
         }
+
+        notifyListeners(new EventObject(this), StatusType.INFORMATION,
+                getClass().toString() + ", validateConnections(), "
+                + "db connections validated", null);
     }
 
     public CachedRowSet getData(String sql, ArrayList params) throws
@@ -263,19 +235,26 @@ public class DatabaseManager {
 
                 rs = stmt.executeQuery();
                 crs.populate(rs);
+
+                notifyListeners(new EventObject(this), StatusType.SELECT,
+                        getClass().toString() + ", getData(), "
+                        + "CachedRowSet returned", crs);
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", getData(), "
+                notifyListeners(new EventObject(this), StatusType.ERROR,
+                        getClass().toString() + ", getData(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                        + ex.getMessage(), sql);
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", getData(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                notifyListeners(new EventObject(this), StatusType.ERROR,
+                        getClass().toString() + ", getData(), "
+                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", getData(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", getData(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -307,19 +286,26 @@ public class DatabaseManager {
 
                 rs = stmt.executeQuery();
                 wrs.populate(rs);
+
+                notifyListeners(new EventObject(this), StatusType.SELECT,
+                        getClass().toString() + ", getDataXML(), "
+                        + "WebRowSet returned", wrs);
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
+                notifyListeners(new EventObject(this), StatusType.ERROR,
+                        getClass().toString() + ", getDataXML(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                        + ex.getMessage(), sql);
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                notifyListeners(new EventObject(this), StatusType.ERROR,
+                        getClass().toString() + ", getDataXML(), "
+                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", getDataXML(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -347,9 +333,9 @@ public class DatabaseManager {
 
             try {
                 stmt = conn.prepareCall(sql);
-                
+
                 // add output cursor type to params
-                params.add(new DatabaseParameter("paramcursor", DatabaseDataTypes.dtcursor, true));
+                params.add(new DatabaseParameter("paramcursor", DatabaseDataType.dtcursor, true));
                 DatabaseParameter.setParameterValue(stmt, params);
 
                 stmt.execute();
@@ -358,19 +344,25 @@ public class DatabaseManager {
                 rs = DatabaseParameter.getResultSet(stmt, params);
 
                 wrs.populate(rs);
+                notifyListeners(new EventObject(this), StatusType.SELECT,
+                        getClass().toString() + ", getDataXMLViaCursor(), "
+                        + "WebRowSet returned", wrs);
             } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
+                notifyListeners(new EventObject(this), StatusType.ERROR,
+                        getClass().toString() + ", getDataXML(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
+                        + ex.getMessage(), sql);
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
+                notifyListeners(new EventObject(this), StatusType.ERROR,
+                        getClass().toString() + ", getDataXML(), "
+                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", getDataXML(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", getDataXML(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
             if (rs != null) {
@@ -392,27 +384,26 @@ public class DatabaseManager {
         PreparedStatement stmt = null;
 
         try {
-            try {
-                stmt = conn.prepareStatement(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+            stmt = conn.prepareStatement(sql);
+            DatabaseParameter.setParameterValue(stmt, params);
 
-                stmt.executeUpdate();
-                conn.commit();
-            } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirect(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
-                conn.rollback();
-                throw new SQLException(ex);
-            } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirect(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
-                conn.rollback();
-                throw new Exception(ex);
-            }
+            stmt.executeUpdate();
+            conn.commit();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+                    getClass().toString() + ", executeDirect(), "
+                    + "executed successfully", sql);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirect(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            conn.rollback();
+            throw new SQLException(ex);
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", executeDirect(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeDirect(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
             throw new Exception(ex);
         } finally {
@@ -424,41 +415,120 @@ public class DatabaseManager {
         }
     }
 
-    public void executeDirectBatch(String sql, ArrayList params) throws
+    public PreparedStatement batchInitialize(String sql, boolean procedure) throws
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
 
-        try {
-            try {
-                stmt = conn.prepareStatement(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+        boolean isException = false;
 
-                stmt.executeUpdate();
-                conn.commit();
-            } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
-                conn.rollback();
-                throw new SQLException(ex);
-            } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
-                conn.rollback();
-                throw new Exception(ex);
+        try {
+            if (!procedure) {
+                stmt = conn.prepareStatement(sql);
+            } else {
+                stmt = conn.prepareCall(sql);
             }
-        } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", executeDirectBatch(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+                    getClass().toString() + ", batchInitialize(), "
+                    + "statement prepare successful.", sql);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", batchInitialize(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
             conn.rollback();
+
+            isException = true;
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", batchInitialize(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
+            conn.rollback();
+
+            isException = true;
+            throw new Exception(ex);
+        } finally {
+            if (isException) {
+                if (stmt != null) {
+                    stmt.close();
+                }
+
+                this.releaseConnection(conn);
+            }
+
+            // return prepared statemetn
+            return stmt;
+        }
+    }
+
+    public void batchRun(PreparedStatement stmt, ArrayList params) throws
+            Exception {
+        boolean isException = false;
+
+        try {
+            DatabaseParameter.setParameterValue(stmt, params);
+            stmt.executeUpdate();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+                    getClass().toString() + ", batchRun(), "
+                    + "executed successfully", stmt);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", batchRun(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
+
+            isException = true;
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", batchRun(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
+
+            isException = true;
+            throw new Exception(ex);
+        } finally {
+            if (isException) {
+                if (stmt != null) {
+                    stmt.close();
+                }
+
+                this.releaseConnection(stmt.getConnection());
+            }
+        }
+    }
+
+    public void batchTerminate(PreparedStatement stmt) throws
+            Exception {
+        try {
+            stmt.getConnection().commit();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+                    getClass().toString() + ", batchTerminate(), "
+                    + "batch commit successful.", stmt);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", batchTerminate(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", batchTerminate(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), stmt);
+            stmt.getConnection().rollback();
             throw new Exception(ex);
         } finally {
             if (stmt != null) {
                 stmt.close();
             }
 
-            this.releaseConnection(conn);
+            this.releaseConnection(stmt.getConnection());
         }
     }
 
@@ -469,30 +539,29 @@ public class DatabaseManager {
         CallableStatement stmt = null;
 
         try {
-            try {
-                stmt = conn.prepareCall(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+            stmt = conn.prepareCall(sql);
+            DatabaseParameter.setParameterValue(stmt, params);
 
-                stmt.executeUpdate();
+            stmt.executeUpdate();
 
-                // load the output params into result by key
-                result = DatabaseParameter.getResult(stmt, params);
-                conn.commit();
-            } catch (SQLException ex) {
-                Log4JManager.error(getClass().toString() + ", executeProcedure(), "
-                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
-                        + ex.getMessage());
-                conn.rollback();
-                throw new SQLException(ex);
-            } catch (Exception ex) {
-                Log4JManager.error(getClass().toString() + ", executeProcedure(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage());
-                conn.rollback();
-                throw new Exception(ex);
-            }
+            // load the output params into result by key
+            result = DatabaseParameter.getResult(stmt, params);
+            conn.commit();
+
+            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+                    getClass().toString() + ", executeProcedure(), "
+                    + "executed successfully", result);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeProcedure(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            conn.rollback();
+            throw new SQLException(ex);
         } catch (Exception ex) {
-            Log4JManager.error(getClass().toString() + ", executeProcedure(), "
-                    + GlobalStack.LINESEPARATOR + ex.getMessage());
+            notifyListeners(new EventObject(this), StatusType.ERROR,
+                    getClass().toString() + ", executeProcedure(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
             throw new Exception(ex);
         } finally {

@@ -2,7 +2,7 @@ package elsu.io;
 
 import elsu.common.*;
 
-public class FileChannelTextReader extends FileChannelReaderAbstract {
+public class FileChannelTextReader extends AbstractFileChannelReader {
 
     // local storage, ignore empty lines when reading
     private volatile boolean _ignoreEmptyLines = false;

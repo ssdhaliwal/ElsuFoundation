@@ -9,15 +9,9 @@ import java.util.*;
  */
 public interface IEventPublisher {
 
-    List<IEventSubscriber> _listeners = new ArrayList<>();
-
     void addEventListener(IEventSubscriber listener);
 
     void removeEventListener(IEventSubscriber listener);
 
-    void notifyListeners(EventAbstract event);
-
-    void notifyListeners(EventAbstract event, Object o);
-
-    void notifyListeners(EventAbstract event, StatusType s, Object o);
+    void notifyListeners(EventObject event, StatusType s, String message, Object o);
 }

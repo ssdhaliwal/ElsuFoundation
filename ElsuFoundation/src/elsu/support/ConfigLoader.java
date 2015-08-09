@@ -3,13 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package config;
+package elsu.support;
 
 import elsu.common.*;
 import elsu.support.*;
 import java.util.*;
 import java.io.*;
 import org.apache.commons.lang3.*;
+import org.apache.log4j.*;
 
 /**
  * ConfigLoader is the base class for factory. The core purpose is to load the
@@ -30,22 +31,28 @@ import org.apache.commons.lang3.*;
  * @version .51
  */
 public class ConfigLoader {
+
     // <editor-fold desc="class private storage">
-
-    private static int _MAXKEYLENGTH = 25;
-
     // static property for app.config store and extraction from jar file
     private static String _APPCONFIG = "config/app.config";
+
     // static property for data format across the application for display 
     // purposes
     private static String _DTGFORMAT = "YYYMMDD HH24:mm:ss";
+
     // variable to store the xml document object from XMLReader class
     protected XMLReader _xmlr = null;
-    // store all application wide properties from app.config
-    private Map<String, String> _frameworkProperties = new HashMap<>();
-    // store all action specific configuration items from app.config
-    private Map<String, Object> _groupProperties = new HashMap<>();
-    private String[] _key = new String[ConfigLoader._MAXKEYLENGTH];
+
+    // store all properties from app.config
+    private Map<String, Object> _properties = new HashMap<>();
+
+    // array of path strings which need to be removed from hashmap
+    private String[] _suppressPath = new String[]{};
+
+    // system logger if configured
+    private String _logConfig = "log.config";
+    private String _logClass = "log.class";
+    private Log4JManager _log4JManager = null;
     // </editor-fold>
 
     // <editor-fold desc="class constructor destructor">
@@ -60,7 +67,7 @@ public class ConfigLoader {
      * @throws Exception
      */
     public ConfigLoader() throws Exception {
-        this(ConfigLoader._APPCONFIG);
+        this(ConfigLoader._APPCONFIG, null);
     }
 
     /**
@@ -72,10 +79,21 @@ public class ConfigLoader {
      * formatted xml (starts with "<?xml ")
      *
      * @param configData is the XML data passed from the calling function.
+     * @param suppressPath is array of strings which should be removed from key
      * @throws Exception
      */
-    public ConfigLoader(String config) throws Exception {
+    public ConfigLoader(String config, String[] suppressPath) throws Exception {
         try {
+            // update suppress path before processing
+            if (suppressPath != null) {
+                this._suppressPath = suppressPath;
+            }
+
+            // if config is null, then use the default
+            if ((config == null) || (config.isEmpty())) {
+                config = ConfigLoader._APPCONFIG;
+            }
+
             // check the format, if raw xml?
             if (config.startsWith("<?xml ")) {
                 // try to create the XML reader instance for XML document parsing
@@ -104,6 +122,21 @@ public class ConfigLoader {
 
             // load the config into application or service properties hashMaps
             initializeConfig();
+
+            // open log if provided
+            for (String key : getProperties().keySet()) {
+                if (key.equals(_logConfig)) {
+                    try {
+                        initializeLogger(getProperties().get(key).toString());
+                    } catch (Exception ex) {
+                        System.out.println("log4J configuration error, " + ex.getMessage());
+                    }
+
+                    break;
+                }
+            }
+
+            logInfo("configuration loaded.");
         } catch (Exception ex) {
             // display exception to the user and exit
             System.out.println(getClass().toString() + "//" + ex.getMessage());
@@ -118,14 +151,28 @@ public class ConfigLoader {
      */
     private void initializeConfig() throws Exception {
         // clear the storage hashMaps
-        getFrameworkProperties().clear();
-
-        // clear the storage hashMaps
-        getGroupProperties().clear();
+        getProperties().clear();
+        loadConfig(_xmlr.getDocument(), "", 1);
     }
     // </editor-fold>
 
     // <editor-fold desc="class getter/setters">
+    public static String getConfigPath() {
+        return _APPCONFIG;
+    }
+
+    public static void setConfigPath(String path) {
+        _APPCONFIG = path;
+    }
+
+    public static String getDTGFormat() {
+        return _DTGFORMAT;
+    }
+
+    public static void setDTGFormat(String format) {
+        _DTGFORMAT = format;
+    }
+
     /**
      * getApplicationProperties() method returns the hashMap containing the
      * application properties key/value pair extracted from the app.config
@@ -133,27 +180,47 @@ public class ConfigLoader {
      *
      * @return <code>hashMap</code> key/value set of all application properties
      */
-    public Map<String, String> getFrameworkProperties() {
-        return this._frameworkProperties;
+    public Map<String, Object> getProperties() {
+        return this._properties;
     }
 
-    public String getFrameworkProperty(String key) {
-        return getFrameworkProperties().get(key);
+    public Object getProperty(String key) {
+        return getProperties().get(key);
     }
 
-    /**
-     * getActionProperties() method returns the hashMap containing the action
-     * properties key/value pair extracted from the app.config action attributes
-     * section
-     *
-     * @return <code>hashMap</code> key/value set of all action properties
-     */
-    public Map<String, Object> getGroupProperties() {
-        return this._groupProperties;
+    public List<String> getClassSet() {
+        List<String> result = new ArrayList<>();
+
+        for (String key : getProperties().keySet()) {
+            if (key.endsWith(".class")) {
+                result.add(key);
+            }
+        }
+        
+        return result;
+    }
+    public List<String> getClassSet(String partialKey) {
+        List<String> result = new ArrayList<>();
+
+        for (String key : getProperties().keySet()) {
+            if ((key.startsWith(partialKey)) && key.endsWith(".class")) {
+                result.add(key);
+            }
+        }
+        
+        return result;
     }
 
-    public Object getGroupProperty(String key) {
-        return (Object) getGroupProperties().get(key);
+    public String getKeyByValue(String value) {
+        String result = "";
+
+        for (String key : getProperties().keySet()) {
+            if (getProperty(key).equals(value)) {
+                result = key;
+                break;
+            }
+        }
+        return result;
     }
     // </editor-fold>
 
@@ -245,7 +312,6 @@ public class ConfigLoader {
      */
     private void showConfig() {
         showConfigNodes(_xmlr.getDocument(), 1);
-        dataConfigNodes(_xmlr.getDocument(), 1);
 
         //System.out.println("------------");
         //org.w3c.dom.NodeList nl = _xmlr.getNodesByElement("connections");
@@ -350,130 +416,152 @@ public class ConfigLoader {
         }
     }
 
-    protected void dataConfigNodes(org.w3c.dom.Node parent, int level) {
-        // create a local class to display node value/text and associated
-        // node attributes
-        class SubShowNode {
+    protected void loadConfig(org.w3c.dom.Node parent, String nodePath, int level) {
+        // retrieve the child nodes for processing
+        ArrayList<org.w3c.dom.Node> nodes = _xmlr.getNodeChildren(parent);
 
-            // loop through the node attributes for the node passed
-            int displayNodeAttributes(org.w3c.dom.Node node, int level) {
-                String uniqueAttrName = "";
-                String uniqueAttr = "";
+        // parse the list of child nodes for the node being processed
+        ArrayList<org.w3c.dom.Node> nAttributes = null;
+        String nodePathHold = nodePath;
+        String nodeAttrKey = "";
+        for (org.w3c.dom.Node node : nodes) {
+            nodePath += (nodePath.isEmpty() ? node.getNodeName() : "." + node.getNodeName());
+            nAttributes = _xmlr.getNodeAttributes(node);
 
-                // retrieve node attributes (if any)
-                ArrayList nAttributes = _xmlr.getNodeAttributes(node);
+            // loop through the attributes array and append them to the
+            // string builder object
+            nodeAttrKey = "";
+            if (nAttributes != null) {
+                // get id, name, class attribute if any
+                nodeAttrKey = getAttributeKey(nAttributes);
 
-                // get unique identifier for linking; id overrides all, name
-                // is secondary, and class is if no id/name are defined
-                if (nAttributes != null) {
-                    for (Object na : nAttributes) {
-                        if (((org.w3c.dom.Node) na).getNodeName().equals("id")) {
-                            uniqueAttrName = "id";
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                            break;
-                        } else if (((org.w3c.dom.Node) na).getNodeName().equals("name")) {
-                            uniqueAttrName = "name";
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                        } else if ((uniqueAttr.isEmpty()) && ((org.w3c.dom.Node) na).getNodeName().equals("class")) {
-                            uniqueAttrName = "class";
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-                        }
-                    }
-
-                    // if uniqueAttr is now defined, increase the level 
-                    if (!uniqueAttr.isEmpty()) {
-                        level++;
-                        _key[level - 1] = uniqueAttr;
-                    }
-
-                // loop through the attributes array and append them to the
-                    // string builder object
-                    for (Object na : nAttributes) {
-                        // if unique attr is not still defined, then use the first 
-                        if (uniqueAttr.isEmpty()) {
-                            uniqueAttr = ((org.w3c.dom.Node) na).getNodeName()
-                                    + "=" + ((org.w3c.dom.Node) na).getNodeValue();
-
-                            level++;
-                            _key[level - 1] = uniqueAttr;
-                        } else {
-                            if ((uniqueAttrName.isEmpty()) || ((!uniqueAttrName.equals("id"))
-                                    && (!uniqueAttrName.equals("name")) && (!uniqueAttrName.equals("class")))) {
-                                // append the attribute details (key/text) to the string
-                                // builder object
-                                System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.')
-                                        + "." + ((org.w3c.dom.Node) na).getNodeName() + "=" + ((org.w3c.dom.Node) na).getNodeValue());
-                            }
-
-                        }
-
-                        // yield processing to other threads
-                        Thread.yield();
+                // get the key value for path
+                for (org.w3c.dom.Node na : nAttributes) {
+                    if (na.getNodeName().equals(nodeAttrKey)) {
+                        nodePath += "." + na.getNodeValue();
+                        break;
                     }
                 }
 
-                // return the string builder representation as a string
-                return level;
+                // first get the key or if none; set it to first value
+                for (org.w3c.dom.Node na : nAttributes) {
+                    // append the attribute details (key/text) to the string
+                    // builder object
+                    if (!na.getNodeName().equals(nodeAttrKey)) {
+                        addMap(nodePath + "." + na.getNodeName(), na.getNodeValue());
+                        //System.out.println(nodePath + "." + na.getNodeName()
+                        //        + "=" + na.getNodeValue());
+                    }
+
+                    // yield processing to other threads
+                    Thread.yield();
+                }
             }
-        }
-
-        // declare the showNode class to allow methods to reference the display
-        // method to prevent duplicaion in code
-        SubShowNode showNode = new SubShowNode();
-
-        // retrieve the child nodes for processing
-        ArrayList nodes = _xmlr.getNodeChildren(parent);
-
-        // if node level is 1, then this is root node, display it with no
-        // indentation
-        if (level == 1) {
-            // display the parent node name
-            String data = StringUtils.repeat('~', level) + parent.getNodeName();
-            _key[level - 1] = parent.getNodeName();
-
-            // use the sub function to extract node attributes
-            level = showNode.displayNodeAttributes(parent, level);
-
-            // display all collected data to the user output
-            System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.'));
-        }
-
-        // parse the list of child nodes for the node being processed
-        for (Object node : nodes) {
-            // display the parent node name
-            String nodeText = "";
-            String data = StringUtils.repeat('\t', level)
-                    + ((org.w3c.dom.Node) node).getNodeName();
-            _key[level - 1] = ((org.w3c.dom.Node) node).getNodeName();
-
-            // use the sub function to extract node attributes
-            int lastLevel = level;
-            level = showNode.displayNodeAttributes((org.w3c.dom.Node) node, level);
 
             // if node has a text value, display the text
-            if (_xmlr.getNodeText((org.w3c.dom.Node) node) != null) {
-                nodeText = " (TEXT=" + _xmlr.getNodeText((org.w3c.dom.Node) node)
-                        + ")";
+            if (_xmlr.getNodeText(node) != null) {
+                addMap(nodePath, _xmlr.getNodeText(node));
+                //System.out.println(nodePath
+                //        + "=" + _xmlr.getNodeText(node));
 
-                System.out.println(CollectionStack.ArrayToString(Arrays.copyOfRange(_key, 0, level), '.')
-                        + ":" + _xmlr.getNodeText((org.w3c.dom.Node) node));
             }
 
             // recall the function (recursion) to see if the node has child 
             // nodes and preocess them in hierarchial level
-            dataConfigNodes((org.w3c.dom.Node) node, (level + 1));
-            level = lastLevel;
+            loadConfig(node, nodePath, (level + 1));
+            nodePath = nodePathHold;
 
             // yield processing to other threads
             Thread.yield();
         }
     }
+
+    private String getAttributeKey(ArrayList<org.w3c.dom.Node> nodes) {
+        String result = "";
+
+        // attributes are in name order, so for class we keep looping
+        for (org.w3c.dom.Node na : nodes) {
+            if (na.getNodeName().equals("id")) {
+                result = "id";
+                break;
+            } else if (na.getNodeName().equals("name")) {
+                result = "name";
+                break;
+            } else if (na.getNodeName().equals("class")) {
+                result = "class";
+            }
+        }
+
+        return result;
+    }
+
+    private void addMap(String key, String value) {
+        // check if the key ends with config.suppressPath
+        // if yes, then load it into the global suppressPath variable
+        if (key.endsWith(".config.suppressPath")) {
+            _suppressPath = value.split(",");
+            
+            // now do a quick cleanup of the already loaded values
+            Object cValue;
+            for (String cKey : getProperties().keySet()) {
+                cValue = getProperties().get(cKey);
+                getProperties().remove(cKey);
+
+                for (String suppress : _suppressPath) {
+                    cKey = cKey.replaceFirst(suppress, "");
+                }
+                
+                getProperties().put(cKey, cValue);
+            }
+        }
+        
+        // check and remove the values in _suppressPath variable
+        for (String suppress : _suppressPath) {
+            key = key.replaceFirst(suppress, "");
+        }
+
+        getProperties().put(key, value);
+        System.out.println(key + "=" + value);
+    }
     // </editor-fold>
 
     // <editor-fold desc="class logging">
+    /**
+     *
+     */
+    private void initializeLogger(String log) throws Exception {
+        // log attribute value is defined, set the static variable to the 
+        // log property file location; also, check if path is provided as
+        // part of the file name - if yes, then ignore class path
+        String configFile;
+        String logFileName = getProperty("log.filename").toString();
+
+        if (!log.contains("\\") && !log.contains("/")) {
+            configFile
+                    = (new File(getClass().getName().replace(".", "\\"))).getParent()
+                    + "\\" + log;
+        } else {
+            configFile = log;
+        }
+
+        // check if the log property file exists, if not extract it 
+        extractConfigFile(configFile);
+
+        // if log.filename is empty, then assign a temporary one
+        if ((logFileName == null) || (logFileName.isEmpty())) {
+            logFileName = System.getProperty("log.filename");
+        }
+
+        _log4JManager = new Log4JManager(configFile, getProperties().get(this._logClass).toString(), logFileName);
+    }
+
+    /**
+     *
+     */
+    public synchronized Logger getLogger() {
+        return this._log4JManager.getLogger();
+    }
+
     /**
      * logDebug(...) method is an interface method to Log4JManager logging
      * capability. This method is provided to allow multiple threads to log to
@@ -486,7 +574,7 @@ public class ConfigLoader {
      * the log file
      */
     public synchronized void logDebug(Object info) {
-        Log4JManager.debug(info.toString());
+        getLogger().debug(info.toString());
     }
 
     /**
@@ -501,7 +589,7 @@ public class ConfigLoader {
      * the log file
      */
     public synchronized void logError(Object info) {
-        Log4JManager.error(info.toString());
+        getLogger().error(info.toString());
     }
 
     /**
@@ -516,7 +604,7 @@ public class ConfigLoader {
      * the log file
      */
     public synchronized void logInfo(Object info) {
-        Log4JManager.info(info.toString());
+        getLogger().info(info.toString());
     }
     // </editor-fold>
 }

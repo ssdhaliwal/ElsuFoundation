@@ -7,8 +7,8 @@ import java.nio.channels.*;
 import java.nio.file.*;
 
 /**
- * FileChannelReaderAbstract() class extends the FileChanneAbstract to provide
- * concrete implementation for reading files using file recovery capability. The
+ * AbstractFileChannelReader() class extends the FileChanneAbstract to provide
+ concrete implementation for reading files using file recovery capability. The
  * class supports two methods of recovery: LIVE and RECOVERY.
  * <p>
  * In LIVE mode the current date format file depending on the rollover
@@ -20,7 +20,7 @@ import java.nio.file.*;
  *
  * @author ssd.administrator
  */
-public abstract class FileChannelReaderAbstract extends FileChannelAbstract {
+public abstract class AbstractFileChannelReader extends AbstractFileChannel {
 
     // local storage, stores the reader file name being processed
     private volatile String _readerFilename = null;
@@ -54,21 +54,21 @@ public abstract class FileChannelReaderAbstract extends FileChannelAbstract {
     // 20141129 SSD added to signal file changed for client to process and reset
     private volatile boolean _fileChanged = false;
 
-    public FileChannelReaderAbstract(String fileMask, String fileLocation)
+    public AbstractFileChannelReader(String fileMask, String fileLocation)
             throws Exception {
         super(fileMask, fileLocation);
 
         initialize();
     }
 
-    public FileChannelReaderAbstract(String fileMask, String fileLocation,
+    public AbstractFileChannelReader(String fileMask, String fileLocation,
             FileProcessingType processingType) throws Exception {
         super(fileMask, fileLocation, processingType);
 
         initialize();
     }
 
-    public FileChannelReaderAbstract(String fileMask, String fileLocation,
+    public AbstractFileChannelReader(String fileMask, String fileLocation,
             FileProcessingType processingType,
             FileRolloverPeriodicityType rolloverPeriodicity,
             int rolloverThreshold) throws Exception {

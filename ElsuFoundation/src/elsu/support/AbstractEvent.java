@@ -6,9 +6,9 @@ import java.util.*;
  *
  * @author ssd.administrator
  */
-public abstract class EventAbstract extends EventObject {
+public abstract class AbstractEvent extends EventObject {
 
-    public EventAbstract(Object source) {
+    public AbstractEvent(Object source) {
         super(source);
     }
 

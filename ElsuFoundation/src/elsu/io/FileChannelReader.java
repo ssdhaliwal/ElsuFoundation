@@ -6,7 +6,7 @@ import elsu.common.*;
  *
  * @author ssd.administrator
  */
-public class FileChannelReader extends FileChannelReaderAbstract {
+public class FileChannelReader extends AbstractFileChannelReader {
 
     public FileChannelReader(String fileMask, String fileLocation) throws
             Exception {

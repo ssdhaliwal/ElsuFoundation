@@ -1,12 +1,12 @@
 package elsu.io;
 
-import static elsu.io.FileChannelAbstract.*;
+import static elsu.io.AbstractFileChannel.*;
 
 /**
  *
  * @author ssd.administrator
  */
-public class FileChannelWriter extends FileChannelWriterAbstract {
+public class FileChannelWriter extends AbstractFileChannelWriter {
 
     public FileChannelWriter(String fileMask, String fileLocation) throws
             Exception {

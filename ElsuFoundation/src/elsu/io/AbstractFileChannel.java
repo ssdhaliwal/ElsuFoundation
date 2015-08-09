@@ -22,7 +22,7 @@ import java.nio.channels.*;
  *
  * @author ssd.administrator
  */
-public abstract class FileChannelAbstract {
+public abstract class AbstractFileChannel {
 
     // local storage, rollover periodicity, default hour
     private volatile FileRolloverPeriodicityType _rolloverPeriodicity
@@ -60,7 +60,7 @@ public abstract class FileChannelAbstract {
      * @param fileMask
      * @param fileLocation
      */
-    public FileChannelAbstract(String fileMask, String fileLocation) {
+    public AbstractFileChannel(String fileMask, String fileLocation) {
         this._fileMask = fileMask;
         this._fileLocation = fileLocation;
     }
@@ -75,7 +75,7 @@ public abstract class FileChannelAbstract {
      * @param rolloverPeriodicity
      * @param rolloverThreshold
      */
-    public FileChannelAbstract(String fileMask, String fileLocation,
+    public AbstractFileChannel(String fileMask, String fileLocation,
             FileRolloverPeriodicityType rolloverPeriodicity,
             int rolloverThreshold) {
         this._fileMask = fileMask;
@@ -96,7 +96,7 @@ public abstract class FileChannelAbstract {
      * @param fileLocation
      * @param processingType
      */
-    public FileChannelAbstract(String fileMask, String fileLocation,
+    public AbstractFileChannel(String fileMask, String fileLocation,
             FileProcessingType processingType) {
         this._fileMask = fileMask;
         this._fileLocation = fileLocation;
@@ -114,7 +114,7 @@ public abstract class FileChannelAbstract {
      * @param rolloverPeriodicity
      * @param rolloverThreshold
      */
-    public FileChannelAbstract(String fileMask, String fileLocation,
+    public AbstractFileChannel(String fileMask, String fileLocation,
             FileProcessingType processingType,
             FileRolloverPeriodicityType rolloverPeriodicity,
             int rolloverThreshold) {
@@ -176,7 +176,7 @@ public abstract class FileChannelAbstract {
      * @return <code>int</code> value of the lock timeout
      */
     public static synchronized int getLockTimeout() {
-        return FileChannelAbstract._lockTimeout;
+        return AbstractFileChannel._lockTimeout;
     }
 
     /**
@@ -185,7 +185,7 @@ public abstract class FileChannelAbstract {
      * @param value
      */
     protected void setLockTimeout(int value) {
-        FileChannelAbstract._lockTimeout = value;
+        AbstractFileChannel._lockTimeout = value;
     }
 
     /**
@@ -286,7 +286,7 @@ public abstract class FileChannelAbstract {
      * @return <code>Lock</code> object for ReentrantLock
      */
     public static Lock getWriterLock() {
-        return FileChannelAbstract._writerLock;
+        return AbstractFileChannel._writerLock;
     }
 
     /**
