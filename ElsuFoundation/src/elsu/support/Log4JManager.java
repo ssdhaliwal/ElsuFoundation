@@ -11,7 +11,7 @@ import org.apache.log4j.*;
 public class Log4JManager {
 
     private String _logConfig = "./log4j.properties";
-    private Logger _log = null;
+    private Logger _logger = null;
     private int _maxMemoryLogSize = 10;
     private List<String> _memoryLog = new ArrayList<>();
 
@@ -62,10 +62,10 @@ public class Log4JManager {
     }
 
     public Logger getLogger() {
-        return this._log;
+        return this._logger;
     }
-    private void setLogger(Logger log) {
-        this._log = log;
+    private void setLogger(Logger logger) {
+        this._logger = logger;
     }
     
     protected void checkMemoryLog(Object message) {

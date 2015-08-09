@@ -4,7 +4,7 @@ import elsu.common.*;
 import elsu.support.*;
 import java.util.*;
 import java.sql.*;
-import elsu.database.DatabaseDataTypes.*;
+import elsu.database.DatabaseDataType.*;
 import java.math.BigDecimal;
 import oracle.jdbc.OracleTypes;
 import oracle.sql.*;
@@ -16,7 +16,7 @@ import oracle.sql.*;
 public class DatabaseParameter {
 
     public String _name = null;
-    public DatabaseDataTypes _type = DatabaseDataTypes.dtstring;
+    public DatabaseDataType _type = DatabaseDataType.dtstring;
     public boolean _input = true;
     public boolean _output = false;
     public Object _value = null;
@@ -25,13 +25,13 @@ public class DatabaseParameter {
     public DatabaseParameter() {
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, Object value) {
+    public DatabaseParameter(String name, DatabaseDataType type, Object value) {
         this._name = name;
         this._type = type;
         this._value = value;
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, Object value,
+    public DatabaseParameter(String name, DatabaseDataType type, Object value,
             String format) {
         this._name = name;
         this._type = type;
@@ -39,7 +39,7 @@ public class DatabaseParameter {
         this._format = format;
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, boolean output) {
+    public DatabaseParameter(String name, DatabaseDataType type, boolean output) {
         this._name = name;
         this._type = type;
         this._output = output;
@@ -49,7 +49,7 @@ public class DatabaseParameter {
         }
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, boolean input,
+    public DatabaseParameter(String name, DatabaseDataType type, boolean input,
             boolean output, Object value) {
         this._name = name;
         this._type = type;
@@ -58,7 +58,7 @@ public class DatabaseParameter {
         this._value = value;
     }
 
-    public DatabaseParameter(String name, DatabaseDataTypes type, boolean input,
+    public DatabaseParameter(String name, DatabaseDataType type, boolean input,
             boolean output, Object value, String format) {
         this._name = name;
         this._type = type;
@@ -126,7 +126,7 @@ public class DatabaseParameter {
         return result;
     }
 
-    public DatabaseDataTypes getType() {
+    public DatabaseDataType getType() {
         return this._type;
     }
 
@@ -657,7 +657,7 @@ public class DatabaseParameter {
         }
     }
 
-    public void setType(DatabaseDataTypes value) {
+    public void setType(DatabaseDataType value) {
         this._type = value;
     }
 

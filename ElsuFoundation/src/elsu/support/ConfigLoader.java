@@ -44,12 +44,10 @@ public class ConfigLoader {
     protected XMLReader _xmlr = null;
 
     // store all properties from app.config
-    private Map<String, String> _properties = new HashMap<>();
+    private Map<String, Object> _properties = new HashMap<>();
 
     // array of path strings which need to be removed from hashmap
-    private String[] _suppressPath = new String[]{"application.framework.attributes.key.",
-        "application.elsuFramework.attributes.key.",
-        "application.groups.group.", "application.groupExtensions."};
+    private String[] _suppressPath = new String[]{};
 
     // system logger if configured
     private String _logConfig = "log.config";
@@ -95,7 +93,7 @@ public class ConfigLoader {
             if ((config == null) || (config.isEmpty())) {
                 config = ConfigLoader._APPCONFIG;
             }
-            
+
             // check the format, if raw xml?
             if (config.startsWith("<?xml ")) {
                 // try to create the XML reader instance for XML document parsing
@@ -159,6 +157,22 @@ public class ConfigLoader {
     // </editor-fold>
 
     // <editor-fold desc="class getter/setters">
+    public static String getConfigPath() {
+        return _APPCONFIG;
+    }
+
+    public static void setConfigPath(String path) {
+        _APPCONFIG = path;
+    }
+
+    public static String getDTGFormat() {
+        return _DTGFORMAT;
+    }
+
+    public static void setDTGFormat(String format) {
+        _DTGFORMAT = format;
+    }
+
     /**
      * getApplicationProperties() method returns the hashMap containing the
      * application properties key/value pair extracted from the app.config
@@ -166,12 +180,35 @@ public class ConfigLoader {
      *
      * @return <code>hashMap</code> key/value set of all application properties
      */
-    public Map<String, String> getProperties() {
+    public Map<String, Object> getProperties() {
         return this._properties;
     }
 
-    public String getProperty(String key) {
+    public Object getProperty(String key) {
         return getProperties().get(key);
+    }
+
+    public List<String> getClassSet() {
+        List<String> result = new ArrayList<>();
+
+        for (String key : getProperties().keySet()) {
+            if (key.endsWith(".class")) {
+                result.add(key);
+            }
+        }
+        
+        return result;
+    }
+    public List<String> getClassSet(String partialKey) {
+        List<String> result = new ArrayList<>();
+
+        for (String key : getProperties().keySet()) {
+            if ((key.startsWith(partialKey)) && key.endsWith(".class")) {
+                result.add(key);
+            }
+        }
+        
+        return result;
     }
 
     public String getKeyByValue(String value) {
@@ -459,6 +496,25 @@ public class ConfigLoader {
     }
 
     private void addMap(String key, String value) {
+        // check if the key ends with config.suppressPath
+        // if yes, then load it into the global suppressPath variable
+        if (key.endsWith(".config.suppressPath")) {
+            _suppressPath = value.split(",");
+            
+            // now do a quick cleanup of the already loaded values
+            Object cValue;
+            for (String cKey : getProperties().keySet()) {
+                cValue = getProperties().get(cKey);
+                getProperties().remove(cKey);
+
+                for (String suppress : _suppressPath) {
+                    cKey = cKey.replaceFirst(suppress, "");
+                }
+                
+                getProperties().put(cKey, cValue);
+            }
+        }
+        
         // check and remove the values in _suppressPath variable
         for (String suppress : _suppressPath) {
             key = key.replaceFirst(suppress, "");
@@ -478,7 +534,7 @@ public class ConfigLoader {
         // log property file location; also, check if path is provided as
         // part of the file name - if yes, then ignore class path
         String configFile;
-        String logFileName = getProperty("log.filename");
+        String logFileName = getProperty("log.filename").toString();
 
         if (!log.contains("\\") && !log.contains("/")) {
             configFile
@@ -495,7 +551,7 @@ public class ConfigLoader {
         if ((logFileName == null) || (logFileName.isEmpty())) {
             logFileName = System.getProperty("log.filename");
         }
-        
+
         _log4JManager = new Log4JManager(configFile, getProperties().get(this._logClass).toString(), logFileName);
     }
 

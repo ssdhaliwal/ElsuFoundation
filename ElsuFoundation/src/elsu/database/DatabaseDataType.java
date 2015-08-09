@@ -4,7 +4,7 @@ package elsu.database;
  *
  * @author ss.dhaliwal_admin
  */
-public enum DatabaseDataTypes {
+public enum DatabaseDataType {
 
     dtarray, // VARRAY
     dtbigDecimal, // DECIMAL(p,s), NUMBER, NUMERIC
