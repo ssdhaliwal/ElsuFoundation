@@ -47,8 +47,7 @@ public class ConfigLoader {
     private Map<String, Object> _properties = new HashMap<>();
 
     // array of path strings which need to be removed from hashmap
-    private String[] _suppressPath = new String[]{"application.framework.attributes.key.",
-        "application.groups.group.", "application.groupExtensions."};
+    private String[] _suppressPath = new String[]{};
 
     // system logger if configured
     private String _logConfig = "log.config";
@@ -497,6 +496,25 @@ public class ConfigLoader {
     }
 
     private void addMap(String key, String value) {
+        // check if the key ends with config.suppressPath
+        // if yes, then load it into the global suppressPath variable
+        if (key.endsWith(".config.suppressPath")) {
+            _suppressPath = value.split(",");
+            
+            // now do a quick cleanup of the already loaded values
+            Object cValue;
+            for (String cKey : getProperties().keySet()) {
+                cValue = getProperties().get(cKey);
+                getProperties().remove(cKey);
+
+                for (String suppress : _suppressPath) {
+                    cKey = cKey.replaceFirst(suppress, "");
+                }
+                
+                getProperties().put(cKey, cValue);
+            }
+        }
+        
         // check and remove the values in _suppressPath variable
         for (String suppress : _suppressPath) {
             key = key.replaceFirst(suppress, "");
