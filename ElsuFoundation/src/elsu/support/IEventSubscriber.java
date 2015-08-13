@@ -9,5 +9,5 @@ import java.util.*;
  */
 public interface IEventSubscriber {
 
-    Object EventHandler(Object sender, StatusType status, String message, Object o);
+    Object EventHandler(Object sender, IStatusType status, String message, Object o);
 }

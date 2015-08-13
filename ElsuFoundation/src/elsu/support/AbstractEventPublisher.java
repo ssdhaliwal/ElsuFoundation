@@ -11,20 +11,24 @@ public abstract class AbstractEventPublisher implements IEventPublisher {
 
     List<IEventSubscriber> _listeners = new ArrayList<>();
 
+    protected synchronized List<IEventSubscriber> getEventListeners() {
+        return this._listeners;
+    }
+    
     @Override
     public synchronized void addEventListener(IEventSubscriber listener) {
-        _listeners.add(listener);
+        getEventListeners().add(listener);
     }
 
     @Override
     public synchronized void removeEventListener(IEventSubscriber listener) {
-        _listeners.remove(listener);
+        getEventListeners().remove(listener);
     }
 
     @Override
     protected void finalize() throws Throwable {
         try {
-            _listeners.clear();
+            getEventListeners().clear();
         } catch (Exception exi) {
         } finally {
             super.finalize();
@@ -32,15 +36,15 @@ public abstract class AbstractEventPublisher implements IEventPublisher {
     }
 
     @Override
-    public synchronized Object notifyListeners(Object sender, StatusType status,
+    public synchronized Object notifyListeners(Object sender, IStatusType status,
             String message, Object o) {
         Object result = null;
         
         // if listeners are not setup, then just output to console
-        if (_listeners.size() == 0) {
-            System.out.println(status.name() + ":" + message);
+        if (getEventListeners().size() == 0) {
+            System.out.println(status.getName() + ":" + message);
         } else {
-            Iterator i = _listeners.iterator();
+            Iterator i = getEventListeners().iterator();
 
             while (i.hasNext()) {
                 try {
