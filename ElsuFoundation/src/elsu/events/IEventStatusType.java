@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package elsu.common;
+package elsu.events;
 
 /**
  *
  * @author ss.dhaliwal
  */
-public interface IStatusType {
+public interface IEventStatusType {
     public String getName();
     public int getId();
 }

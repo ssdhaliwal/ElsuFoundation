@@ -1,5 +1,6 @@
-package elsu.support;
+package elsu.events;
 
+import elsu.events.IEventStatusType;
 import elsu.common.*;
 import java.util.*;
 
@@ -13,5 +14,5 @@ public interface IEventPublisher {
 
     void removeEventListener(IEventSubscriber listener);
 
-    Object notifyListeners(Object sender, IStatusType status, String message, Object o);
+    Object notifyListeners(Object sender, IEventStatusType status, String message, Object o);
 }

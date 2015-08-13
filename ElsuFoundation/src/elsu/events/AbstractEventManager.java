@@ -1,5 +1,6 @@
-package elsu.support;
+package elsu.events;
 
+import elsu.events.IEventStatusType;
 import elsu.common.*;
 import java.util.*;
 
@@ -7,7 +8,7 @@ import java.util.*;
  *
  * @author ssd.administrator
  */
-public abstract class AbstractEventPublisher implements IEventPublisher {
+public abstract class AbstractEventManager implements IEventPublisher {
 
     List<IEventSubscriber> _listeners = new ArrayList<>();
 
@@ -36,7 +37,7 @@ public abstract class AbstractEventPublisher implements IEventPublisher {
     }
 
     @Override
-    public synchronized Object notifyListeners(Object sender, IStatusType status,
+    public synchronized Object notifyListeners(Object sender, IEventStatusType status,
             String message, Object o) {
         Object result = null;
         

@@ -1,4 +1,4 @@
-package elsu.common;
+package elsu.events;
 
 import java.util.*;
 
@@ -6,7 +6,7 @@ import java.util.*;
  *
  * @author ss.dhaliwal_admin
  */
-public enum StatusType implements IStatusType {
+public enum EventStatusType implements IEventStatusType {
 
     // A
     ABORT("ABORT", 1000), ACCEPT("ACCEPT", 1001), ACTIVATE("ACTIVATE", 1002),
@@ -56,23 +56,23 @@ public enum StatusType implements IStatusType {
     // W
     WRITE("WRITE", 1064), WARNING("WARNING", 1065);
 
-    private static Map< String, IStatusType> _map
-            = new TreeMap< String, IStatusType>();
+    private static Map< String, IEventStatusType> _map
+            = new TreeMap< String, IEventStatusType>();
 
     private final String _name;
     private final int _id;
 
     static {
-        for (IStatusType status : values()) {
+        for (IEventStatusType status : values()) {
             _map.put(status.getName(), status);
         }
     }
 
-    public static IStatusType statusTypeFor(String name) {
-        return (IStatusType) _map.get(name);
+    public static IEventStatusType statusTypeFor(String name) {
+        return (IEventStatusType) _map.get(name);
     }
 
-    private StatusType(String name, int id) {
+    private EventStatusType(String name, int id) {
         this._name = name;
         this._id = id;
     }
@@ -92,7 +92,7 @@ public enum StatusType implements IStatusType {
             final String lName = name;
             final int lId = id;
 
-            IStatusType newStatus = new IStatusType() {
+            IEventStatusType newStatus = new IEventStatusType() {
                 @Override
                 public String getName() {
                     return lName;
