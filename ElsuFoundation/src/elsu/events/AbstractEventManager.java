@@ -10,26 +10,39 @@ import java.util.*;
  */
 public abstract class AbstractEventManager implements IEventPublisher {
 
+    private Object _runtimeSync = new Object();
     List<IEventSubscriber> _listeners = new ArrayList<>();
 
-    protected synchronized List<IEventSubscriber> getEventListeners() {
-        return this._listeners;
-    }
-    
-    @Override
-    public synchronized void addEventListener(IEventSubscriber listener) {
-        getEventListeners().add(listener);
+    protected List<IEventSubscriber> getEventListeners() {
+        List<IEventSubscriber> result = null;
+
+        synchronized (this._runtimeSync) {
+            result = this._listeners;
+        }
+
+        return result;
     }
 
     @Override
-    public synchronized void removeEventListener(IEventSubscriber listener) {
-        getEventListeners().remove(listener);
+    public void addEventListener(IEventSubscriber listener) {
+        synchronized (this._runtimeSync) {
+            getEventListeners().add(listener);
+        }
+    }
+
+    @Override
+    public void removeEventListener(IEventSubscriber listener) {
+        synchronized (this._runtimeSync) {
+            getEventListeners().remove(listener);
+        }
     }
 
     @Override
     protected void finalize() throws Throwable {
         try {
-            getEventListeners().clear();
+            synchronized (this._runtimeSync) {
+                getEventListeners().clear();
+            }
         } catch (Exception exi) {
         } finally {
             super.finalize();
@@ -37,26 +50,24 @@ public abstract class AbstractEventManager implements IEventPublisher {
     }
 
     @Override
-    public synchronized Object notifyListeners(Object sender, IEventStatusType status,
+    public Object notifyListeners(Object sender, IEventStatusType status,
             String message, Object o) {
         Object result = null;
-        
+
         // if listeners are not setup, then just output to console
         if (getEventListeners().size() == 0) {
             System.out.println(status.getName() + ":" + message);
         } else {
-            Iterator i = getEventListeners().iterator();
-
-            while (i.hasNext()) {
+            for (IEventSubscriber sub : getEventListeners()) {
                 try {
-                    result = ((IEventSubscriber) i.next()).EventHandler(sender, status, message, o);
+                    result = sub.EventHandler(sender, status, message, o);
                 } catch (Exception ex) {
                     System.out.println(getClass().toString() + ", notifyListeners(), "
                             + ex.getMessage());
                 }
             }
         }
-        
+
         return result;
     }
 }
