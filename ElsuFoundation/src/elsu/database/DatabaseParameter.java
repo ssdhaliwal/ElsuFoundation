@@ -1,10 +1,8 @@
 package elsu.database;
 
 import elsu.common.*;
-import elsu.support.*;
 import java.util.*;
 import java.sql.*;
-import elsu.database.DatabaseDataType.*;
 import java.math.BigDecimal;
 import oracle.jdbc.OracleTypes;
 import oracle.sql.*;

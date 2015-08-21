@@ -87,7 +87,7 @@ public enum EventStatusType implements IEventStatusType {
         return this._id;
     }
 
-    public static void addStatusType(String name, int id) {
+    public static void addStatusType(String name, int id) throws Exception {
         if (!_map.containsKey(name)) {
             final String lName = name;
             final int lId = id;
@@ -105,6 +105,9 @@ public enum EventStatusType implements IEventStatusType {
             };
 
             _map.put(name, newStatus);
+        } else {
+            throw new Exception("class elsu.events.EventStatusType"
+                    + ", addStatusType(), duplication of name/id");
         }
     }
 }

@@ -1,6 +1,6 @@
 package elsu.events;
 
-import elsu.events.IEventStatusType;
+import elsu.events.*;
 import elsu.common.*;
 import java.util.*;
 
