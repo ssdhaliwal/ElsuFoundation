@@ -8,7 +8,7 @@ import java.nio.file.*;
 
 /**
  * AbstractFileChannelWriter() class extends the FileChanneAbstract to provide
- concrete implementation for writing to file or files. Multiple threads can
+ * concrete implementation for writing to file or files. Multiple threads can
  * write to same file as the threads are synchronized through static shareWrite
  * method of base class.
  * <p>
@@ -19,6 +19,9 @@ import java.nio.file.*;
  * @author ssd.administrator
  */
 public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
+
+    // runtime sync object
+    private Object _runtimeSync = new Object();
 
     // local storage, stores the writer channel
     private volatile SeekableByteChannel _writerChannel = null;
@@ -76,7 +79,7 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
 
         try {
             super.finalize();
-        } catch (Throwable texi){
+        } catch (Throwable texi) {
         }
     }
 
@@ -140,7 +143,7 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
                     // close the current writer, if error, ignore it
                     try {
                         getWriterChannel().close();
-                    } catch (Exception exi){
+                    } catch (Exception exi) {
                     }
                 }
             }
@@ -176,7 +179,7 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
                                     StandardOpenOption.WRITE,
                                     StandardOpenOption.TRUNCATE_EXISTING));
                 }
-            } catch (Exception ex){
+            } catch (Exception ex) {
                 throw new Exception(ex);
             }
         }
@@ -184,14 +187,16 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
         return fileChange;
     }
 
-    public synchronized void close() {
-        if (getWriterChannel() != null) {
-            try {
-                getWriterChannel().close();
-            } catch (Exception exi){
-            }
+    public void close() {
+        synchronized (this._runtimeSync) {
+            if (getWriterChannel() != null) {
+                try {
+                    getWriterChannel().close();
+                } catch (Exception exi) {
+                }
 
-            this._writerChannel = null;
+                this._writerChannel = null;
+            }
         }
     }
 

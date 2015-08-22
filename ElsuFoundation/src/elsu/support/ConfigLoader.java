@@ -33,6 +33,9 @@ import org.apache.log4j.*;
 public class ConfigLoader {
 
     // <editor-fold desc="class private storage">
+    // runtime sync object
+    private Object _runtimeSync = new Object();
+
     // static property for app.config store and extraction from jar file
     private static String _APPCONFIG = "config/app.config";
 
@@ -558,8 +561,14 @@ public class ConfigLoader {
     /**
      *
      */
-    public synchronized Logger getLogger() {
-        return this._log4JManager.getLogger();
+    public Logger getLogger() {
+        Logger result = null;
+        
+        synchronized (this._runtimeSync) {
+            result = this._log4JManager.getLogger();
+        }
+        
+        return result;
     }
 
     /**
@@ -573,8 +582,10 @@ public class ConfigLoader {
      * @param info is the object whose string representation will be stored in
      * the log file
      */
-    public synchronized void logDebug(Object info) {
-        getLogger().debug(info.toString());
+    public void logDebug(Object info) {
+        synchronized (this._runtimeSync) {
+            getLogger().debug(info.toString());
+        }
     }
 
     /**
@@ -588,8 +599,10 @@ public class ConfigLoader {
      * @param info is the object whose string representation will be stored in
      * the log file
      */
-    public synchronized void logError(Object info) {
-        getLogger().error(info.toString());
+    public void logError(Object info) {
+        synchronized (this._runtimeSync) {
+            getLogger().error(info.toString());
+        }
     }
 
     /**
@@ -603,8 +616,10 @@ public class ConfigLoader {
      * @param info is the object whose string representation will be stored in
      * the log file
      */
-    public synchronized void logInfo(Object info) {
-        getLogger().info(info.toString());
+    public void logInfo(Object info) {
+        synchronized (this._runtimeSync) {
+            getLogger().info(info.toString());
+        }
     }
     // </editor-fold>
 }

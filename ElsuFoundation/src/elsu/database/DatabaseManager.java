@@ -15,6 +15,7 @@ import javax.sql.rowset.*;
 // http://docs.oracle.com/javase/tutorial/jdbc/basics/retrieving.html
 public class DatabaseManager extends AbstractEventManager implements IEventPublisher {
 
+    private Object _runtimeSync = new Object();
     private volatile ArrayList<Connection> _connections
             = new ArrayList<>();
     private volatile ArrayList<Connection> _connectionsActive
@@ -46,7 +47,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         initializeConnections();
     }
 
-    private synchronized void initializeConnections() throws Exception {
+    private void initializeConnections() throws Exception {
         Connection conn;
 
         int i = this.getConnections().size()
@@ -63,8 +64,8 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         }
 
         notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
-                        getClass().toString() + ", initializeConnections(), "
-                        + "successful.", null);
+                getClass().toString() + ", initializeConnections(), "
+                + "successful.", null);
     }
 
     @Override
@@ -90,8 +91,8 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         DriverManager.registerDriver(driver);
 
         notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
-                        getClass().toString() + ", LoadDriver(), "
-                        + dbDriver + " loaded successfully.", null);
+                getClass().toString() + ", LoadDriver(), "
+                + dbDriver + " loaded successfully.", null);
     }
 
     public ArrayList<Connection> getConnections() {
@@ -103,52 +104,55 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
     }
 
     // return connection
-    public synchronized Connection getConnection() throws Exception {
-        Connection conn = null;
+    public Connection getConnection() throws Exception {
+        Connection result = null;
 
-        while (this.getConnections().isEmpty()) {
-            if (this.getConnectionsActive().size() == this._totalConnections) {
-                notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
-                        getClass().toString() + ", getConnection(), "
-                        + "all db connnections in use, none available.", null);
-                idle(30000);
-            } else {
-                initializeConnections();
-                notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
-                        getClass().toString() + ", getConnection(), "
-                        + "db connections initialized.", null);
-            }
-        }
-
-        // is there an open connection available
-        if (this.getConnections().size() > 0) {
-            conn = (Connection) this.getConnections().get(0);
-
-            if (isValid(conn)) {
-                this.getConnections().remove(conn);
-                this.getConnectionsActive().add(conn);
-            } else {
-                String errMsg = getClass().toString() + ", getConnection(), "
-                        + " connection is not valid!!";
-                notifyListeners(new EventObject(this), EventStatusType.ERROR, errMsg, null);
-
-                // 20141130 SSD remove the connection and force close it
-                this.getConnections().remove(conn);
-
-                try {
-                    conn.close();
-                } catch (Exception exi) {
+        synchronized (this._runtimeSync) {
+            while (this.getConnections().isEmpty()) {
+                if (this.getConnectionsActive().size() == this._totalConnections) {
+                    notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                            getClass().toString() + ", getConnection(), "
+                            + "all db connnections in use, none available.", null);
+                    idle(30000);
+                } else {
+                    initializeConnections();
+                    notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                            getClass().toString() + ", getConnection(), "
+                            + "db connections initialized.", null);
                 }
-
-                conn = null;
-                throw new Exception(errMsg);
             }
+
+            // is there an open connection available
+            if (this.getConnections().size() > 0) {
+                result = (Connection) this.getConnections().get(0);
+
+                if (isValid(result)) {
+                    this.getConnections().remove(result);
+                    this.getConnectionsActive().add(result);
+                } else {
+                    String errMsg = getClass().toString() + ", getConnection(), "
+                            + " connection is not valid!!";
+                    notifyListeners(new EventObject(this), EventStatusType.ERROR, errMsg, null);
+
+                    // 20141130 SSD remove the connection and force close it
+                    this.getConnections().remove(result);
+
+                    try {
+                        result.close();
+                    } catch (Exception exi) {
+                    }
+
+                    result = null;
+                    throw new Exception(errMsg);
+                }
+            }
+
+            notifyListeners(new EventObject(this), EventStatusType.CONNECT,
+                    getClass().toString() + ", getConnection(), "
+                    + "db connection reserved", result);
         }
 
-        notifyListeners(new EventObject(this), EventStatusType.CONNECT,
-                getClass().toString() + ", getConnection(), "
-                + "db connection reserved", conn);
-        return conn;
+        return result;
     }
 
     private boolean isValid(Connection conn) {
@@ -179,47 +183,51 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         return result;
     }
 
-    public synchronized void releaseConnection(Connection connection) {
-        // remove connection from active list and put it back in connections
-        this.getConnectionsActive().remove(connection);
-        this.getConnections().add(connection);
+    public void releaseConnection(Connection connection) {
+        synchronized (this._runtimeSync) {
+            // remove connection from active list and put it back in connections
+            this.getConnectionsActive().remove(connection);
+            this.getConnections().add(connection);
 
-        notifyListeners(new EventObject(this), EventStatusType.DISCONNECT,
-                getClass().toString() + ", releaseConnection(), "
-                + "db connection released", connection);
+            notifyListeners(new EventObject(this), EventStatusType.DISCONNECT,
+                    getClass().toString() + ", releaseConnection(), "
+                    + "db connection released", connection);
 
-        // interrupt the wait for connections
-        notify();
+            // interrupt the wait for connections
+            notify();
+        }
     }
 
     // scans through all connections and checks if they have valid connection
     // 20141130 SSD implementation completed
-    public synchronized void validateConnections() {
-        ArrayList<Connection> badConnections = new ArrayList<>();
+    public void validateConnections() {
+        synchronized (this._runtimeSync) {
+            ArrayList<Connection> badConnections = new ArrayList<>();
 
-        // scan available connections list and validate them
-        for (Connection conn : getConnections()) {
-            if (!isValid(conn)) {
-                badConnections.add(conn);
+            // scan available connections list and validate them
+            for (Connection conn : getConnections()) {
+                if (!isValid(conn)) {
+                    badConnections.add(conn);
+                }
             }
-        }
 
-        // remove bad connections from list
-        for (Connection conn : badConnections) {
-            this.getConnections().remove(conn);
+            // remove bad connections from list
+            for (Connection conn : badConnections) {
+                this.getConnections().remove(conn);
 
-            try {
-                conn.close();
-            } catch (Exception exi) {
+                try {
+                    conn.close();
+                } catch (Exception exi) {
+                }
             }
-        }
 
-        notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
-                getClass().toString() + ", validateConnections(), "
-                + "db connections validated", null);
+            notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                    getClass().toString() + ", validateConnections(), "
+                    + "db connections validated", null);
+        }
     }
 
-    public CachedRowSet getData(String sql, ArrayList params) throws
+    public CachedRowSet getData(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
@@ -270,7 +278,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         return crs;
     }
 
-    public WebRowSet getDataXML(String sql, ArrayList params) throws
+    public WebRowSet getDataXML(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
@@ -321,7 +329,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         return wrs;
     }
 
-    public WebRowSet getDataXMLViaCursor(String sql, ArrayList params) throws
+    public WebRowSet getDataXMLViaCursor(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         CallableStatement stmt = null;
@@ -378,7 +386,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         return wrs;
     }
 
-    public void executeDirect(String sql, ArrayList params) throws SQLException,
+    public void executeDirect(String sql, ArrayList<DatabaseParameter> params) throws SQLException,
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
@@ -463,7 +471,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         }
     }
 
-    public void batchRun(PreparedStatement stmt, ArrayList params) throws
+    public void batchRun(PreparedStatement stmt, ArrayList<DatabaseParameter> params) throws
             Exception {
         boolean isException = false;
 
@@ -532,7 +540,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         }
     }
 
-    public Map<String, Object> executeProcedure(String sql, ArrayList params)
+    public Map<String, Object> executeProcedure(String sql, ArrayList<DatabaseParameter> params)
             throws Exception {
         Map<String, Object> result = null;
         Connection conn = this.getConnection();
