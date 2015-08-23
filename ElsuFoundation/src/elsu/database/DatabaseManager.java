@@ -183,7 +183,9 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         return result;
     }
 
-    public void releaseConnection(Connection connection) {
+    // note method synchronization is required for notify() to work, otherwise
+    // illegalMonitorStateException is reported.
+    public synchronized void releaseConnection(Connection connection) {
         synchronized (this._runtimeSync) {
             // remove connection from active list and put it back in connections
             this.getConnectionsActive().remove(connection);
