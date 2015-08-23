@@ -6,7 +6,6 @@
 package elsu.support;
 
 import elsu.common.*;
-import elsu.support.*;
 import java.util.*;
 import java.io.*;
 import org.apache.commons.lang3.*;

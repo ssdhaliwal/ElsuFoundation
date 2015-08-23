@@ -1,6 +1,5 @@
 package elsu.io;
 
-import java.io.IOException;
 import java.text.*;
 import java.util.*;
 import java.nio.channels.*;

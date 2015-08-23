@@ -3,8 +3,8 @@ package elsu.database;
 import elsu.common.*;
 import java.util.*;
 import java.sql.*;
-import java.math.BigDecimal;
-import oracle.jdbc.OracleTypes;
+import java.math.*;
+import oracle.jdbc.*;
 import oracle.sql.*;
 
 /**
