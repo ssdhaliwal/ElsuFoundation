@@ -11,6 +11,7 @@ import java.sql.*;
 /**
  *
  * @author ss.dhaliwal
+ * http://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#i16209
  */
 public class DatabaseStack {
 
@@ -60,8 +61,8 @@ public class DatabaseStack {
 
     public static DatabaseDataType getDataType(String className) {
         DatabaseDataType result = DatabaseDataType.dtstring;
-
-        if (className.equals(java.sql.Types.NULL) == null) {
+/*
+        if (className.equals() == null) {
             result = DatabaseDataType.dtnull;
         } else if (o.getClass().equals(BigDecimal.class)) {
             result = DatabaseDataType.dtbigDecimal;
@@ -98,7 +99,7 @@ public class DatabaseStack {
         } else if (o.getClass().equals(java.sql.Timestamp.class)) {
             result = DatabaseDataType.dttimestamp;
         }
-
+*/
         return result;
     }
 }

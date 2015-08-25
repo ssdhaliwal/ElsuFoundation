@@ -2,6 +2,7 @@ package elsu.database;
 
 import elsu.events.*;
 import elsu.common.*;
+import elsu.database.rowset.*;
 import java.util.*;
 import java.sql.*;
 import javax.sql.rowset.*;
@@ -278,6 +279,74 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         }
 
         return crs;
+    }
+
+    public EntityDescriptor getDataResultSet(String sql, ArrayList<DatabaseParameter> params) throws
+            Exception {
+        Connection conn = this.getConnection();
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        EntityDescriptor result = null;
+
+        try {
+            stmt = conn.prepareStatement(sql);
+            DatabaseParameter.setParameterValue(stmt, params);
+
+            rs = stmt.executeQuery();
+
+            // extract the result set meta data and store it
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int cols = rsmd.getColumnCount();
+
+            Map<String, FieldDescriptor> fdList = new HashMap<String, FieldDescriptor>();
+            ArrayList<RowDescriptor> rows = new ArrayList<RowDescriptor>();
+
+            result = new EntityDescriptor(sql, params, fdList, rows);
+
+            FieldDescriptor fd = null;
+            for (int i = 1; i <= cols; i++) {
+                fd = new FieldDescriptor(
+                        rsmd.getSchemaName(i),
+                        rsmd.getCatalogName(i),
+                        rsmd.getTableName(i),
+                        rsmd.getColumnName(i),
+                        (rsmd.isNullable(i) == ResultSetMetaData.columnNoNulls ? false : true),
+                        rsmd.isCaseSensitive(i),
+                        rsmd.isReadOnly(i),
+                        rsmd.isAutoIncrement(i),
+                        rsmd.isCurrency(i),
+                        rsmd.isSigned(i),
+                        rsmd.getColumnDisplaySize(i),
+                        rsmd.getPrecision(i),
+                        rsmd.getScale(i),
+                        rsmd.getColumnClassName(i),
+                        i);
+
+                fdList.put(rsmd.getColumnName(i), fd);
+            }
+            
+            // store the resultset data.
+
+            notifyListeners(new EventObject(this), EventStatusType.SELECT,
+                    getClass().toString() + ", getData(), "
+                    + "CachedRowSet returned", result);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getData(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
+            throw new Exception(ex);
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (stmt != null) {
+                stmt.close();
+            }
+
+            this.releaseConnection(conn);
+        }
+
+        return result;
     }
 
     public WebRowSet getDataXML(String sql, ArrayList<DatabaseParameter> params) throws
