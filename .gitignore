@@ -13,3 +13,5 @@ hs_err_pid*
 
 # local compiler properties
 /ElsuConfigTest/dist/
+/ElsuFoundation/build/
+/ElsuFoundation/dist/
