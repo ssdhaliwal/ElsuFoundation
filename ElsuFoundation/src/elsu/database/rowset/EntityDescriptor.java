@@ -5,7 +5,7 @@
  */
 package elsu.database.rowset;
 
-import elsu.database.*;
+import com.google.gson.*;
 import java.io.*;
 import java.util.*;
 
@@ -16,21 +16,18 @@ import java.util.*;
 public class EntityDescriptor implements Serializable, Cloneable {
     private static final long serialVersionUID = 5099557402995654788L;
     
-    private String _sql = "";
-    private ArrayList<DatabaseParameter> _parameters = null;
     private boolean _dirty = false;
     private int _columnCount = 0;
     private int _rowCount = 0;
 
     private Map<String, FieldDescriptor> _fields = null;
     private ArrayList<RowDescriptor> _rows = null;
-    private Map<String, Map<String, RowDescriptor>> _index = null;
+    private Set<String> _indexKey = null;
+    private transient Map<String, Map<String, RowDescriptor>> _index = null;
     
-    public EntityDescriptor(String sql, ArrayList<DatabaseParameter> parameters,
-            Map<String, FieldDescriptor> fields,
+    public EntityDescriptor(Map<String, FieldDescriptor> fields,
             ArrayList<RowDescriptor> rows) {
         
-        this._readOnly = readOnly;
         this._dirty = false;
         
         this._columnCount = fields.size();
@@ -38,11 +35,9 @@ public class EntityDescriptor implements Serializable, Cloneable {
         
         this._fields = fields;
         this._rows = rows;
+        
+        this._indexKey = new HashSet<String>();
         this._index = new HashMap<String, Map<String, RowDescriptor>>();
-    }
-    
-    public Boolean isReadOnly() {
-        return this._readOnly;
     }
     
     public Boolean isDirty() {
@@ -79,5 +74,12 @@ public class EntityDescriptor implements Serializable, Cloneable {
     
     public void buildIndex(String index) {
         // to-do
+    }
+    
+    @Override
+    public String toString() {
+        Gson gson = new Gson();
+        String result = gson.toJson(this);
+        return result;
     }
 }

@@ -281,7 +281,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         return crs;
     }
 
-    public EntityDescriptor getDataResultSet(String sql, ArrayList<DatabaseParameter> params) throws
+    public EntityDescriptor getDataRowSet(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
@@ -293,46 +293,20 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
             DatabaseParameter.setParameterValue(stmt, params);
 
             rs = stmt.executeQuery();
-
-            // extract the result set meta data and store it
-            ResultSetMetaData rsmd = rs.getMetaData();
-            int cols = rsmd.getColumnCount();
-
-            Map<String, FieldDescriptor> fdList = new HashMap<String, FieldDescriptor>();
-            ArrayList<RowDescriptor> rows = new ArrayList<RowDescriptor>();
-
-            result = new EntityDescriptor(sql, params, fdList, rows);
-
-            FieldDescriptor fd = null;
-            for (int i = 1; i <= cols; i++) {
-                fd = new FieldDescriptor(
-                        rsmd.getSchemaName(i),
-                        rsmd.getCatalogName(i),
-                        rsmd.getTableName(i),
-                        rsmd.getColumnName(i),
-                        (rsmd.isNullable(i) == ResultSetMetaData.columnNoNulls ? false : true),
-                        rsmd.isCaseSensitive(i),
-                        rsmd.isReadOnly(i),
-                        rsmd.isAutoIncrement(i),
-                        rsmd.isCurrency(i),
-                        rsmd.isSigned(i),
-                        rsmd.getColumnDisplaySize(i),
-                        rsmd.getPrecision(i),
-                        rsmd.getScale(i),
-                        rsmd.getColumnClassName(i),
-                        i);
-
-                fdList.put(rsmd.getColumnName(i), fd);
-            }
-            
-            // store the resultset data.
+            result = setEntityDescriptor(rs);
 
             notifyListeners(new EventObject(this), EventStatusType.SELECT,
-                    getClass().toString() + ", getData(), "
+                    getClass().toString() + ", getDataRowSet(), "
                     + "CachedRowSet returned", result);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getDataRowSet(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            throw new SQLException(ex);
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), EventStatusType.ERROR,
-                    getClass().toString() + ", getData(), "
+                    getClass().toString() + ", getDataRowSet(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
@@ -375,11 +349,6 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                         + ex.getMessage(), sql);
                 throw new SQLException(ex);
-            } catch (Exception ex) {
-                notifyListeners(new EventObject(this), EventStatusType.ERROR,
-                        getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
-                throw new Exception(ex);
             }
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), EventStatusType.ERROR,
@@ -400,7 +369,107 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         return wrs;
     }
 
-    public WebRowSet getDataXMLViaCursor(String sql, ArrayList<DatabaseParameter> params) throws
+    public CachedRowSet getCursor(String sql, ArrayList<DatabaseParameter> params) throws
+            Exception {
+        Connection conn = this.getConnection();
+        CallableStatement stmt = null;
+        CachedRowSet crs = null;
+        ResultSet rs = null;
+
+        try {
+            crs = RowSetProvider.newFactory().createCachedRowSet();
+
+            try {
+                stmt = conn.prepareCall(sql);
+
+                // add output cursor type to params
+                params.add(new DatabaseParameter("paramcursor", DatabaseDataType.dtcursor, true));
+                DatabaseParameter.setParameterValue(stmt, params);
+
+                stmt.execute();
+
+                // load the output params into result by key
+                rs = DatabaseParameter.getResultSet(stmt, params);
+
+                crs.populate(rs);
+                notifyListeners(new EventObject(this), EventStatusType.SELECT,
+                        getClass().toString() + ", getCursor(), "
+                        + "WebRowSet returned", crs);
+            } catch (SQLException ex) {
+                notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                        getClass().toString() + ", getCursor(), "
+                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                        + ex.getMessage(), sql);
+                throw new SQLException(ex);
+            }
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getCursor(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
+            throw new Exception(ex);
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (stmt != null) {
+                stmt.close();
+            }
+
+            this.releaseConnection(conn);
+        }
+
+        return crs;
+    }
+
+    public EntityDescriptor getCursorRowSet(String sql, ArrayList<DatabaseParameter> params) throws
+            Exception {
+        Connection conn = this.getConnection();
+        CallableStatement stmt = null;
+        ResultSet rs = null;
+        EntityDescriptor result = null;
+
+        try {
+            stmt = conn.prepareCall(sql);
+
+            // add output cursor type to params
+            params.add(new DatabaseParameter("paramcursor", DatabaseDataType.dtcursor, true));
+            DatabaseParameter.setParameterValue(stmt, params);
+
+            stmt.execute();
+
+            // load the output params into result by key
+            rs = DatabaseParameter.getResultSet(stmt, params);
+            result = setEntityDescriptor(rs);
+            
+            notifyListeners(new EventObject(this), EventStatusType.SELECT,
+                    getClass().toString() + ", getCursorRowSet(), "
+                    + "WebRowSet returned", result);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getCursorRowSet(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getCursorRowSet(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
+            throw new Exception(ex);
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (stmt != null) {
+                stmt.close();
+            }
+
+            this.releaseConnection(conn);
+        }
+
+        return result;
+    }
+
+    public WebRowSet getCursorXML(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         CallableStatement stmt = null;
@@ -424,23 +493,18 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
                 wrs.populate(rs);
                 notifyListeners(new EventObject(this), EventStatusType.SELECT,
-                        getClass().toString() + ", getDataXMLViaCursor(), "
+                        getClass().toString() + ", getCursorXML(), "
                         + "WebRowSet returned", wrs);
             } catch (SQLException ex) {
                 notifyListeners(new EventObject(this), EventStatusType.ERROR,
-                        getClass().toString() + ", getDataXML(), "
+                        getClass().toString() + ", getCursorXML(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                         + ex.getMessage(), sql);
                 throw new SQLException(ex);
-            } catch (Exception ex) {
-                notifyListeners(new EventObject(this), EventStatusType.ERROR,
-                        getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
-                throw new Exception(ex);
             }
         } catch (Exception ex) {
             notifyListeners(new EventObject(this), EventStatusType.ERROR,
-                    getClass().toString() + ", getDataXML(), "
+                    getClass().toString() + ", getCursorXML(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
@@ -649,6 +713,55 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
             }
 
             this.releaseConnection(conn);
+        }
+
+        return result;
+    }
+
+    public static EntityDescriptor setEntityDescriptor(ResultSet rs) throws Exception {
+        EntityDescriptor result = null;
+
+        // extract the result set meta data and store it
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int cols = rsmd.getColumnCount();
+
+        Map<String, FieldDescriptor> fdList = new HashMap<String, FieldDescriptor>();
+        ArrayList<RowDescriptor> rows = new ArrayList<RowDescriptor>();
+
+        result = new EntityDescriptor(fdList, rows);
+
+        FieldDescriptor fd = null;
+        for (int i = 1; i <= cols; i++) {
+            fd = new FieldDescriptor(
+                    rsmd.getSchemaName(i),
+                    rsmd.getCatalogName(i),
+                    rsmd.getTableName(i),
+                    rsmd.getColumnName(i),
+                    (rsmd.isNullable(i) == ResultSetMetaData.columnNoNulls ? false : true),
+                    rsmd.isCaseSensitive(i),
+                    rsmd.isReadOnly(i),
+                    rsmd.isAutoIncrement(i),
+                    rsmd.isCurrency(i),
+                    rsmd.isSigned(i),
+                    rsmd.getColumnDisplaySize(i),
+                    rsmd.getPrecision(i),
+                    rsmd.getScale(i),
+                    rsmd.getColumnClassName(i),
+                    i);
+
+            fdList.put(rsmd.getColumnName(i), fd);
+        }
+
+        // store the resultset data.
+        RowDescriptor rd = null;
+        while (rs.next()) {
+            rd = new RowDescriptor(fdList);
+
+            for (int i = 1; i <= cols; i++) {
+                rd.setValue(i - 1, rs.getObject(i));
+            }
+
+            result.getRows().add(rd);
         }
 
         return result;

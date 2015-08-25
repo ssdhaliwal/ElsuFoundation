@@ -5,6 +5,7 @@
  */
 package elsu.database.rowset;
 
+import elsu.support.*;
 import java.io.*;
 
 /**
@@ -35,43 +36,43 @@ public class FieldDescriptor implements Serializable, Cloneable {
     public FieldDescriptor(String schema, String catalog, String entity,
             String name, boolean nullable, boolean caseSensitive,
             boolean readOnly, boolean identity, boolean currency, boolean signed,
-            int displaySize, int precision, int scale, String className, 
+            int displaySize, int precision, int scale, String className,
             int fieldPosition) {
         this._schema = schema;
         this._catalog = catalog;
         this._entity = entity;
 
         this._name = name;
-        
+
         this._nullable = nullable;
         this._caseSensitive = caseSensitive;
         this._readOnly = readOnly;
         this._identity = identity;
         this._currency = currency;
         this._signed = signed;
-        
+
         this._displaySize = displaySize;
         this._precision = precision;
         this._scale = scale;
-        
+
         this._className = className;
         //this._type = type;
-        
+
         this._fieldPosition = fieldPosition;
     }
-    
+
     public String getSchmea() {
         return this._schema;
     }
-    
+
     public String getCatalog() {
         return this._catalog;
     }
-    
+
     public String getEntity() {
         return this._entity;
     }
-    
+
     public String getName() {
         return this._name;
     }
@@ -118,5 +119,13 @@ public class FieldDescriptor implements Serializable, Cloneable {
 
     public int getFieldPosition() {
         return this._fieldPosition;
+    }
+
+    @Override
+    public String toString() {
+        String result = "";
+        result = GsonXMLStack.Object2XML(this);
+
+        return result;
     }
 }
