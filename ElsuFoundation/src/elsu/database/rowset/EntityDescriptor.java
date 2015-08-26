@@ -11,6 +11,7 @@ import elsu.support.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import org.apache.commons.io.IOUtils;
 
 /**
  *
@@ -20,22 +21,19 @@ public class EntityDescriptor implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 5099557402995654788L;
 
-    private boolean _dirty = false;
-    private int _columnCount = 0;
-    private int _rowCount = 0;
+    private transient int _columnCount = 0;
+    private transient int _rowCount = 0;
 
-    private Map<String, FieldDescriptor> _fields = null;
-    private ArrayList<RowDescriptor> _rows = null;
+    private transient Map<String, FieldDescriptor> _fields = null;
+    private transient ArrayList<RowDescriptor> _rows = null;
     private Set<String> _indexKey = null;
-    private Map<String, Map<String, RowDescriptor>> _index = null;
+    private transient Map<String, Map<String, RowDescriptor>> _index = null;
 
     public EntityDescriptor(Map<String, FieldDescriptor> fields,
             ArrayList<RowDescriptor> rows) {
         this._fields = fields;
         this._rows = rows;
 
-        this._dirty = false;
-
         this._columnCount = this._fields.size();
         this._rowCount = this._rows.size();
 
@@ -43,43 +41,26 @@ public class EntityDescriptor implements Serializable, Cloneable {
         this._index = new HashMap<String, Map<String, RowDescriptor>>();
     }
 
-    public EntityDescriptor(String jsonFields, String jsonRows) {
+    public EntityDescriptor(String jsonFields, String jsonRows) throws Exception {
         Type fieldType = new TypeToken<Map<String, FieldDescriptor>>() {}.getType();
-        final Map<String, FieldDescriptor> fields = (Map<String, FieldDescriptor>) GsonXMLStack.JSon2Object(jsonFields, fieldType);
-        this._fields = fields;
+        this._fields = 
+                (Map<String, FieldDescriptor>) GsonXMLStack.JSon2Object(jsonFields, fieldType);
 
-        Type rowType = new TypeToken<ArrayList<String>>() {}.getType();
-        class RowDescriptorInstanceCreator implements InstanceCreator<RowDescriptor> {
-            @Override
-            public RowDescriptor createInstance(Type fieldType) {
-                return new RowDescriptor(fields);
-            }
+        this._rows = new ArrayList<RowDescriptor>();
+        RowDescriptor rd = null;
+        
+        JsonParser parser = new JsonParser();
+        JsonArray jArray = parser.parse(jsonRows).getAsJsonArray();
+        for (JsonElement jElement : jArray) {
+            rd = new RowDescriptor(this._fields, jElement.toString());
+            this._rows.add(rd);
         }
 
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(RowDescriptor.class, new RowDescriptorInstanceCreator());
-        Gson gson = gsonBuilder.create();
-        
-        //JSONObject obj = new JSONObject(jsonRows);
-        //JsonReader jReader = new JsonReader(new InputStreamReader(new StringReader(jsonRows)));
-        this._rows = (ArrayList<RowDescriptor>) GsonXMLStack.JSon2Object(jsonFields, rowType);
-
-        this._dirty = false;
-
         this._columnCount = this._fields.size();
         this._rowCount = this._rows.size();
 
         this._indexKey = new HashSet<String>();
         this._index = new HashMap<String, Map<String, RowDescriptor>>();
-    }
-
-    public Boolean isDirty() {
-        return this._dirty;
-    }
-
-    protected Boolean isDirty(Boolean dirty) {
-        this._dirty = dirty;
-        return this.isDirty();
     }
 
     public int getColumnCount() {
@@ -90,12 +71,16 @@ public class EntityDescriptor implements Serializable, Cloneable {
         return this._rowCount;
     }
 
-    public Set<String> getFields() {
+    public Set<String> getFieldKeySet() {
         return this._fields.keySet();
     }
 
     public FieldDescriptor getField(String field) {
         return this._fields.get(field);
+    }
+
+    public Map<String, FieldDescriptor> getFields() {
+        return this._fields;
     }
 
     public ArrayList<RowDescriptor> getRows() {
@@ -112,5 +97,13 @@ public class EntityDescriptor implements Serializable, Cloneable {
 
     public void rebuildAllIndexes() {
         // to-do
+    }
+
+    @Override
+    public String toString() {
+        String result = "";
+        result = GsonXMLStack.Object2JSon(this);
+
+        return result;
     }
 }
