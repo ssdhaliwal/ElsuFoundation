@@ -32,11 +32,11 @@ public class RowDescriptor implements Serializable, Cloneable {
     }
 
     public RowDescriptor(Map<String, FieldDescriptor> fields,
-            String jsonData) {
+            String jsonRow) {
         this._fields = fields;
         this._originalRow = new Object[getFieldCount()];
         
-        RowDescriptor rd = (RowDescriptor)GsonXMLStack.JSon2Object(jsonData, RowDescriptor.class);
+        RowDescriptor rd = (RowDescriptor)GsonXMLStack.JSon2Object(jsonRow, RowDescriptor.class);
         
         this._deleted = rd._deleted;
         this._currentRow = rd._currentRow;
@@ -142,7 +142,7 @@ public class RowDescriptor implements Serializable, Cloneable {
     @Override
     public String toString() {
         String result = "";
-        result = GsonXMLStack.Object2XML(this);
+        result = GsonXMLStack.Object2JSon(this);
 
         return result;
     }

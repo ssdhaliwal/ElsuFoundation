@@ -124,7 +124,7 @@ public class FieldDescriptor implements Serializable, Cloneable {
     @Override
     public String toString() {
         String result = "";
-        result = GsonXMLStack.Object2XML(this);
+        result = GsonXMLStack.Object2JSon(this);
 
         return result;
     }

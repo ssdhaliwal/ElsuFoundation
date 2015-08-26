@@ -1,8 +1,6 @@
 package elsu.support;
 
 import com.google.gson.*;
-import net.sf.json.*;
-import net.sf.json.xml.*;
 
 /**
  *
@@ -13,16 +11,6 @@ public class GsonXMLStack {
     public static String Object2JSon(Object obj) {
         Gson gson = new Gson();
         String result = gson.toJson(obj);
-        return result;
-    }
-
-    public static String Object2XML(Object obj) {
-        String jsonStr = Object2JSon(obj);
-
-        JSON json = JSONSerializer.toJSON(jsonStr);
-        XMLSerializer xmlSerializer = new XMLSerializer();
-        String result = xmlSerializer.write(json);
-
         return result;
     }
 

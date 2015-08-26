@@ -6,8 +6,8 @@
             <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/RowDescriptor.java</file>
             <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/EntityDescriptor.java</file>
             <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/FieldDescriptor.java</file>
+            <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/support/GsonXMLStack.java</file>
             <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/DatabaseManager.java</file>
-            <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/DatabaseStack.java</file>
         </group>
     </open-files>
 </project-private>
