@@ -32,14 +32,23 @@ public class RowDescriptor implements Serializable, Cloneable {
     }
 
     public RowDescriptor(Map<String, FieldDescriptor> fields,
-            String jsonData) {
+            String jsonRow) {
         this._fields = fields;
-        this._originalRow = new Object[getFieldCount()];
+
+        RowDescriptor rd = (RowDescriptor) GsonXMLStack.JSon2Object(jsonRow, RowDescriptor.class);
+        this.cloneRow(rd);
+    }
+
+    public RowDescriptor(Map<String, FieldDescriptor> fields,
+            Boolean deleted, Boolean changed, Object[] originalRow,
+            Object[] currentRow) {
+        this._fields = fields;
+
+        this._deleted = deleted;
+        this._changed = changed;
         
-        RowDescriptor rd = (RowDescriptor)GsonXMLStack.JSon2Object(jsonData, RowDescriptor.class);
-        
-        this._deleted = rd._deleted;
-        this._currentRow = rd._currentRow;
+        this._originalRow = originalRow;
+        this._currentRow = currentRow;
     }
 
     public boolean isDeleted() {
@@ -81,6 +90,22 @@ public class RowDescriptor implements Serializable, Cloneable {
     public Object getValue(String columnName) {
         int index = this._fields.get(columnName).getFieldPosition();
         return this._currentRow[index];
+    }
+
+    public Object getValue(int index) {
+        return this._currentRow[index];
+    }
+
+    public String getValue(int[] index) {
+        String result = "";
+        String value = "";
+
+        for(int i : index) {
+            value = this._currentRow[i].toString();
+            result += (result.isEmpty() ? value : "," + value);
+        }
+        
+        return result;
     }
 
     public void setValue(String columnName, Object value) {
@@ -139,10 +164,18 @@ public class RowDescriptor implements Serializable, Cloneable {
         isChanged(temp);
     }
 
+    private void cloneRow(RowDescriptor row) {
+        this._deleted = row._deleted;
+        this._changed = row._changed;
+        
+        this._originalRow = row._originalRow;
+        this._currentRow = row._currentRow;
+    }
+    
     @Override
     public String toString() {
         String result = "";
-        result = GsonXMLStack.Object2XML(this);
+        result = GsonXMLStack.Object2JSon(this);
 
         return result;
     }

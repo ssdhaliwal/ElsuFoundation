@@ -5,8 +5,11 @@
  */
 package elsu.database.rowset;
 
+import com.google.gson.*;
 import elsu.support.*;
 import java.io.*;
+import java.lang.reflect.*;
+import java.util.Map;
 
 /**
  *
@@ -60,6 +63,11 @@ public class FieldDescriptor implements Serializable, Cloneable {
 
         this._fieldPosition = fieldPosition;
     }
+    
+     public FieldDescriptor(String jsonField) {
+        FieldDescriptor fd = (FieldDescriptor)GsonXMLStack.JSon2Object(jsonField, FieldDescriptor.class);
+        this.cloneField(fd);
+     }
 
     public String getSchmea() {
         return this._schema;
@@ -120,11 +128,35 @@ public class FieldDescriptor implements Serializable, Cloneable {
     public int getFieldPosition() {
         return this._fieldPosition;
     }
+    
+    private void cloneField(FieldDescriptor field) {
+        this._schema = field._schema;
+        this._catalog = field._catalog;
+        this._entity = field._entity;
+
+        this._name = field._name;
+
+        this._nullable = field._nullable;
+        this._caseSensitive = field._caseSensitive;
+        this._readOnly = field._readOnly;
+        this._identity = field._identity;
+        this._currency = field._currency;
+        this._signed = field._signed;
+
+        this._displaySize = field._displaySize;
+        this._precision = field._precision;
+        this._scale = field._scale;
+
+        this._className = field._className;
+        //this._type = type;
+
+        this._fieldPosition = field._fieldPosition;
+    }
 
     @Override
     public String toString() {
         String result = "";
-        result = GsonXMLStack.Object2XML(this);
+        result = GsonXMLStack.Object2JSon(this);
 
         return result;
     }

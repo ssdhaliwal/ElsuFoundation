@@ -1,8 +1,6 @@
 package elsu.support;
 
 import com.google.gson.*;
-import net.sf.json.*;
-import net.sf.json.xml.*;
 
 /**
  *
@@ -11,30 +9,29 @@ import net.sf.json.xml.*;
 public class GsonXMLStack {
 
     public static String Object2JSon(Object obj) {
+        String result = "";
+        
         Gson gson = new Gson();
-        String result = gson.toJson(obj);
-        return result;
-    }
-
-    public static String Object2XML(Object obj) {
-        String jsonStr = Object2JSon(obj);
-
-        JSON json = JSONSerializer.toJSON(jsonStr);
-        XMLSerializer xmlSerializer = new XMLSerializer();
-        String result = xmlSerializer.write(json);
+        result = gson.toJson(obj);
 
         return result;
     }
 
     public static Object JSon2Object(String jsonData, java.lang.Class objClass) {
+        Object result = null;
+        
         Gson gson = new Gson();
-        Object result = gson.fromJson(jsonData, objClass);
+        result = gson.fromJson(jsonData, objClass);
+        
         return result;
     }
 
     public static Object JSon2Object(String jsonData, java.lang.reflect.Type objType) {
+        Object result = null;
+        
         Gson gson = new Gson();
-        Object result = gson.fromJson(jsonData, objType);
+        result = gson.fromJson(jsonData, objType);
+        
         return result;
     }
 }
