@@ -727,6 +727,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
         Map<String, FieldDescriptor> fdList = new HashMap<String, FieldDescriptor>();
         ArrayList<RowDescriptor> rows = new ArrayList<RowDescriptor>();
+        FieldDescriptor[] fieldsById = EntityDescriptor.setFieldsById(fdList);
 
         result = new EntityDescriptor(fdList, rows);
 
@@ -755,7 +756,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         // store the resultset data.
         RowDescriptor rd = null;
         while (rs.next()) {
-            rd = new RowDescriptor(fdList);
+            rd = new RowDescriptor(fdList, fieldsById);
 
             for (int i = 1; i <= cols; i++) {
                 rd.setValue(i - 1, rs.getObject(i));

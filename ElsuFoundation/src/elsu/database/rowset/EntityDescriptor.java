@@ -24,6 +24,7 @@ public class EntityDescriptor implements Serializable, Cloneable {
     private transient int _rowCount = 0;
 
     private transient Map<String, FieldDescriptor> _fields = null;
+    private transient FieldDescriptor[] _fieldsById = null;
     private transient ArrayList<RowDescriptor> _rows = null;
     private Set<String> _indexKey = null;
     private transient Map<String, Map<String, RowDescriptor>> _index = null;
@@ -31,6 +32,8 @@ public class EntityDescriptor implements Serializable, Cloneable {
     public EntityDescriptor(Map<String, FieldDescriptor> fields,
             ArrayList<RowDescriptor> rows) {
         this._fields = fields;
+        this._fieldsById = setFieldsById(this._fields);
+
         this._rows = rows;
 
         this._columnCount = this._fields.size();
@@ -41,17 +44,19 @@ public class EntityDescriptor implements Serializable, Cloneable {
     }
 
     public EntityDescriptor(String jsonFields, String jsonRows) throws Exception {
-        Type fieldType = new TypeToken<Map<String, FieldDescriptor>>() {}.getType();
-        this._fields = 
-                (Map<String, FieldDescriptor>) GsonXMLStack.JSon2Object(jsonFields, fieldType);
+        Type fieldType = new TypeToken<Map<String, FieldDescriptor>>() {
+        }.getType();
+        this._fields
+                = (Map<String, FieldDescriptor>) GsonXMLStack.JSon2Object(jsonFields, fieldType);
+        this._fieldsById = setFieldsById(this._fields);
 
         this._rows = new ArrayList<RowDescriptor>();
+
         RowDescriptor rd = null;
-        
         JsonParser parser = new JsonParser();
         JsonArray jArray = parser.parse(jsonRows).getAsJsonArray();
         for (JsonElement jElement : jArray) {
-            rd = new RowDescriptor(this._fields, jElement.toString());
+            rd = new RowDescriptor(this._fields, this._fieldsById, jElement.toString());
             this._rows.add(rd);
         }
 
@@ -75,7 +80,7 @@ public class EntityDescriptor implements Serializable, Cloneable {
     }
 
     public FieldDescriptor getField(String field) {
-        return this._fields.get(field);
+        return this._fields.get(field.toUpperCase());
     }
 
     public Map<String, FieldDescriptor> getFields() {
@@ -90,26 +95,53 @@ public class EntityDescriptor implements Serializable, Cloneable {
         return (this._index.get(index)).get(key);
     }
 
-    public void buildIndex(String index) throws Exception {
-        buildIndex(index, false);
+    public static FieldDescriptor[] setFieldsById(Map<String, FieldDescriptor> fields) {
+        FieldDescriptor[] result = new FieldDescriptor[fields.size()];
+
+        for (FieldDescriptor field : fields.values()) {
+            result[field.getFieldPosition() - 1] = field;
+        }
+
+        return result;
+    }
+
+    public void buildIndex(String fields) throws Exception {
+        String[] keyArray = fields.split(";");
+        buildIndex(keyArray, false);
     }
 
     public void rebuildAllIndexes() throws Exception {
         // loop through all the index fields
-        for(String key : this._indexKey) {
-            buildIndex(key, true);
+        for (String keys : this._indexKey) {
+            String[] keyArray = keys.split(";");
+            buildIndex(keyArray, true);
         }
     }
-    
-    private void buildIndex(String index, Boolean rebuild) throws Exception {
+
+    private void buildIndex(String[] fields, Boolean rebuild) throws Exception {
+        int[] index = null;
+
         // index exists?
         if (rebuild) {
             // index exists?, Yes clear the current map
         } else {
             // if index exists, throw exception
+            if (this._indexKey.contains(fields)) {
+                throw new Exception(this.getClass() + "buildIndex(), index already exists");
+            }
+        }
+
+        // collect field array ids
+        String[] keys = fields.split(";");
+        index = new int[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            index[i] = this._fieldsById[i].getFieldPosition();
         }
 
         // build index
+        for (RowDescriptor row : this.getRows()) {
+            System.out.println(row.getValue(fields));
+        }
     }
 
     @Override
