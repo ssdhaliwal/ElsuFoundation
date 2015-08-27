@@ -5,6 +5,7 @@
  */
 package elsu.database.rowset;
 
+import elsu.common.*;
 import elsu.support.*;
 import java.io.*;
 import java.util.*;
@@ -21,28 +22,32 @@ public class RowDescriptor implements Serializable, Cloneable {
     private boolean _changed = false;
 
     private transient Map<String, FieldDescriptor> _fields = null;
+    private transient FieldDescriptor[] _fieldsById = null;
     private Object[] _originalRow = null;
     private Object[] _currentRow = null;
 
-    public RowDescriptor(Map<String, FieldDescriptor> fields) {
+    public RowDescriptor(Map<String, FieldDescriptor> fields, FieldDescriptor[] fieldsById) {
         this._fields = fields;
+        this._fieldsById = fieldsById;
 
         this._originalRow = new Object[getFieldCount()];
         this._currentRow = new Object[getFieldCount()];
     }
 
-    public RowDescriptor(Map<String, FieldDescriptor> fields,
+    public RowDescriptor(Map<String, FieldDescriptor> fields, FieldDescriptor[] fieldsById,
             String jsonRow) {
         this._fields = fields;
+        this._fieldsById = fieldsById;
 
         RowDescriptor rd = (RowDescriptor) GsonXMLStack.JSon2Object(jsonRow, RowDescriptor.class);
         this.cloneRow(rd);
     }
 
-    public RowDescriptor(Map<String, FieldDescriptor> fields,
+    public RowDescriptor(Map<String, FieldDescriptor> fields, FieldDescriptor[] fieldsById, 
             Boolean deleted, Boolean changed, Object[] originalRow,
             Object[] currentRow) {
         this._fields = fields;
+        this._fieldsById = fieldsById;
 
         this._deleted = deleted;
         this._changed = changed;
@@ -88,20 +93,36 @@ public class RowDescriptor implements Serializable, Cloneable {
     }
 
     public Object getValue(String columnName) {
-        int index = this._fields.get(columnName).getFieldPosition();
-        return this._currentRow[index];
+        int index = this.getFieldPosition(columnName);
+        return this._currentRow[index-1];
+    }
+
+    public Object getValue(String[] columnNames) {
+        int[] index = new int[columnNames.length];
+        
+        for(int i = 0; i < columnNames.length; i++) {
+            index[i] = this.getFieldPosition(columnNames[i]);
+        }
+
+        return getValue(index);
     }
 
     public Object getValue(int index) {
         return this._currentRow[index];
     }
 
-    public String getValue(int[] index) {
+    public String getValue(int[] indexes) {
+        return getValue(indexes, false);
+    }
+
+    public String getValue(int[] indexes, Boolean fixedLength) {
         String result = "";
         String value = "";
 
-        for(int i : index) {
+        for(int i : indexes) {
             value = this._currentRow[i].toString();
+            value = (fixedLength ? StringStack.padString(value, getFieldLength(i+1)) : value);
+            
             result += (result.isEmpty() ? value : "," + value);
         }
         
@@ -109,10 +130,10 @@ public class RowDescriptor implements Serializable, Cloneable {
     }
 
     public void setValue(String columnName, Object value) {
-        int index = this._fields.get(columnName).getFieldPosition();
+        int index = getFieldPosition(columnName);
 
-        this._originalRow[index] = this._currentRow[index];
-        this._currentRow[index] = value;
+        this._originalRow[index-1] = this._currentRow[index-1];
+        this._currentRow[index-1] = value;
 
         isChanged(true);
     }
@@ -136,10 +157,10 @@ public class RowDescriptor implements Serializable, Cloneable {
     }
 
     public void resetToOriginal(String columnName) {
-        int index = this._fields.get(columnName).getFieldPosition();
+        int index = getFieldPosition(columnName);
 
-        this._currentRow[index] = this._originalRow[index];
-        this._originalRow[index] = null;
+        this._currentRow[index-1] = this._originalRow[index-1];
+        this._originalRow[index-1] = null;
 
         validateIsChanged();
     }
@@ -164,6 +185,24 @@ public class RowDescriptor implements Serializable, Cloneable {
         isChanged(temp);
     }
 
+    private int getFieldPosition(String columnName) {
+        return this._fields.get(columnName.toUpperCase()).getFieldPosition();
+    }
+    
+    private int getFieldLength(String columnName) {
+        int result = 0;
+        
+        result = this._fields.get(columnName.toUpperCase()).getDisplaySize();
+        return result;
+    }
+
+    private int getFieldLength(int index) {
+        int result = 0;
+
+        result = this._fieldsById[index].getDisplaySize();
+        return result;
+    }
+    
     private void cloneRow(RowDescriptor row) {
         this._deleted = row._deleted;
         this._changed = row._changed;
