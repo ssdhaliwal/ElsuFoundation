@@ -119,7 +119,7 @@ public class EntityDescriptor implements Serializable, Cloneable {
     }
 
     private void buildIndex(String[] fields, Boolean rebuild) throws Exception {
-        int[] index = null;
+        int[] indexes = null;
 
         // index exists?
         if (rebuild) {
@@ -132,15 +132,14 @@ public class EntityDescriptor implements Serializable, Cloneable {
         }
 
         // collect field array ids
-        String[] keys = fields.split(";");
-        index = new int[keys.length];
-        for (int i = 0; i < keys.length; i++) {
-            index[i] = this._fieldsById[i].getFieldPosition();
+        indexes = new int[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            indexes[i] = this._fieldsById[i].getFieldPosition();
         }
 
         // build index
         for (RowDescriptor row : this.getRows()) {
-            System.out.println(row.getValue(fields));
+            System.out.println(row.getValue(indexes));
         }
     }
 
