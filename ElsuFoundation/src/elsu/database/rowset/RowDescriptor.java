@@ -92,6 +92,22 @@ public class RowDescriptor implements Serializable, Cloneable {
         return this._currentRow[index];
     }
 
+    public Object getValue(int index) {
+        return this._currentRow[index];
+    }
+
+    public String getValue(int[] index) {
+        String result = "";
+        String value = "";
+
+        for(int i : index) {
+            value = this._currentRow[i].toString();
+            result += (result.isEmpty() ? value : "," + value);
+        }
+        
+        return result;
+    }
+
     public void setValue(String columnName, Object value) {
         int index = this._fields.get(columnName).getFieldPosition();
 

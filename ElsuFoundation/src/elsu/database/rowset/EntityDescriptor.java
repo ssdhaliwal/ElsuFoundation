@@ -11,7 +11,6 @@ import elsu.support.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
-import org.apache.commons.io.IOUtils;
 
 /**
  *
@@ -91,12 +90,26 @@ public class EntityDescriptor implements Serializable, Cloneable {
         return (this._index.get(index)).get(key);
     }
 
-    public void buildIndex(String index) {
-        // to-do
+    public void buildIndex(String index) throws Exception {
+        buildIndex(index, false);
     }
 
-    public void rebuildAllIndexes() {
-        // to-do
+    public void rebuildAllIndexes() throws Exception {
+        // loop through all the index fields
+        for(String key : this._indexKey) {
+            buildIndex(key, true);
+        }
+    }
+    
+    private void buildIndex(String index, Boolean rebuild) throws Exception {
+        // index exists?
+        if (rebuild) {
+            // index exists?, Yes clear the current map
+        } else {
+            // if index exists, throw exception
+        }
+
+        // build index
     }
 
     @Override
