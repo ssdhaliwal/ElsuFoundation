@@ -12,4 +12,10 @@
 hs_err_pid*
 
 # local compiler properties
-/ElsuConfigTest/dist/
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
