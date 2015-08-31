@@ -23,6 +23,8 @@ public class BxTree<Key extends Comparable<? super Key>, Value>
     private final int M;
     /** the maximum number of keys in inner node, the number of pointer is N+1, N must be > 2 */
     private final int N;
+    /** the number of depth of the keys in the node, D must be > 0 */
+    private final int D;
 
     /** Create a new empty tree. */
     public BxTree(int n) {
