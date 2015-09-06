@@ -34,6 +34,14 @@ public class BxTree<Key extends Comparable<? super Key>, Value>
     public BxTree(int m, int n) {
         M = m;
         N = n;
+        D = 1;
+        root = new LNode();
+    }
+
+    public BxTree(int m, int n, int d) {
+        M = m;
+        N = n;
+        D = d;
         root = new LNode();
     }
 
