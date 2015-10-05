@@ -134,7 +134,7 @@ public class EntityDescriptor implements Serializable, Cloneable {
         // collect field array ids
         indexes = new int[fields.length];
         for (int i = 0; i < fields.length; i++) {
-            indexes[i] = this._fieldsById[i].getFieldPosition();
+            indexes[i] = this.getField(fields[i]).getFieldPosition();
         }
 
         // build index

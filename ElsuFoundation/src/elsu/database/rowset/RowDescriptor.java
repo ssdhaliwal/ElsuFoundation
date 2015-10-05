@@ -120,8 +120,8 @@ public class RowDescriptor implements Serializable, Cloneable {
         String value = "";
 
         for(int i : indexes) {
-            value = this._currentRow[i].toString();
-            value = (fixedLength ? StringStack.padString(value, getFieldLength(i+1)) : value);
+            value = this._currentRow[i-1].toString();
+            value = (fixedLength ? StringStack.padString(value, getFieldLength(i-1)) : value);
             
             result += (result.isEmpty() ? value : "," + value);
         }

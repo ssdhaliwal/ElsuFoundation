@@ -440,7 +440,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
             // load the output params into result by key
             rs = DatabaseParameter.getResultSet(stmt, params);
             result = setEntityDescriptor(rs);
-            
+
             notifyListeners(new EventObject(this), EventStatusType.SELECT,
                     getClass().toString() + ", getCursorRowSet(), "
                     + "WebRowSet returned", result);
@@ -727,9 +727,6 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
         Map<String, FieldDescriptor> fdList = new HashMap<String, FieldDescriptor>();
         ArrayList<RowDescriptor> rows = new ArrayList<RowDescriptor>();
-        FieldDescriptor[] fieldsById = EntityDescriptor.setFieldsById(fdList);
-
-        result = new EntityDescriptor(fdList, rows);
 
         FieldDescriptor fd = null;
         for (int i = 1; i <= cols; i++) {
@@ -752,6 +749,8 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
             fdList.put(rsmd.getColumnName(i), fd);
         }
+        FieldDescriptor[] fieldsById = EntityDescriptor.setFieldsById(fdList);
+        result = new EntityDescriptor(fdList, rows);
 
         // store the resultset data.
         RowDescriptor rd = null;
