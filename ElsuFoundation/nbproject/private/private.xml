@@ -5,9 +5,8 @@
         <group>
             <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/RowDescriptor.java</file>
             <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/EntityDescriptor.java</file>
-            <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/BTree.java</file>
             <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/FieldDescriptor.java</file>
-            <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/rowset/BxTree.java</file>
+            <file>file:/M:/GitHub/ElsuFoundation/ElsuFoundation/src/elsu/database/DatabaseManager.java</file>
         </group>
     </open-files>
 </project-private>

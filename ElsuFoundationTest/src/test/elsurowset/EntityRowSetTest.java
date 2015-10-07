@@ -85,8 +85,6 @@ public class EntityRowSetTest implements IEventSubscriber {
                 //}
 
                 wrs = new EntityDescriptor(jFields, jRows);
-                
-                wrs.buildIndex("Site");
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
             }
