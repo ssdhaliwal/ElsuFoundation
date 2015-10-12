@@ -83,10 +83,6 @@ public class EntityDescriptor implements Serializable, Cloneable {
         return this._rows;
     }
 
-    public RowDescriptor getRows(String index, String key) {
-        return (this._index.get(index)).get(key);
-    }
-
     public static FieldDescriptor[] setFieldsById(Map<String, FieldDescriptor> fields) {
         FieldDescriptor[] result = new FieldDescriptor[fields.size()];
 
