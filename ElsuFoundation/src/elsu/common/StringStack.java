@@ -179,6 +179,10 @@ public class StringStack {
         return new String(result);
     }
     
+    public static String padString(String value, int length) {
+        return padString(value, length, " ", null);
+    }
+    
     public static String padString(String value, int length, String padWith) {
         return padString(value, length, padWith, null);
     }

@@ -5,11 +5,8 @@
  */
 package elsu.database.syncprovider;
 
-import com.sun.rowset.internal.*;
 import elsu.database.syncprovider.internal.*;
 import java.io.*;
-import java.sql.SQLException;
-import java.sql.Savepoint;
 import javax.sql.*;
 import javax.sql.rowset.spi.*;
 

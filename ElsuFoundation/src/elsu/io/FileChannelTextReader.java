@@ -4,6 +4,9 @@ import elsu.common.*;
 
 public class FileChannelTextReader extends AbstractFileChannelReader {
 
+    // runtime sync object
+    private Object _runtimeSync = new Object();
+
     // local storage, ignore empty lines when reading
     private volatile boolean _ignoreEmptyLines = false;
 
@@ -172,7 +175,7 @@ public class FileChannelTextReader extends AbstractFileChannelReader {
     }
 
     @Override
-    public synchronized byte[] read() throws Exception {
+    public byte[] read() throws Exception {
         throw new Exception("not implemented in text reader.");
     }
 }

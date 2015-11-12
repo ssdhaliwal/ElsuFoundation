@@ -11,6 +11,7 @@ import java.sql.*;
 /**
  *
  * @author ss.dhaliwal
+ * http://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#i16209
  */
 public class DatabaseStack {
 
