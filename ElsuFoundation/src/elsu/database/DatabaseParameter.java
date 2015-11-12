@@ -1,12 +1,10 @@
 package elsu.database;
 
 import elsu.common.*;
-import elsu.support.*;
 import java.util.*;
 import java.sql.*;
-import elsu.database.DatabaseDataType.*;
-import java.math.BigDecimal;
-import oracle.jdbc.OracleTypes;
+import java.math.*;
+import oracle.jdbc.*;
 import oracle.sql.*;
 
 /**
@@ -77,7 +75,7 @@ public class DatabaseParameter {
     }
 
     public static Map<String, Object> getResult(CallableStatement stmt,
-            ArrayList params) throws Exception {
+            ArrayList<DatabaseParameter> params) throws Exception {
         Map<String, Object> result = null;
         int paramIndex = 1;
 
@@ -85,9 +83,7 @@ public class DatabaseParameter {
             return result;
         }
 
-        for (Object o : params) {
-            DatabaseParameter dbpm = (DatabaseParameter) o;
-
+        for (DatabaseParameter dbpm : params) {
             if (dbpm.isOutput()) {
                 if (result == null) {
                     result = new HashMap<>();
@@ -103,7 +99,7 @@ public class DatabaseParameter {
     }
 
     public static ResultSet getResultSet(CallableStatement stmt,
-            ArrayList params) throws Exception {
+            ArrayList<DatabaseParameter> params) throws Exception {
         ResultSet result = null;
         int paramIndex = 1;
 
@@ -111,9 +107,7 @@ public class DatabaseParameter {
             return result;
         }
 
-        for (Object o : params) {
-            DatabaseParameter dbpm = (DatabaseParameter) o;
-
+        for (DatabaseParameter dbpm : params) {
             if (dbpm.isOutput()) {
                 if (result == null) {
                     result = (ResultSet) stmt.getObject(paramIndex);
@@ -161,13 +155,11 @@ public class DatabaseParameter {
     }
 
     public static void setParameterValue(PreparedStatement stmt,
-            ArrayList params) throws Exception {
+            ArrayList<DatabaseParameter> params) throws Exception {
         int paramIndex = 1;
 
         if (params != null) {
-            for (Object o : params) {
-                DatabaseParameter dbpm = (DatabaseParameter) o;
-
+            for (DatabaseParameter dbpm : params) {
                 // if null pointer, special case
                 switch (dbpm.getType()) {
                     case dtarray:
@@ -226,8 +218,13 @@ public class DatabaseParameter {
                         }
                         break;
                     case dtcursor:
-                        throw new Exception(
-                                "invalid datatype return (SYS_REFCURSOR)!");
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            throw new Exception(
+                                    "invalid datatype return (SYS_REFCURSOR)!");
+                        }
+                        break;
                     case dtdate:
                         if (dbpm.getValue() == null) {
                             stmt.setNull(paramIndex, java.sql.Types.NULL);
@@ -301,7 +298,7 @@ public class DatabaseParameter {
                         }
                         break;
                     case dtstream:
-                            //                        File file = new File("1.wma");  
+                        //                        File file = new File("1.wma");  
                         //                        fis = new FileInputStream(file);  
                         //                        stmt.setBinaryStream(1,fis,fis.available();  
                         //                        fis.close();  
@@ -352,13 +349,11 @@ public class DatabaseParameter {
     }
 
     public static void setParameterValue(CallableStatement stmt,
-            ArrayList params) throws Exception {
+            ArrayList<DatabaseParameter> params) throws Exception {
         int paramIndex = 1;
 
         if (params != null) {
-            for (Object o : params) {
-                DatabaseParameter dbpm = (DatabaseParameter) o;
-
+            for (DatabaseParameter dbpm : params) {
                 switch (dbpm.getType()) {
                     case dtarray:
                         if (dbpm.isOutput()) {

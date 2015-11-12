@@ -23,9 +23,10 @@ import java.util.*;
  */
 public class ASCIIByteBuffer {
 
-    private byte[] _value;
-    private int _count;
-    private int _minGrowthSize = 64;
+    private Object _runtimeSync = new Object();
+    private volatile byte[] _value;
+    private volatile int _count;
+    private volatile int _minGrowthSize = 64;
 
     public ASCIIByteBuffer(int capacity) {
         this._value = new byte[capacity];
@@ -36,17 +37,31 @@ public class ASCIIByteBuffer {
         this._minGrowthSize = growthSize;
     }
 
-    public synchronized int length() {
-        return this._count;
+    public int length() {
+        int result = 0;
+
+        synchronized (this._runtimeSync) {
+            result = this._count;
+        }
+
+        return result;
     }
 
     public synchronized int size() {
-        return this._value.length;
+        int result = 0;
+
+        synchronized (this._runtimeSync) {
+            result = this._value.length;
+        }
+
+        return result;
     }
 
-    public synchronized void ensureCapacity(int minimumCapacity) {
-        if (minimumCapacity > this._value.length) {
-            expandCapacity(minimumCapacity);
+    public void ensureCapacity(int minimumCapacity) {
+        synchronized (this._runtimeSync) {
+            if (minimumCapacity > this._value.length) {
+                expandCapacity(minimumCapacity);
+            }
         }
     }
 
@@ -62,56 +77,72 @@ public class ASCIIByteBuffer {
         this._value = Arrays.copyOf(this._value, newCapacity);
     }
 
-    public synchronized void trimToSize() {
-        if (this._count < this._value.length) {
-            this._value = Arrays.copyOf(this._value, this._count);
+    public void trimToSize() {
+        synchronized (this._runtimeSync) {
+            if (this._count < this._value.length) {
+                this._value = Arrays.copyOf(this._value, this._count);
+            }
         }
     }
 
-    public synchronized void trimToSize(int size) {
+    public void trimToSize(int size) {
         setLength(size);
         trimToSize();
     }
 
-    public synchronized void setLength(int newLength) {
+    public void setLength(int newLength) {
         if (newLength < 0) {
             throw new StringIndexOutOfBoundsException(newLength);
         }
 
-        if (newLength > this._value.length) {
-            expandCapacity(newLength);
-        }
-
-        if (this._count < newLength) {
-            for (; this._count < newLength; this._count++) {
-                this._value[this._count] = '\0';
+        synchronized (this._runtimeSync) {
+            if (newLength > this._value.length) {
+                expandCapacity(newLength);
             }
-        } else {
-            this._count = newLength;
+
+            if (this._count < newLength) {
+                for (; this._count < newLength; this._count++) {
+                    this._value[this._count] = '\0';
+                }
+            } else {
+                this._count = newLength;
+            }
         }
     }
 
-    public synchronized byte byteAt(int index) {
+    public byte byteAt(int index) {
         if ((index < 0) || (index >= this._count)) {
             throw new StringIndexOutOfBoundsException(index);
         }
 
-        return this._value[index];
+        byte result = 0;
+
+        synchronized (this._runtimeSync) {
+            result = this._value[index];
+        }
+
+        return result;
     }
 
-    public synchronized byte[] getByteBuffer() {
-        return this._value;
+    public byte[] getByteBuffer() {
+        byte[] result = null;
+
+        synchronized (this._runtimeSync) {
+            result = this._value;
+        }
+
+        return result;
     }
 
-    public synchronized byte[] getBytes() {
+    public byte[] getBytes() {
         return subSequence(0);
     }
 
-    public synchronized String getString() {
+    public String getString() {
         return new String(getBytes());
     }
 
-    public synchronized void getBytes(int srcBegin, int srcEnd, byte[] dst,
+    public void getBytes(int srcBegin, int srcEnd, byte[] dst,
             int dstBegin) {
         if (srcBegin < 0) {
             throw new StringIndexOutOfBoundsException(srcBegin);
@@ -125,26 +156,30 @@ public class ASCIIByteBuffer {
             throw new StringIndexOutOfBoundsException("srcBegin > srcEnd");
         }
 
-        System.arraycopy(this._value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
+        synchronized (this._runtimeSync) {
+            System.arraycopy(this._value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
+        }
     }
 
-    public synchronized void setByteAt(int index, byte ch) {
+    public void setByteAt(int index, byte ch) {
         if ((index < 0) || (index >= this._count)) {
             throw new StringIndexOutOfBoundsException(index);
         }
 
-        this._value[index] = ch;
+        synchronized (this._runtimeSync) {
+            this._value[index] = ch;
+        }
     }
 
-    public synchronized ASCIIByteBuffer append(String str) {
+    public ASCIIByteBuffer append(String str) {
         return append(str.getBytes());
     }
 
-    public synchronized ASCIIByteBuffer append(Object obj) {
+    public ASCIIByteBuffer append(Object obj) {
         return append(String.valueOf(obj));
     }
 
-    public synchronized ASCIIByteBuffer append(StringBuffer sb) {
+    public ASCIIByteBuffer append(StringBuffer sb) {
         if (sb == null) {
             return this;
         }
@@ -152,37 +187,42 @@ public class ASCIIByteBuffer {
         return append(sb.toString());
     }
 
-    public synchronized ASCIIByteBuffer append(CharSequence s, int start,
-            int end) {
-        if (s == null) {
-            return this;
+    public ASCIIByteBuffer append(CharSequence s, int start, int end) {
+        ASCIIByteBuffer result = null;
+
+        synchronized (this._runtimeSync) {
+            if (s == null) {
+                result = this;
+            } else {
+                if ((start < 0) || (end < 0) || (start > end) || (end > s.length())) {
+                    throw new IndexOutOfBoundsException(
+                            "start " + start + ", end " + end + ", s.length() "
+                            + s.length());
+                }
+
+                int len = end - start;
+                if (len == 0) {
+                    result = this;
+                } else {
+                    int newCount = this._count + len;
+                    if (newCount > this._value.length) {
+                        expandCapacity(newCount);
+                    }
+
+                    for (int i = start; i < end; i++) {
+                        this._value[this._count++] = (byte) s.charAt(i);
+                    }
+
+                    this._count = newCount;
+                    result = this;
+                }
+            }
         }
 
-        if ((start < 0) || (end < 0) || (start > end) || (end > s.length())) {
-            throw new IndexOutOfBoundsException(
-                    "start " + start + ", end " + end + ", s.length() "
-                    + s.length());
-        }
-
-        int len = end - start;
-        if (len == 0) {
-            return this;
-        }
-
-        int newCount = this._count + len;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
-
-        for (int i = start; i < end; i++) {
-            this._value[this._count++] = (byte) s.charAt(i);
-        }
-
-        this._count = newCount;
-        return this;
+        return result;
     }
 
-    public synchronized ASCIIByteBuffer append(CharSequence s) {
+    public ASCIIByteBuffer append(CharSequence s) {
         if (s == null) {
             return this;
         }
@@ -198,137 +238,153 @@ public class ASCIIByteBuffer {
         return this.append(s, 0, s.length());
     }
 
-    public synchronized ASCIIByteBuffer append(char[] str) {
+    public ASCIIByteBuffer append(char[] str) {
         return append(new String(str).getBytes());
     }
 
-    public synchronized ASCIIByteBuffer append(byte[] bytes) {
-        int newCount = this._count + bytes.length;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
+    public ASCIIByteBuffer append(byte[] bytes) {
+        synchronized (this._runtimeSync) {
+            int newCount = this._count + bytes.length;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
 
-        System.arraycopy(bytes, 0, this._value, this._count, bytes.length);
-        this._count = newCount;
+            System.arraycopy(bytes, 0, this._value, this._count, bytes.length);
+            this._count = newCount;
+        }
 
         return this;
     }
 
-    public synchronized ASCIIByteBuffer append(char[] str, int offset, int len) {
+    public ASCIIByteBuffer append(char[] str, int offset, int len) {
         return append(new String(str).getBytes(), offset, len);
     }
 
-    public synchronized ASCIIByteBuffer append(byte[] bytes, int offset, int len) {
-        int newCount = this._count + len;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
+    public ASCIIByteBuffer append(byte[] bytes, int offset, int len) {
+        synchronized (this._runtimeSync) {
+            int newCount = this._count + len;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
 
-        System.arraycopy(bytes, offset, this._value, this._count, len);
-        this._count = newCount;
+            System.arraycopy(bytes, offset, this._value, this._count, len);
+            this._count = newCount;
+        }
 
         return this;
     }
 
-    public synchronized ASCIIByteBuffer append(byte b) {
-        int newCount = this._count + 1;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
+    public ASCIIByteBuffer append(byte b) {
+        synchronized (this._runtimeSync) {
+            int newCount = this._count + 1;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
+
+            this._value[this._count++] = b;
         }
 
-        this._value[this._count++] = b;
         return this;
     }
 
-    public synchronized ASCIIByteBuffer append(char c) {
-        int newCount = this._count + 1;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
+    public ASCIIByteBuffer append(char c) {
+        synchronized (this._runtimeSync) {
+            int newCount = this._count + 1;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
+
+            this._value[this._count++] = (byte) c;
         }
 
-        this._value[this._count++] = (byte) c;
         return this;
     }
 
-    public synchronized ASCIIByteBuffer append(int i) {
+    public ASCIIByteBuffer append(int i) {
         return append(Integer.toString(i));
     }
 
-    public synchronized ASCIIByteBuffer append(long l) {
+    public ASCIIByteBuffer append(long l) {
         return append(Long.toString(l));
     }
 
-    public synchronized ASCIIByteBuffer append(float f) {
+    public ASCIIByteBuffer append(float f) {
         return append(Float.toString(f));
     }
 
-    public synchronized ASCIIByteBuffer append(double d) {
+    public ASCIIByteBuffer append(double d) {
         return append(Double.toString(d));
     }
 
-    public synchronized ASCIIByteBuffer delete(char c) {
+    public ASCIIByteBuffer delete(char c) {
         return delete((byte) c);
     }
 
     // to-do
-    public synchronized ASCIIByteBuffer delete(byte b) {
+    public ASCIIByteBuffer delete(byte b) {
         return null;
     }
 
     // to-do
-    public synchronized ASCIIByteBuffer delete(String str) {
+    public ASCIIByteBuffer delete(String str) {
         return null;
     }
 
-    public synchronized ASCIIByteBuffer delete(int start, int end) {
+    public ASCIIByteBuffer delete(int start, int end) {
         if (start < 0) {
             throw new StringIndexOutOfBoundsException(start);
         }
 
-        if (end > this._count) {
-            end = this._count;
-        }
+        synchronized (this._runtimeSync) {
+            if (end > this._count) {
+                end = this._count;
+            }
 
-        if (start > end) {
-            throw new StringIndexOutOfBoundsException();
-        }
+            if (start > end) {
+                throw new StringIndexOutOfBoundsException();
+            }
 
-        int len = end - start;
-        if (len > 0) {
-            System.arraycopy(this._value, start + len, this._value, start,
-                    this._count - end);
-            this._count -= len;
+            int len = end - start;
+            if (len > 0) {
+                System.arraycopy(this._value, start + len, this._value, start,
+                        this._count - end);
+                this._count -= len;
+            }
         }
 
         return this;
     }
 
-    public synchronized ASCIIByteBuffer deleteByteAt(int index) {
+    public ASCIIByteBuffer deleteByteAt(int index) {
         if ((index < 0) || (index >= this._count)) {
             throw new StringIndexOutOfBoundsException(index);
         }
 
-        System.arraycopy(this._value, index + 1, this._value, index, this._count
-                - index - 1);
-        this._count--;
+        synchronized (this._runtimeSync) {
+            System.arraycopy(this._value, index + 1, this._value, index, this._count
+                    - index - 1);
+            this._count--;
+        }
 
         return this;
     }
 
     // to-do
-    public synchronized byte[] replace(String oldstr, String newstr) {
+    public byte[] replace(String oldstr, String newstr) {
         return null;
     }
 
-    public synchronized byte[] replace(byte oldChar, byte newChar) {
-        if (oldChar != newChar) {
-            int len = this._count;
-            int i = -1;
-            byte[] val = this._value;
+    public byte[] replace(byte oldChar, byte newChar) {
+        synchronized (this._runtimeSync) {
+            if (oldChar != newChar) {
+                int len = this._count;
+                int i = -1;
+                byte[] val = this._value;
 
-            while (++i < len) {
-                if (val[i] == oldChar) {
-                    val[i] = newChar;
+                while (++i < len) {
+                    if (val[i] == oldChar) {
+                        val[i] = newChar;
+                    }
                 }
             }
         }
@@ -336,7 +392,7 @@ public class ASCIIByteBuffer {
         return this._value;
     }
 
-    public synchronized ASCIIByteBuffer replace(int start, int end, String str) {
+    public ASCIIByteBuffer replace(int start, int end, String str) {
         if (start < 0) {
             throw new StringIndexOutOfBoundsException(start);
         }
@@ -349,27 +405,29 @@ public class ASCIIByteBuffer {
             throw new StringIndexOutOfBoundsException("start > end");
         }
 
-        if (end > this._count) {
-            end = this._count;
+        synchronized (this._runtimeSync) {
+            if (end > this._count) {
+                end = this._count;
+            }
+
+            int len = str.length();
+            int newCount = this._count + len - (end - start);
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
+
+            System.arraycopy(this._value, end, this._value, start + len, this._count
+                    - end);
+
+            //str.getChars(this._value, start);
+            System.arraycopy(str.getBytes(), 0, this._value, start, len);
+            this._count = newCount;
         }
-
-        int len = str.length();
-        int newCount = this._count + len - (end - start);
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
-
-        System.arraycopy(this._value, end, this._value, start + len, this._count
-                - end);
-
-        //str.getChars(this._value, start);
-        System.arraycopy(str.getBytes(), 0, this._value, start, len);
-        this._count = newCount;
 
         return this;
     }
 
-    public synchronized byte[] subSequence(int start, int end) {
+    public byte[] subSequence(int start, int end) {
         if (start < 0) {
             throw new StringIndexOutOfBoundsException(start);
         }
@@ -380,17 +438,20 @@ public class ASCIIByteBuffer {
             throw new StringIndexOutOfBoundsException(end - start);
         }
 
-        byte[] bytes = new byte[end - start];
-        System.arraycopy(this._value, start, bytes, 0, end - start);
+        byte[] bytes = null;
+        synchronized (this._runtimeSync) {
+            bytes = new byte[end - start];
+            System.arraycopy(this._value, start, bytes, 0, end - start);
+        }
 
         return bytes;
     }
 
-    public synchronized byte[] subSequence(int start) {
+    public byte[] subSequence(int start) {
         return subSequence(start, this._count);
     }
 
-    public synchronized ASCIIByteBuffer insert(int index, byte[] bytes,
+    public ASCIIByteBuffer insert(int index, byte[] bytes,
             int offset,
             int len) {
         if ((index < 0) || (index > this._count)) {
@@ -403,56 +464,60 @@ public class ASCIIByteBuffer {
                     + bytes.length);
         }
 
-        int newCount = this._count + len;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
+        synchronized (this._runtimeSync) {
+            int newCount = this._count + len;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
 
-        System.arraycopy(this._value, index, this._value, index + len,
-                this._count - index);
-        System.arraycopy(bytes, offset, this._value, index, len);
-        this._count = newCount;
+            System.arraycopy(this._value, index, this._value, index + len,
+                    this._count - index);
+            System.arraycopy(bytes, offset, this._value, index, len);
+            this._count = newCount;
+        }
 
         return this;
     }
 
-    public synchronized ASCIIByteBuffer insert(int index, char[] str, int offset,
+    public ASCIIByteBuffer insert(int index, char[] str, int offset,
             int len) {
         return insert(index, new String(str).getBytes(), offset, len);
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, Object obj) {
+    public ASCIIByteBuffer insert(int offset, Object obj) {
         return insert(offset, String.valueOf(obj));
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, String str) {
+    public ASCIIByteBuffer insert(int offset, String str) {
         return insert(offset, str.getBytes());
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, byte[] bytes) {
+    public ASCIIByteBuffer insert(int offset, byte[] bytes) {
         if ((offset < 0) || (offset > this._count)) {
             throw new StringIndexOutOfBoundsException(offset);
         }
 
-        int len = bytes.length;
-        int newCount = this._count + len;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
+        synchronized (this._runtimeSync) {
+            int len = bytes.length;
+            int newCount = this._count + len;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
 
-        System.arraycopy(this._value, offset, this._value, offset + len,
-                this._count - offset);
-        System.arraycopy(bytes, 0, this._value, offset, len);
-        this._count = newCount;
+            System.arraycopy(this._value, offset, this._value, offset + len,
+                    this._count - offset);
+            System.arraycopy(bytes, 0, this._value, offset, len);
+            this._count = newCount;
+        }
 
         return this;
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, char[] str) {
+    public ASCIIByteBuffer insert(int offset, char[] str) {
         return insert(offset, new String(str));
     }
 
-    public synchronized ASCIIByteBuffer insert(int dstOffset, CharSequence s,
+    public ASCIIByteBuffer insert(int dstOffset, CharSequence s,
             int start, int end) {
         if (s == null) {
             return this;
@@ -468,27 +533,30 @@ public class ASCIIByteBuffer {
                     + s.length());
         }
 
-        int len = end - start;
-        if (len == 0) {
-            return this;
+        synchronized (this._runtimeSync) {
+            int len = end - start;
+            if (len == 0) {
+                return this;
+            }
+
+            int newCount = this._count + len;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
+
+            System.arraycopy(this._value, dstOffset, this._value, dstOffset + len,
+                    this._count - dstOffset);
+            for (int i = start; i < end; i++) {
+                this._value[dstOffset++] = (byte) s.charAt(i);
+            }
+
+            this._count = newCount;
         }
 
-        int newCount = this._count + len;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
-
-        System.arraycopy(this._value, dstOffset, this._value, dstOffset + len,
-                this._count - dstOffset);
-        for (int i = start; i < end; i++) {
-            this._value[dstOffset++] = (byte) s.charAt(i);
-        }
-
-        this._count = newCount;
         return this;
     }
 
-    public synchronized ASCIIByteBuffer insert(int dstOffset, CharSequence s) {
+    public ASCIIByteBuffer insert(int dstOffset, CharSequence s) {
         if (s == null) {
             return this;
         }
@@ -500,51 +568,55 @@ public class ASCIIByteBuffer {
         return this.insert(dstOffset, s, 0, s.length());
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, boolean b) {
+    public ASCIIByteBuffer insert(int offset, boolean b) {
         return insert(offset, String.valueOf(b));
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, byte b) {
-        int newCount = this._count + 1;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
+    public ASCIIByteBuffer insert(int offset, byte b) {
+        synchronized (this._runtimeSync) {
+            int newCount = this._count + 1;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
 
-        System.arraycopy(this._value, offset, this._value, offset + 1,
-                this._count - offset);
-        this._value[offset] = b;
-        this._count = newCount;
+            System.arraycopy(this._value, offset, this._value, offset + 1,
+                    this._count - offset);
+            this._value[offset] = b;
+            this._count = newCount;
+        }
 
         return this;
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, char c) {
-        int newCount = this._count + 1;
-        if (newCount > this._value.length) {
-            expandCapacity(newCount);
-        }
+    public ASCIIByteBuffer insert(int offset, char c) {
+        synchronized (this._runtimeSync) {
+            int newCount = this._count + 1;
+            if (newCount > this._value.length) {
+                expandCapacity(newCount);
+            }
 
-        System.arraycopy(this._value, offset, this._value, offset + 1,
-                this._count - offset);
-        this._value[offset] = (byte) c;
-        this._count = newCount;
+            System.arraycopy(this._value, offset, this._value, offset + 1,
+                    this._count - offset);
+            this._value[offset] = (byte) c;
+            this._count = newCount;
+        }
 
         return this;
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, int i) {
+    public ASCIIByteBuffer insert(int offset, int i) {
         return insert(offset, Integer.toString(i));
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, long l) {
+    public ASCIIByteBuffer insert(int offset, long l) {
         return insert(offset, Long.toString(l));
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, float f) {
+    public ASCIIByteBuffer insert(int offset, float f) {
         return insert(offset, Float.toString(f));
     }
 
-    public synchronized ASCIIByteBuffer insert(int offset, double d) {
+    public ASCIIByteBuffer insert(int offset, double d) {
         return insert(offset, Double.toString(d));
     }
 
@@ -589,24 +661,24 @@ public class ASCIIByteBuffer {
         return -1;
     }
 
-    public synchronized int indexOf(String str, int fromIndex) {
+    public int indexOf(String str, int fromIndex) {
         return indexOf(this._value, 0, this._count,
                 str.getBytes(), 0, str.length(), fromIndex);
     }
 
     // to-do
-    public synchronized int indexOf(byte b) {
+    public int indexOf(byte b) {
         return indexOf(this._value, 0, this._count,
                 new byte[]{b}, 0, 1, 0);
     }
 
     // to-do
-    public synchronized int indexOf(char c) {
+    public int indexOf(char c) {
         return indexOf(this._value, 0, this._count,
                 new byte[]{(byte) c}, 0, 1, 0);
     }
 
-    public synchronized int indexOf(String str) {
+    public int indexOf(String str) {
         return indexOf(str, 0);
     }
 
@@ -657,24 +729,26 @@ public class ASCIIByteBuffer {
         }
     }
 
-    public synchronized int lastIndexOf(String str, int fromIndex) {
+    public int lastIndexOf(String str, int fromIndex) {
         return lastIndexOf(this._value, 0, this._count,
                 str.getBytes(), 0, str.length(), fromIndex);
     }
 
-    public synchronized int lastIndexOf(String str) {
+    public int lastIndexOf(String str) {
         return lastIndexOf(str, this._count - 1);
     }
 
-    public synchronized byte[] reverse() {
-        int n = this._count - 1;
+    public byte[] reverse() {
+        synchronized (this._runtimeSync) {
+            int n = this._count - 1;
 
-        for (int j = (n - 1) >> 1; j >= 0; --j) {
-            byte temp = this._value[j];
-            byte temp2 = this._value[n - j];
+            for (int j = (n - 1) >> 1; j >= 0; --j) {
+                byte temp = this._value[j];
+                byte temp2 = this._value[n - j];
 
-            this._value[j] = temp2;
-            this._value[n - j] = temp;
+                this._value[j] = temp2;
+                this._value[n - j] = temp;
+            }
         }
 
         return this._value;

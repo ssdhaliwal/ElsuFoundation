@@ -1,7 +1,8 @@
 package elsu.database;
 
+import elsu.events.*;
 import elsu.common.*;
-import elsu.support.*;
+import elsu.database.rowset.*;
 import java.util.*;
 import java.sql.*;
 import javax.sql.rowset.*;
@@ -13,8 +14,9 @@ import javax.sql.rowset.*;
  * 20141128 SSD updated exceptions
  */
 // http://docs.oracle.com/javase/tutorial/jdbc/basics/retrieving.html
-public class DatabaseManager extends AbstractEventPublisher implements IEventPublisher {
+public class DatabaseManager extends AbstractEventManager implements IEventPublisher {
 
+    private Object _runtimeSync = new Object();
     private volatile ArrayList<Connection> _connections
             = new ArrayList<>();
     private volatile ArrayList<Connection> _connectionsActive
@@ -46,7 +48,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         initializeConnections();
     }
 
-    private synchronized void initializeConnections() throws Exception {
+    private void initializeConnections() throws Exception {
         Connection conn;
 
         int i = this.getConnections().size()
@@ -62,9 +64,9 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             this.getConnections().add(conn);
         }
 
-        notifyListeners(new EventObject(this), StatusType.INFORMATION,
-                        getClass().toString() + ", initializeConnections(), "
-                        + "successful.", null);
+        notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                getClass().toString() + ", initializeConnections(), "
+                + "successful.", null);
     }
 
     @Override
@@ -89,9 +91,9 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         Driver driver = (Driver) Class.forName(dbDriver).newInstance();
         DriverManager.registerDriver(driver);
 
-        notifyListeners(new EventObject(this), StatusType.INFORMATION,
-                        getClass().toString() + ", LoadDriver(), "
-                        + dbDriver + " loaded successfully.", null);
+        notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                getClass().toString() + ", LoadDriver(), "
+                + dbDriver + " loaded successfully.", null);
     }
 
     public ArrayList<Connection> getConnections() {
@@ -103,52 +105,55 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
     }
 
     // return connection
-    public synchronized Connection getConnection() throws Exception {
-        Connection conn = null;
+    public Connection getConnection() throws Exception {
+        Connection result = null;
 
-        while (this.getConnections().isEmpty()) {
-            if (this.getConnectionsActive().size() == this._totalConnections) {
-                notifyListeners(new EventObject(this), StatusType.INFORMATION,
-                        getClass().toString() + ", getConnection(), "
-                        + "all db connnections in use, none available.", null);
-                idle(30000);
-            } else {
-                initializeConnections();
-                notifyListeners(new EventObject(this), StatusType.INFORMATION,
-                        getClass().toString() + ", getConnection(), "
-                        + "db connections initialized.", null);
-            }
-        }
-
-        // is there an open connection available
-        if (this.getConnections().size() > 0) {
-            conn = (Connection) this.getConnections().get(0);
-
-            if (isValid(conn)) {
-                this.getConnections().remove(conn);
-                this.getConnectionsActive().add(conn);
-            } else {
-                String errMsg = getClass().toString() + ", getConnection(), "
-                        + " connection is not valid!!";
-                notifyListeners(new EventObject(this), StatusType.ERROR, errMsg, null);
-
-                // 20141130 SSD remove the connection and force close it
-                this.getConnections().remove(conn);
-
-                try {
-                    conn.close();
-                } catch (Exception exi) {
+        synchronized (this._runtimeSync) {
+            while (this.getConnections().isEmpty()) {
+                if (this.getConnectionsActive().size() == this._totalConnections) {
+                    notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                            getClass().toString() + ", getConnection(), "
+                            + "all db connnections in use, none available.", null);
+                    idle(30000);
+                } else {
+                    initializeConnections();
+                    notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                            getClass().toString() + ", getConnection(), "
+                            + "db connections initialized.", null);
                 }
-
-                conn = null;
-                throw new Exception(errMsg);
             }
+
+            // is there an open connection available
+            if (this.getConnections().size() > 0) {
+                result = (Connection) this.getConnections().get(0);
+
+                if (isValid(result)) {
+                    this.getConnections().remove(result);
+                    this.getConnectionsActive().add(result);
+                } else {
+                    String errMsg = getClass().toString() + ", getConnection(), "
+                            + " connection is not valid!!";
+                    notifyListeners(new EventObject(this), EventStatusType.ERROR, errMsg, null);
+
+                    // 20141130 SSD remove the connection and force close it
+                    this.getConnections().remove(result);
+
+                    try {
+                        result.close();
+                    } catch (Exception exi) {
+                    }
+
+                    result = null;
+                    throw new Exception(errMsg);
+                }
+            }
+
+            notifyListeners(new EventObject(this), EventStatusType.CONNECT,
+                    getClass().toString() + ", getConnection(), "
+                    + "db connection reserved", result);
         }
 
-        notifyListeners(new EventObject(this), StatusType.CONNECT,
-                getClass().toString() + ", getConnection(), "
-                + "db connection reserved", conn);
-        return conn;
+        return result;
     }
 
     private boolean isValid(Connection conn) {
@@ -179,47 +184,53 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         return result;
     }
 
+    // note method synchronization is required for notify() to work, otherwise
+    // illegalMonitorStateException is reported.
     public synchronized void releaseConnection(Connection connection) {
-        // remove connection from active list and put it back in connections
-        this.getConnectionsActive().remove(connection);
-        this.getConnections().add(connection);
+        synchronized (this._runtimeSync) {
+            // remove connection from active list and put it back in connections
+            this.getConnectionsActive().remove(connection);
+            this.getConnections().add(connection);
 
-        notifyListeners(new EventObject(this), StatusType.DISCONNECT,
-                getClass().toString() + ", releaseConnection(), "
-                + "db connection released", connection);
+            notifyListeners(new EventObject(this), EventStatusType.DISCONNECT,
+                    getClass().toString() + ", releaseConnection(), "
+                    + "db connection released", connection);
 
-        // interrupt the wait for connections
-        notify();
+            // interrupt the wait for connections
+            notify();
+        }
     }
 
     // scans through all connections and checks if they have valid connection
     // 20141130 SSD implementation completed
-    public synchronized void validateConnections() {
-        ArrayList<Connection> badConnections = new ArrayList<>();
+    public void validateConnections() {
+        synchronized (this._runtimeSync) {
+            ArrayList<Connection> badConnections = new ArrayList<>();
 
-        // scan available connections list and validate them
-        for (Connection conn : getConnections()) {
-            if (!isValid(conn)) {
-                badConnections.add(conn);
+            // scan available connections list and validate them
+            for (Connection conn : getConnections()) {
+                if (!isValid(conn)) {
+                    badConnections.add(conn);
+                }
             }
-        }
 
-        // remove bad connections from list
-        for (Connection conn : badConnections) {
-            this.getConnections().remove(conn);
+            // remove bad connections from list
+            for (Connection conn : badConnections) {
+                this.getConnections().remove(conn);
 
-            try {
-                conn.close();
-            } catch (Exception exi) {
+                try {
+                    conn.close();
+                } catch (Exception exi) {
+                }
             }
-        }
 
-        notifyListeners(new EventObject(this), StatusType.INFORMATION,
-                getClass().toString() + ", validateConnections(), "
-                + "db connections validated", null);
+            notifyListeners(new EventObject(this), EventStatusType.INFORMATION,
+                    getClass().toString() + ", validateConnections(), "
+                    + "db connections validated", null);
+        }
     }
 
-    public CachedRowSet getData(String sql, ArrayList params) throws
+    public CachedRowSet getData(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
@@ -236,23 +247,23 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 rs = stmt.executeQuery();
                 crs.populate(rs);
 
-                notifyListeners(new EventObject(this), StatusType.SELECT,
+                notifyListeners(new EventObject(this), EventStatusType.SELECT,
                         getClass().toString() + ", getData(), "
                         + "CachedRowSet returned", crs);
             } catch (SQLException ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
+                notifyListeners(new EventObject(this), EventStatusType.ERROR,
                         getClass().toString() + ", getData(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                         + ex.getMessage(), sql);
                 throw new SQLException(ex);
             } catch (Exception ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
+                notifyListeners(new EventObject(this), EventStatusType.ERROR,
                         getClass().toString() + ", getData(), "
                         + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
                 throw new Exception(ex);
             }
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", getData(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
@@ -270,7 +281,49 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         return crs;
     }
 
-    public WebRowSet getDataXML(String sql, ArrayList params) throws
+    public EntityDescriptor getDataED(String sql, ArrayList<DatabaseParameter> params) throws
+            Exception {
+        Connection conn = this.getConnection();
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        EntityDescriptor result = null;
+
+        try {
+            stmt = conn.prepareStatement(sql);
+            DatabaseParameter.setParameterValue(stmt, params);
+
+            rs = stmt.executeQuery();
+            result = setEntityDescriptor(rs);
+
+            notifyListeners(new EventObject(this), EventStatusType.SELECT,
+                    getClass().toString() + ", getDataRowSet(), "
+                    + "CachedRowSet returned", result);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getDataRowSet(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getDataRowSet(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
+            throw new Exception(ex);
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (stmt != null) {
+                stmt.close();
+            }
+
+            this.releaseConnection(conn);
+        }
+
+        return result;
+    }
+
+    public WebRowSet getDataXML(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
@@ -287,23 +340,18 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 rs = stmt.executeQuery();
                 wrs.populate(rs);
 
-                notifyListeners(new EventObject(this), StatusType.SELECT,
+                notifyListeners(new EventObject(this), EventStatusType.SELECT,
                         getClass().toString() + ", getDataXML(), "
                         + "WebRowSet returned", wrs);
             } catch (SQLException ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
+                notifyListeners(new EventObject(this), EventStatusType.ERROR,
                         getClass().toString() + ", getDataXML(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                         + ex.getMessage(), sql);
                 throw new SQLException(ex);
-            } catch (Exception ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
-                throw new Exception(ex);
             }
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", getDataXML(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
@@ -321,7 +369,107 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         return wrs;
     }
 
-    public WebRowSet getDataXMLViaCursor(String sql, ArrayList params) throws
+    public CachedRowSet getCursor(String sql, ArrayList<DatabaseParameter> params) throws
+            Exception {
+        Connection conn = this.getConnection();
+        CallableStatement stmt = null;
+        CachedRowSet crs = null;
+        ResultSet rs = null;
+
+        try {
+            crs = RowSetProvider.newFactory().createCachedRowSet();
+
+            try {
+                stmt = conn.prepareCall(sql);
+
+                // add output cursor type to params
+                params.add(new DatabaseParameter("paramOCursor", DatabaseDataType.dtcursor, true));
+                DatabaseParameter.setParameterValue(stmt, params);
+
+                stmt.execute();
+
+                // load the output params into result by key
+                rs = DatabaseParameter.getResultSet(stmt, params);
+
+                crs.populate(rs);
+                notifyListeners(new EventObject(this), EventStatusType.SELECT,
+                        getClass().toString() + ", getCursor(), "
+                        + "WebRowSet returned", crs);
+            } catch (SQLException ex) {
+                notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                        getClass().toString() + ", getCursor(), "
+                        + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                        + ex.getMessage(), sql);
+                throw new SQLException(ex);
+            }
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getCursor(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
+            throw new Exception(ex);
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (stmt != null) {
+                stmt.close();
+            }
+
+            this.releaseConnection(conn);
+        }
+
+        return crs;
+    }
+
+    public EntityDescriptor getCursorED(String sql, ArrayList<DatabaseParameter> params) throws
+            Exception {
+        Connection conn = this.getConnection();
+        CallableStatement stmt = null;
+        ResultSet rs = null;
+        EntityDescriptor result = null;
+
+        try {
+            stmt = conn.prepareCall(sql);
+
+            // add output cursor type to params
+            params.add(new DatabaseParameter("paramOCursor", DatabaseDataType.dtcursor, true));
+            DatabaseParameter.setParameterValue(stmt, params);
+
+            stmt.execute();
+
+            // load the output params into result by key
+            rs = DatabaseParameter.getResultSet(stmt, params);
+            result = setEntityDescriptor(rs);
+
+            notifyListeners(new EventObject(this), EventStatusType.SELECT,
+                    getClass().toString() + ", getCursorRowSet(), "
+                    + "WebRowSet returned", result);
+        } catch (SQLException ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getCursorRowSet(), "
+                    + ex.getErrorCode() + GlobalStack.LINESEPARATOR
+                    + ex.getMessage(), sql);
+            throw new SQLException(ex);
+        } catch (Exception ex) {
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getCursorRowSet(), "
+                    + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
+            throw new Exception(ex);
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (stmt != null) {
+                stmt.close();
+            }
+
+            this.releaseConnection(conn);
+        }
+
+        return result;
+    }
+
+    public WebRowSet getCursorXML(String sql, ArrayList<DatabaseParameter> params) throws
             Exception {
         Connection conn = this.getConnection();
         CallableStatement stmt = null;
@@ -335,7 +483,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 stmt = conn.prepareCall(sql);
 
                 // add output cursor type to params
-                params.add(new DatabaseParameter("paramcursor", DatabaseDataType.dtcursor, true));
+                params.add(new DatabaseParameter("paramOCursor", DatabaseDataType.dtcursor, true));
                 DatabaseParameter.setParameterValue(stmt, params);
 
                 stmt.execute();
@@ -344,24 +492,19 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 rs = DatabaseParameter.getResultSet(stmt, params);
 
                 wrs.populate(rs);
-                notifyListeners(new EventObject(this), StatusType.SELECT,
-                        getClass().toString() + ", getDataXMLViaCursor(), "
+                notifyListeners(new EventObject(this), EventStatusType.SELECT,
+                        getClass().toString() + ", getCursorXML(), "
                         + "WebRowSet returned", wrs);
             } catch (SQLException ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", getDataXML(), "
+                notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                        getClass().toString() + ", getCursorXML(), "
                         + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                         + ex.getMessage(), sql);
                 throw new SQLException(ex);
-            } catch (Exception ex) {
-                notifyListeners(new EventObject(this), StatusType.ERROR,
-                        getClass().toString() + ", getDataXML(), "
-                        + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
-                throw new Exception(ex);
             }
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
-                    getClass().toString() + ", getDataXML(), "
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
+                    getClass().toString() + ", getCursorXML(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             throw new Exception(ex);
         } finally {
@@ -378,7 +521,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         return wrs;
     }
 
-    public void executeDirect(String sql, ArrayList params) throws SQLException,
+    public void executeDirect(String sql, ArrayList<DatabaseParameter> params) throws SQLException,
             Exception {
         Connection conn = this.getConnection();
         PreparedStatement stmt = null;
@@ -390,18 +533,18 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             stmt.executeUpdate();
             conn.commit();
 
-            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+            notifyListeners(new EventObject(this), EventStatusType.EXECUTE,
                     getClass().toString() + ", executeDirect(), "
                     + "executed successfully", sql);
         } catch (SQLException ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", executeDirect(), "
                     + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                     + ex.getMessage(), sql);
             conn.rollback();
             throw new SQLException(ex);
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", executeDirect(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
@@ -429,11 +572,11 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
                 stmt = conn.prepareCall(sql);
             }
 
-            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+            notifyListeners(new EventObject(this), EventStatusType.EXECUTE,
                     getClass().toString() + ", batchInitialize(), "
                     + "statement prepare successful.", sql);
         } catch (SQLException ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", batchInitialize(), "
                     + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                     + ex.getMessage(), sql);
@@ -442,7 +585,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             isException = true;
             throw new SQLException(ex);
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", batchInitialize(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
@@ -463,7 +606,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         }
     }
 
-    public void batchRun(PreparedStatement stmt, ArrayList params) throws
+    public void batchRun(PreparedStatement stmt, ArrayList<DatabaseParameter> params) throws
             Exception {
         boolean isException = false;
 
@@ -471,11 +614,11 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             DatabaseParameter.setParameterValue(stmt, params);
             stmt.executeUpdate();
 
-            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+            notifyListeners(new EventObject(this), EventStatusType.EXECUTE,
                     getClass().toString() + ", batchRun(), "
                     + "executed successfully", stmt);
         } catch (SQLException ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", batchRun(), "
                     + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                     + ex.getMessage(), stmt);
@@ -484,7 +627,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             isException = true;
             throw new SQLException(ex);
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", batchRun(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), stmt);
             stmt.getConnection().rollback();
@@ -507,18 +650,18 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         try {
             stmt.getConnection().commit();
 
-            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+            notifyListeners(new EventObject(this), EventStatusType.EXECUTE,
                     getClass().toString() + ", batchTerminate(), "
                     + "batch commit successful.", stmt);
         } catch (SQLException ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", batchTerminate(), "
                     + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                     + ex.getMessage(), stmt);
             stmt.getConnection().rollback();
             throw new SQLException(ex);
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", batchTerminate(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), stmt);
             stmt.getConnection().rollback();
@@ -532,7 +675,7 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
         }
     }
 
-    public Map<String, Object> executeProcedure(String sql, ArrayList params)
+    public Map<String, Object> executeProcedure(String sql, ArrayList<DatabaseParameter> params)
             throws Exception {
         Map<String, Object> result = null;
         Connection conn = this.getConnection();
@@ -546,20 +689,29 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
 
             // load the output params into result by key
             result = DatabaseParameter.getResult(stmt, params);
+
+            // check if there is a cursor return param by name
+            if (result.containsKey("paramOCursor")) {
+                EntityDescriptor ed = setEntityDescriptor((ResultSet) result.get("paramOCursor"));
+                result.remove("paramOCursor");
+                result.put("paramOCursor", ed);
+            }
+            
+            // note, this is redundant - if SP has commit, data will be committed
             conn.commit();
 
-            notifyListeners(new EventObject(this), StatusType.EXECUTE,
+            notifyListeners(new EventObject(this), EventStatusType.EXECUTE,
                     getClass().toString() + ", executeProcedure(), "
                     + "executed successfully", result);
         } catch (SQLException ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", executeProcedure(), "
                     + ex.getErrorCode() + GlobalStack.LINESEPARATOR
                     + ex.getMessage(), sql);
             conn.rollback();
             throw new SQLException(ex);
         } catch (Exception ex) {
-            notifyListeners(new EventObject(this), StatusType.ERROR,
+            notifyListeners(new EventObject(this), EventStatusType.ERROR,
                     getClass().toString() + ", executeProcedure(), "
                     + GlobalStack.LINESEPARATOR + ex.getMessage(), sql);
             conn.rollback();
@@ -570,6 +722,57 @@ public class DatabaseManager extends AbstractEventPublisher implements IEventPub
             }
 
             this.releaseConnection(conn);
+        }
+
+        return result;
+    }
+
+    public static EntityDescriptor setEntityDescriptor(ResultSet rs) throws Exception {
+        EntityDescriptor result = null;
+
+        // extract the result set meta data and store it
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int cols = rsmd.getColumnCount();
+
+        Map<String, ColumnDescriptor> fdList = new HashMap<String, ColumnDescriptor>();
+        ArrayList<RowDescriptor> rows = new ArrayList<RowDescriptor>();
+
+        ColumnDescriptor fd = null;
+        for (int i = 1; i <= cols; i++) {
+            fd = new ColumnDescriptor(
+                    rsmd.getSchemaName(i),
+                    rsmd.getCatalogName(i),
+                    rsmd.getTableName(i),
+                    rsmd.getColumnName(i),
+                    (rsmd.isNullable(i) == ResultSetMetaData.columnNoNulls ? false : true),
+                    rsmd.isCaseSensitive(i),
+                    rsmd.isReadOnly(i),
+                    rsmd.isAutoIncrement(i),
+                    rsmd.isCurrency(i),
+                    rsmd.isSigned(i),
+                    rsmd.getColumnDisplaySize(i),
+                    rsmd.getPrecision(i),
+                    rsmd.getScale(i),
+                    rsmd.getColumnClassName(i),
+                    rsmd.getColumnType(i),
+                    rsmd.getColumnTypeName(i),
+                    i);
+
+            fdList.put(rsmd.getColumnName(i), fd);
+        }
+        ColumnDescriptor[] fieldsById = EntityDescriptor.setColumnsById(fdList);
+        result = new EntityDescriptor(fdList, rows);
+
+        // store the resultset data.
+        RowDescriptor rd = null;
+        while (rs.next()) {
+            rd = new RowDescriptor(fdList, fieldsById);
+
+            for (int i = 1; i <= cols; i++) {
+                rd.setValue(i, rs.getObject(i));
+            }
+
+            result.getRows().add(rd);
         }
 
         return result;
