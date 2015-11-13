@@ -71,6 +71,10 @@ public class EntityDescriptor implements Serializable, Cloneable {
         return this._columns.keySet();
     }
 
+    public ColumnDescriptor getColumn(int index) {
+        return getColumn(getColumnsById(), index);
+    }
+
     public ColumnDescriptor getColumn(String column) {
         return this._columns.get(column.toUpperCase());
     }
