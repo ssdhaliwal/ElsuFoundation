@@ -9,17 +9,18 @@ import java.io.*;
 import java.math.*;
 import java.sql.*;
 import java.text.*;
+import javax.sql.rowset.serial.*;
 
 /**
  *
  * @author ss.dhaliwal
  * http://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#i16209
- * 
- * note all of the get/set methods are direct/modified copies from 
- * CachedRowSetImpl.java because it is better for them to static, accessible 
- * globally as they can apply to numerous situations and did not want to mandate 
+ *
+ * note all of the get/set methods are direct/modified copies from
+ * CachedRowSetImpl.java because it is better for them to static, accessible
+ * globally as they can apply to numerous situations and did not want to mandate
  * inheritance
- * 
+ *
  */
 public class DatabaseStack {
 
@@ -73,9 +74,22 @@ public class DatabaseStack {
     // to numerous situations and did not want to mandate inheritance
     public static boolean isBinary(int dataType) {
         switch (dataType) {
+            case java.sql.Types.CLOB:
+            case java.sql.Types.NCLOB:
             case java.sql.Types.BINARY:
             case java.sql.Types.VARBINARY:
             case java.sql.Types.LONGVARBINARY:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isDate(int dataType) {
+        switch (dataType) {
+            case java.sql.Types.DATE:
+            case java.sql.Types.TIME:
+            case java.sql.Types.TIMESTAMP:
                 return true;
             default:
                 return false;
@@ -115,6 +129,9 @@ public class DatabaseStack {
             case java.sql.Types.CHAR:
             case java.sql.Types.VARCHAR:
             case java.sql.Types.LONGVARCHAR:
+            case java.sql.Types.NCHAR:
+            case java.sql.Types.NVARCHAR:
+            case java.sql.Types.LONGNVARCHAR:
                 return true;
             default:
                 return false;
@@ -126,9 +143,31 @@ public class DatabaseStack {
             case java.sql.Types.DATE:
             case java.sql.Types.TIME:
             case java.sql.Types.TIMESTAMP:
+            case java.sql.Types.CHAR:
+            case java.sql.Types.VARCHAR:
+            case java.sql.Types.LONGVARCHAR:
+            case java.sql.Types.NCHAR:
+            case java.sql.Types.NVARCHAR:
+            case java.sql.Types.LONGNVARCHAR:
                 return true;
             default:
                 return false;
+        }
+    }
+
+    public static boolean isPrimitive(Object value) {
+        if ((value instanceof Byte) ||
+                (value instanceof Short) ||
+                (value instanceof Integer) ||
+                (value instanceof Long) ||
+                (value instanceof Float) ||
+                (value instanceof Double) ||
+                (value instanceof Character) ||
+                (value instanceof String) ||
+                (value instanceof Boolean)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -470,9 +509,10 @@ public class DatabaseStack {
 
     public static Object convertBoolean(Object value, int srcType, int destType) throws Exception {
         // is same source/destination then return value
-        if (srcType == destType) {
-            return value;
-        }
+        // * commented to allow cloneObject to allow clone creation
+        // if (srcType == destType) {
+        //     return value;
+        // }
 
         if ((isNumeric(destType) == true)
                 || ((isString(destType) == false) && (isBoolean(destType) == false))) {
@@ -498,9 +538,10 @@ public class DatabaseStack {
 
     public static Object convertNumeric(Object value, int srcType, int destType) throws Exception {
         // is same source/destination then return value
-        if (srcType == destType) {
-            return value;
-        }
+        // * commented to allow cloneObject to allow clone creation
+        // if (srcType == destType) {
+        //     return value;
+        // }
 
         if (isNumeric(destType) == false && isString(destType) == false) {
             throw new Exception("numeric conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
@@ -543,9 +584,10 @@ public class DatabaseStack {
 
     public static Object convertTemporal(Object value, int srcType, int destType) throws Exception {
         // is same source/destination then return value
-        if (srcType == destType) {
-            return value;
-        }
+        // * commented to allow cloneObject to allow clone creation
+        // if (srcType == destType) {
+        //     return value;
+        // }
 
         if (isNumeric(destType) == false && isString(destType) == false) {
             throw new Exception("temporal conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
@@ -557,7 +599,7 @@ public class DatabaseStack {
                     if (srcType == java.sql.Types.TIMESTAMP) {
                         return new java.sql.Date(((java.sql.Timestamp) value).getTime());
                     } else {
-                        throw new Exception("temporal conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
+                        return new java.sql.Date(((java.sql.Date)value).getTime());
                     }
                 case java.sql.Types.TIMESTAMP:
                     if (srcType == java.sql.Types.TIME) {
@@ -569,17 +611,66 @@ public class DatabaseStack {
                     if (srcType == java.sql.Types.TIMESTAMP) {
                         return new Time(((java.sql.Timestamp) value).getTime());
                     } else {
-                        throw new Exception("temporal conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
+                        return new java.sql.Time(((java.sql.Time)value).getTime());
                     }
                 case java.sql.Types.CHAR:
                 case java.sql.Types.VARCHAR:
                 case java.sql.Types.LONGVARCHAR:
+                case java.sql.Types.NCHAR:
+                case java.sql.Types.NVARCHAR:
+                case java.sql.Types.LONGNVARCHAR:
                     return new String(value.toString());
                 default:
                     throw new Exception("temporal conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
             }
         } catch (NumberFormatException ex) {
             throw new Exception("temporal conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
+        }
+    }
+    
+    public static Object cloneObject(Object value, int dataType) throws Exception {
+        // check for NULL
+        if (value == null) {
+            return null;
+        }
+        
+        // if primitive, return original back to source
+        if (isNumeric(dataType)) {
+            return convertNumeric(value, dataType, dataType);
+        } else if (isBoolean(dataType)) {
+            return convertBoolean(value, dataType, dataType);
+        } else if (isTemporal(dataType)) {
+            return convertTemporal(value, dataType, dataType);
+        } else {
+            switch (dataType) {
+                case java.sql.Types.ARRAY:
+                    return getArray(value);
+                case java.sql.Types.BLOB:
+                    return new SerialBlob((Blob)value);
+                case java.sql.Types.CLOB:
+                case java.sql.Types.NCLOB:
+                    return getCharStream(value, dataType);
+                case java.sql.Types.DATALINK:
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                case java.sql.Types.DISTINCT:
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                case java.sql.Types.JAVA_OBJECT:
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                case java.sql.Types.NULL:
+                    return null;
+                case java.sql.Types.OTHER:
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                case java.sql.Types.REF:
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                case java.sql.Types.ROWID:
+                    return ((RowId)value).toString();
+                case java.sql.Types.SQLXML:
+                    return ((SQLXML)value).toString();
+                case java.sql.Types.STRUCT:
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                default:
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+            }
         }
     }
 }

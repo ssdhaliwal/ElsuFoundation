@@ -19,9 +19,6 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 
     private static final long serialVersionUID = -7416407102795717036L;
 
-    private String _schema = "";
-    private String _catalog = "";
-    private String _entity = "";
     private String _name = "";
     private boolean _nullable = true;
     private boolean _caseSensitive = false;
@@ -38,15 +35,10 @@ public class ColumnDescriptor implements Serializable, Cloneable {
 
     private int _columnPosition = 0;
 
-    public ColumnDescriptor(String schema, String catalog, String entity,
-            String name, boolean nullable, boolean caseSensitive,
+    public ColumnDescriptor(String name, boolean nullable, boolean caseSensitive,
             boolean readOnly, boolean identity, boolean currency, boolean signed,
             int displaySize, int precision, int scale, String className,
             int type, String typeName, int columnPosition) {
-        this._schema = schema;
-        this._catalog = catalog;
-        this._entity = entity;
-
         this._name = name;
 
         this._nullable = nullable;
@@ -70,18 +62,6 @@ public class ColumnDescriptor implements Serializable, Cloneable {
     public ColumnDescriptor(String jsonColumn) {
         ColumnDescriptor fd = (ColumnDescriptor) GsonXMLStack.JSon2Object(jsonColumn, ColumnDescriptor.class);
         this.cloneColumn(fd);
-    }
-
-    public String getSchmea() {
-        return this._schema;
-    }
-
-    public String getCatalog() {
-        return this._catalog;
-    }
-
-    public String getEntity() {
-        return this._entity;
     }
 
     public String getName() {
@@ -141,10 +121,6 @@ public class ColumnDescriptor implements Serializable, Cloneable {
     }
 
     private void cloneColumn(ColumnDescriptor column) {
-        this._schema = column._schema;
-        this._catalog = column._catalog;
-        this._entity = column._entity;
-
         this._name = column._name;
 
         this._nullable = column._nullable;
@@ -173,9 +149,6 @@ public class ColumnDescriptor implements Serializable, Cloneable {
         sb.append(spacer + spacer + spacer + "<column-definition>" + newLine);
 
         sb.append(spacer + spacer + spacer + spacer + "<columnIndex>" + getColumnPosition() + "<columnIndex>" + newLine);
-        sb.append(spacer + spacer + spacer + spacer + "<schema>" + getCatalog() + "<schema>" + newLine);
-        sb.append(spacer + spacer + spacer + spacer + "<catalog>" + getEntity() + "<catalog>" + newLine);
-        sb.append(spacer + spacer + spacer + spacer + "<entity>" + getEntity() + "<entity>" + newLine);
         sb.append(spacer + spacer + spacer + spacer + "<name>" + getName() + "<name>" + newLine);
         sb.append(spacer + spacer + spacer + spacer + "<nullable>" + isNullable() + "<nullable>" + newLine);
         sb.append(spacer + spacer + spacer + spacer + "<caseSensitive>" + isCaseSensitive() + "<caseSensitive>" + newLine);

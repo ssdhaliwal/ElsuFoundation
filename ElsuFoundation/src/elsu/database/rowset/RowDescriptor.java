@@ -6,6 +6,7 @@
 package elsu.database.rowset;
 
 import elsu.common.*;
+import elsu.database.DatabaseStack;
 import elsu.support.*;
 import java.io.*;
 import java.math.*;
@@ -46,11 +47,11 @@ public class RowDescriptor implements Serializable, Cloneable {
 
     public RowDescriptor(Map<String, ColumnDescriptor> columns, ColumnDescriptor[] columnsById,
             Object[] currentRow) throws Exception {
-        if ((columns.size() != columnsById.length) ||
-                (columns.size() != currentRow.length)) {
+        if ((columns.size() != columnsById.length)
+                || (columns.size() != currentRow.length)) {
             throw new Exception("column count does not match values provided in current row array");
         }
-        
+
         this._columns = columns;
         this._columnsById = columnsById;
 
@@ -58,7 +59,7 @@ public class RowDescriptor implements Serializable, Cloneable {
         this._changed = false;
 
         // store data passed into current row
-        for(int i = 0; i < getColumnCount(); i++) {
+        for (int i = 0; i < getColumnCount(); i++) {
             this._originalRow[i] = null;
             this._currentRow[i] = currentRow[i];
         }
@@ -87,11 +88,11 @@ public class RowDescriptor implements Serializable, Cloneable {
     public void clear() {
         this._deleted = false;
         this._changed = false;
-        
+
         this._originalRow = new Object[getColumnCount()];
         this._currentRow = new Object[getColumnCount()];
     }
-    
+
     public int getColumnCount() {
         return this._columns.size();
     }
@@ -190,7 +191,7 @@ public class RowDescriptor implements Serializable, Cloneable {
     }
 
     public void resetToOriginal(String[] columnNames) {
-        for(String column : columnNames) {
+        for (String column : columnNames) {
             resetToOriginal(column);
         }
     }
@@ -240,14 +241,34 @@ public class RowDescriptor implements Serializable, Cloneable {
         return result;
     }
 
+    public int getColumnType(String columnName) {
+        int result = 0;
+
+        result = this._columns.get(columnName.toUpperCase()).getType();
+        return result;
+    }
+
+    public int getColumnType(int index) {
+        int result = 0;
+
+        // column index is offset 1 not 0 but array offset is 0
+        result = this._columnsById[index - 1].getType();
+        return result;
+    }
+
     public void cloneRow(RowDescriptor row) {
         this._deleted = row._deleted;
         this._changed = row._changed;
 
         // column index is offset 1 not 0 but array offset is 0
-        for(int i = 0; i < getColumnCount(); i++) {
-            this._originalRow[i] = row._originalRow[i];
-            this._currentRow[i] = row._currentRow[i];
+        for (int i = 1; i <= getColumnCount(); i++) {
+            // if primitive then direct copy, else instantiate the class
+            if (DatabaseStack.isPrimitive(getColumnType(i))) {
+                this._originalRow[i - 1] = row._originalRow[i - 1];
+                this._currentRow[i - 1] = row._currentRow[i - 1];
+            } else {
+                
+            }
         }
     }
 
