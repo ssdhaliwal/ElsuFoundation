@@ -327,7 +327,10 @@ public class DatabaseStack {
             }
             case java.sql.Types.CHAR:
             case java.sql.Types.VARCHAR:
-            case java.sql.Types.LONGVARCHAR: {
+            case java.sql.Types.LONGVARCHAR: 
+            case java.sql.Types.NCHAR:
+            case java.sql.Types.NVARCHAR:
+            case java.sql.Types.LONGNVARCHAR: {
                 try {
                     DateFormat df = DateFormat.getDateInstance();
                     return ((java.sql.Date) (df.parse(value.toString())));
@@ -437,7 +440,10 @@ public class DatabaseStack {
             }
             case java.sql.Types.CHAR:
             case java.sql.Types.VARCHAR:
-            case java.sql.Types.LONGVARCHAR: {
+            case java.sql.Types.LONGVARCHAR:
+            case java.sql.Types.NCHAR:
+            case java.sql.Types.NVARCHAR:
+            case java.sql.Types.LONGNVARCHAR: {
                 try {
                     DateFormat df = DateFormat.getDateInstance();
                     return ((java.sql.Time) (df.parse(value.toString())));
@@ -573,6 +579,9 @@ public class DatabaseStack {
                 case java.sql.Types.CHAR:
                 case java.sql.Types.VARCHAR:
                 case java.sql.Types.LONGVARCHAR:
+                case java.sql.Types.NCHAR:
+                case java.sql.Types.NVARCHAR:
+                case java.sql.Types.LONGNVARCHAR:
                     return new String(value.toString());
                 default:
                     throw new Exception("numeric conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
@@ -655,7 +664,7 @@ public class DatabaseStack {
                 case java.sql.Types.DISTINCT:
                     throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
                 case java.sql.Types.JAVA_OBJECT:
-                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                    return value;
                 case java.sql.Types.NULL:
                     return null;
                 case java.sql.Types.OTHER:

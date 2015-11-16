@@ -273,7 +273,7 @@ public class DatabaseParameter {
                             stmt.setNull(paramIndex, java.sql.Types.NULL);
                         } else {
                             if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
-                                stmt.setFloat(paramIndex, ((BigDecimal) dbpm.getValue()).floatValue());
+                                stmt.setFloat(paramIndex, ((BigDecimal) dbpm.getValue()).longValue());
                             } else {
                                 stmt.setLong(paramIndex, (Long) dbpm.getValue());
                             }
