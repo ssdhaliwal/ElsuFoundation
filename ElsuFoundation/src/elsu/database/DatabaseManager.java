@@ -740,9 +740,6 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         ColumnDescriptor fd = null;
         for (int i = 1; i <= cols; i++) {
             fd = new ColumnDescriptor(
-                    rsmd.getSchemaName(i),
-                    rsmd.getCatalogName(i),
-                    rsmd.getTableName(i),
                     rsmd.getColumnName(i),
                     (rsmd.isNullable(i) == ResultSetMetaData.columnNoNulls ? false : true),
                     rsmd.isCaseSensitive(i),
