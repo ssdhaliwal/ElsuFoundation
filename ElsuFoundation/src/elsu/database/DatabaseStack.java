@@ -7,6 +7,7 @@ package elsu.database;
 
 import java.io.*;
 import java.math.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.text.*;
 import javax.sql.rowset.serial.*;
@@ -74,6 +75,7 @@ public class DatabaseStack {
     // to numerous situations and did not want to mandate inheritance
     public static boolean isBinary(int dataType) {
         switch (dataType) {
+            case java.sql.Types.BLOB:
             case java.sql.Types.CLOB:
             case java.sql.Types.NCLOB:
             case java.sql.Types.BINARY:
@@ -156,15 +158,16 @@ public class DatabaseStack {
     }
 
     public static boolean isPrimitive(Object value) {
-        if ((value instanceof Byte) ||
-                (value instanceof Short) ||
-                (value instanceof Integer) ||
-                (value instanceof Long) ||
-                (value instanceof Float) ||
-                (value instanceof Double) ||
-                (value instanceof Character) ||
-                (value instanceof String) ||
-                (value instanceof Boolean)) {
+        if ((value instanceof Byte)
+                || (value instanceof Short)
+                || (value instanceof Integer)
+                || (value instanceof Long)
+                || (value instanceof Float)
+                || (value instanceof Double)
+                || (value instanceof Character)
+                || (value instanceof String)
+                || (value instanceof Void)
+                || (value instanceof Boolean)) {
             return true;
         } else {
             return false;
@@ -244,6 +247,37 @@ public class DatabaseStack {
         return (java.io.InputStream) binaryStream;
     }
 
+    public static String getBinary(Object value, int columnType) throws Exception {
+        String result = null;
+        InputStream stream = null;
+        char[] buffer = new char[1024];
+
+        try {
+            if ((columnType == java.sql.Types.BINARY) || (columnType == java.sql.Types.VARBINARY)
+                    || (columnType == java.sql.Types.LONGVARBINARY) || (columnType == java.sql.Types.BLOB)) {
+                byte[] blobData = ((Blob) value).getBytes(1, (int) ((Blob) value).length());
+                result = new String(blobData, "US-ASCII");
+            } else if (columnType == java.sql.Types.CLOB) {
+                result = ((Clob) value).getSubString(1, (int) ((Clob) value).length());
+            } else if ((columnType == java.sql.Types.VARCHAR)
+                    || (columnType == java.sql.Types.LONGVARCHAR)) {
+                byte[] blobData = ((Blob) value).getBytes(1, (int) ((Blob) value).length());
+                result = new String(blobData, "UTF-8");
+            }
+        } catch (Exception ex) {
+            throw new Exception("clob conversion failed. (" + value.toString().trim() + ")");
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (Exception exi) {
+                }
+            }
+        }
+        
+        return result;
+    }
+
     public static boolean getBoolean(Object value) throws Exception {
         // check for null
         if (value == null) {
@@ -285,8 +319,8 @@ public class DatabaseStack {
         return (byte[]) (value);
     }
 
-    public static java.io.Reader getCharStream(Object value, int columnType) throws Exception {
-        java.io.Reader charStream = null;
+    public static java.io.InputStream getCharStream(Object value, int columnType) throws Exception {
+        java.io.InputStream charStream = null;
 
         // check for NULL
         if (value == null) {
@@ -294,14 +328,14 @@ public class DatabaseStack {
         }
 
         if (isBinary(columnType)) {
-            charStream = new InputStreamReader(new ByteArrayInputStream((byte[]) value));
+            charStream = new ByteArrayInputStream((byte[]) value);
         } else if (isString(columnType)) {
-            charStream = new StringReader(value.toString());
+            charStream = new ByteArrayInputStream(value.toString().getBytes(StandardCharsets.UTF_8));
         } else {
             throw new Exception("charStream conversion failed. (" + value.toString().trim() + "/" + columnType + ")");
         }
 
-        return (java.io.Reader) charStream;
+        return charStream;
     }
 
     public static java.sql.Date getDate(Object value, int columnType) throws Exception {
@@ -327,7 +361,7 @@ public class DatabaseStack {
             }
             case java.sql.Types.CHAR:
             case java.sql.Types.VARCHAR:
-            case java.sql.Types.LONGVARCHAR: 
+            case java.sql.Types.LONGVARCHAR:
             case java.sql.Types.NCHAR:
             case java.sql.Types.NVARCHAR:
             case java.sql.Types.LONGNVARCHAR: {
@@ -608,7 +642,7 @@ public class DatabaseStack {
                     if (srcType == java.sql.Types.TIMESTAMP) {
                         return new java.sql.Date(((java.sql.Timestamp) value).getTime());
                     } else {
-                        return new java.sql.Date(((java.sql.Date)value).getTime());
+                        return new java.sql.Date(((java.sql.Date) value).getTime());
                     }
                 case java.sql.Types.TIMESTAMP:
                     if (srcType == java.sql.Types.TIME) {
@@ -620,7 +654,7 @@ public class DatabaseStack {
                     if (srcType == java.sql.Types.TIMESTAMP) {
                         return new Time(((java.sql.Timestamp) value).getTime());
                     } else {
-                        return new java.sql.Time(((java.sql.Time)value).getTime());
+                        return new java.sql.Time(((java.sql.Time) value).getTime());
                     }
                 case java.sql.Types.CHAR:
                 case java.sql.Types.VARCHAR:
@@ -636,13 +670,13 @@ public class DatabaseStack {
             throw new Exception("temporal conversion failed. (" + value.toString().trim() + "/" + srcType + ":" + destType + ")");
         }
     }
-    
+
     public static Object cloneObject(Object value, int dataType) throws Exception {
         // check for NULL
         if (value == null) {
             return null;
         }
-        
+
         // if primitive, return original back to source
         if (isNumeric(dataType)) {
             return convertNumeric(value, dataType, dataType);
@@ -655,12 +689,12 @@ public class DatabaseStack {
                 case java.sql.Types.ARRAY:
                     return getArray(value);
                 case java.sql.Types.BLOB:
-                    return new SerialBlob((Blob)value);
+                    return new SerialBlob((Blob) value);
                 case java.sql.Types.CLOB:
                 case java.sql.Types.NCLOB:
                     return getCharStream(value, dataType);
                 case java.sql.Types.DATALINK:
-                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                    return (java.net.URL) value;
                 case java.sql.Types.DISTINCT:
                     throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
                 case java.sql.Types.JAVA_OBJECT:
@@ -672,9 +706,9 @@ public class DatabaseStack {
                 case java.sql.Types.REF:
                     throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
                 case java.sql.Types.ROWID:
-                    return ((RowId)value).toString();
+                    return ((RowId) value).toString();
                 case java.sql.Types.SQLXML:
-                    return ((SQLXML)value).toString();
+                    return ((SQLXML) value).toString();
                 case java.sql.Types.STRUCT:
                     throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
                 default:

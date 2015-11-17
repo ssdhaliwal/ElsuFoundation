@@ -696,7 +696,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
                 result.remove("paramOCursor");
                 result.put("paramOCursor", ed);
             }
-            
+
             // note, this is redundant - if SP has commit, data will be committed
             conn.commit();
 
@@ -766,7 +766,12 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
             rd = new RowDescriptor(fdList, fieldsById);
 
             for (int i = 1; i <= cols; i++) {
-                rd.setValue(i, rs.getObject(i));
+                // if primitive or wrapped, then direct assignment
+                if (DatabaseStack.isPrimitive(fieldsById[i - 1].getType())) {
+                    rd.setValue(i, rs.getObject(i));
+                } else {
+                    
+                }
             }
 
             result.getRows().add(rd);
