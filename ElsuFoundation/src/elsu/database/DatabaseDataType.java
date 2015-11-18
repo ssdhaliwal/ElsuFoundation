@@ -11,8 +11,8 @@ public enum DatabaseDataType {
     dtblob, // BLOB(n)
     dtboolean, // SMALLING
     dtbyte, // SMALLINT
-    dtbyteArray, // CHAR(n), NCHAR(n), VARCHAR2(n), BLOB(n), ROWID, UROWID(n), RAW(n), LONG RAW
-    dtclob, // CLOB(n), DBCLOB(n), NCLOB(n)
+    dtbyteArray, // BLOB(n), BINARY, VARBINARY, LONGVARBINARY, RAW(n), LONGRAW
+    dtclob, // CLOB(n), DBCLOB(n), NCLOB(n), XML
     dtcursor, // SYS_REFCURSOR
     dtdate, // DATE
     dtdouble, // DOUBLE
@@ -23,7 +23,7 @@ public enum DatabaseDataType {
     dtrowid, // ROWID, UROWID(n)
     dtshort, // SMALLINT
     dtstream, // BLOB(n)
-    dtstring, // CHAR(n), NCHAR(n), GRAPHIC(m), VARCHAR2(n), VARGRAPHIC(m), NVARCHAR2(n)
+    dtstring, // CHAR(n), NCHAR(n), VARCHAR2(n), NVARCHAR2(n), GRAPHIC(m), VARGRAPHIC(m)
     dttime, // TIME
     dttimestamp // TIMESTAMP
 }

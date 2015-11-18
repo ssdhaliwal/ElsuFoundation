@@ -7,9 +7,10 @@ package elsu.database;
 
 import java.io.*;
 import java.math.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.*;
 import java.sql.*;
 import java.text.*;
+import java.util.stream.*;
 import javax.sql.rowset.serial.*;
 
 /**
@@ -30,6 +31,8 @@ public class DatabaseStack {
 
         if (o == null) {
             result = DatabaseDataType.dtnull;
+        } else if (o.getClass().equals(Array.class)) {
+            result = DatabaseDataType.dtarray;
         } else if (o.getClass().equals(BigDecimal.class)) {
             result = DatabaseDataType.dtbigDecimal;
         } else if (o.getClass().equals(Blob.class)) {
@@ -37,7 +40,7 @@ public class DatabaseStack {
         } else if (o.getClass().equals(Boolean.class)) {
             result = DatabaseDataType.dtboolean;
         } else if (o.getClass().equals(Byte.class)) {
-            result = DatabaseDataType.dtboolean;
+            result = DatabaseDataType.dtbyte;
         } else if (o.getClass().equals(Byte[].class)) {
             result = DatabaseDataType.dtbyteArray;
         } else if (o.getClass().equals(Clob.class)) {
@@ -52,12 +55,12 @@ public class DatabaseStack {
             result = DatabaseDataType.dtint;
         } else if (o.getClass().equals(Long.class)) {
             result = DatabaseDataType.dtlong;
-        } else if (o.getClass().equals(String.class)) {
-            result = DatabaseDataType.dtstring;
         } else if (o.getClass().equals(RowId.class)) {
             result = DatabaseDataType.dtrowid;
         } else if (o.getClass().equals(Short.class)) {
             result = DatabaseDataType.dtshort;
+        } else if (o.getClass().equals(Stream.class)) {
+            result = DatabaseDataType.dtstream;
         } else if (o.getClass().equals(String.class)) {
             result = DatabaseDataType.dtstring;
         } else if (o.getClass().equals(Time.class)) {
@@ -81,6 +84,7 @@ public class DatabaseStack {
             case java.sql.Types.BINARY:
             case java.sql.Types.VARBINARY:
             case java.sql.Types.LONGVARBINARY:
+            case java.sql.Types.SQLXML:
                 return true;
             default:
                 return false;
