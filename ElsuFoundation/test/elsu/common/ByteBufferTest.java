@@ -2,7 +2,6 @@ package elsu.common;
 
 import elsu.common.*;
 import junit.framework.*;
-import static org.junit.Assert.*;
 
 /**
  *

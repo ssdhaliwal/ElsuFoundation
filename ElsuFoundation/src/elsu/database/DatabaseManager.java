@@ -3,9 +3,12 @@ package elsu.database;
 import elsu.events.*;
 import elsu.common.*;
 import elsu.database.rowset.*;
+import java.math.*;
 import java.util.*;
 import java.sql.*;
 import javax.sql.rowset.*;
+import oracle.jdbc.*;
+import oracle.sql.*;
 
 /**
  *
@@ -242,7 +245,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
             try {
                 stmt = conn.prepareStatement(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+                setParameterValue(stmt, params);
 
                 rs = stmt.executeQuery();
                 crs.populate(rs);
@@ -290,7 +293,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
         try {
             stmt = conn.prepareStatement(sql);
-            DatabaseParameter.setParameterValue(stmt, params);
+            setParameterValue(stmt, params);
 
             rs = stmt.executeQuery();
             result = setEntityDescriptor(rs);
@@ -335,7 +338,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
             try {
                 stmt = conn.prepareStatement(sql);
-                DatabaseParameter.setParameterValue(stmt, params);
+                setParameterValue(stmt, params);
 
                 rs = stmt.executeQuery();
                 wrs.populate(rs);
@@ -383,13 +386,13 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
                 stmt = conn.prepareCall(sql);
 
                 // add output cursor type to params
-                params.add(new DatabaseParameter("paramOCursor", DatabaseDataType.dtcursor, true));
-                DatabaseParameter.setParameterValue(stmt, params);
+                params.add(new DatabaseParameter("paramOCursor", java.sql.Types.REF_CURSOR, true));
+                setParameterValue(stmt, params);
 
                 stmt.execute();
 
                 // load the output params into result by key
-                rs = DatabaseParameter.getResultSet(stmt, params);
+                rs = getResultSet(stmt, params);
 
                 crs.populate(rs);
                 notifyListeners(new EventObject(this), EventStatusType.SELECT,
@@ -432,13 +435,13 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
             stmt = conn.prepareCall(sql);
 
             // add output cursor type to params
-            params.add(new DatabaseParameter("paramOCursor", DatabaseDataType.dtcursor, true));
-            DatabaseParameter.setParameterValue(stmt, params);
+            params.add(new DatabaseParameter("paramOCursor", java.sql.Types.REF_CURSOR, true));
+            setParameterValue(stmt, params);
 
             stmt.execute();
 
             // load the output params into result by key
-            rs = DatabaseParameter.getResultSet(stmt, params);
+            rs = getResultSet(stmt, params);
             result = setEntityDescriptor(rs);
 
             notifyListeners(new EventObject(this), EventStatusType.SELECT,
@@ -483,13 +486,13 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
                 stmt = conn.prepareCall(sql);
 
                 // add output cursor type to params
-                params.add(new DatabaseParameter("paramOCursor", DatabaseDataType.dtcursor, true));
-                DatabaseParameter.setParameterValue(stmt, params);
+                params.add(new DatabaseParameter("paramOCursor", java.sql.Types.REF_CURSOR, true));
+                setParameterValue(stmt, params);
 
                 stmt.execute();
 
                 // load the output params into result by key
-                rs = DatabaseParameter.getResultSet(stmt, params);
+                rs = getResultSet(stmt, params);
 
                 wrs.populate(rs);
                 notifyListeners(new EventObject(this), EventStatusType.SELECT,
@@ -528,7 +531,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
         try {
             stmt = conn.prepareStatement(sql);
-            DatabaseParameter.setParameterValue(stmt, params);
+            setParameterValue(stmt, params);
 
             stmt.executeUpdate();
             conn.commit();
@@ -611,7 +614,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         boolean isException = false;
 
         try {
-            DatabaseParameter.setParameterValue(stmt, params);
+            setParameterValue(stmt, params);
             stmt.executeUpdate();
 
             notifyListeners(new EventObject(this), EventStatusType.EXECUTE,
@@ -683,12 +686,12 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
 
         try {
             stmt = conn.prepareCall(sql);
-            DatabaseParameter.setParameterValue(stmt, params);
+            setParameterValue(stmt, params);
 
             stmt.executeUpdate();
 
             // load the output params into result by key
-            result = DatabaseParameter.getResult(stmt, params);
+            result = getResult(stmt, params);
 
             // check if there is a cursor return param by name
             if (result.containsKey("paramOCursor")) {
@@ -778,6 +781,524 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         }
 
         return result;
+    }
+
+    public static Map<String, Object> getResult(CallableStatement stmt,
+            ArrayList<DatabaseParameter> params) throws Exception {
+        Map<String, Object> result = null;
+        int paramIndex = 1;
+
+        if (params == null) {
+            return result;
+        }
+
+        for (DatabaseParameter dbpm : params) {
+            if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                if (result == null) {
+                    result = new HashMap<>();
+                }
+
+                result.put(dbpm.getName(), stmt.getObject(paramIndex));
+            }
+
+            paramIndex++;
+        }
+
+        return result;
+    }
+
+    public static ResultSet getResultSet(CallableStatement stmt,
+            ArrayList<DatabaseParameter> params) throws Exception {
+        ResultSet result = null;
+        int paramIndex = 1;
+
+        if (params == null) {
+            return result;
+        }
+
+        for (DatabaseParameter dbpm : params) {
+            if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                if (result == null) {
+                    result = (ResultSet) stmt.getObject(paramIndex);
+                }
+            }
+
+            paramIndex++;
+        }
+
+        return result;
+    }
+
+    public static void setParameterValue(PreparedStatement stmt,
+            ArrayList<DatabaseParameter> params) throws Exception {
+        int paramIndex = 1;
+
+        if (params != null) {
+            for (DatabaseParameter dbpm : params) {
+                // if null pointer, special case
+                switch (dbpm.getType()) {
+                    case java.sql.Types.ARRAY:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            ArrayDescriptor ad = ArrayDescriptor.createDescriptor("STR_ARRAY_TYP", stmt.getConnection());
+                            ARRAY ar = new ARRAY(ad, stmt.getConnection(), dbpm.getValue());
+                            stmt.setArray(paramIndex, ar);
+                        }
+                        break;
+                    case java.sql.Types.DECIMAL:
+                    case java.sql.Types.NUMERIC:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBigDecimal(paramIndex, (BigDecimal) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.BLOB:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBlob(paramIndex, (Blob) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.BIT:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBoolean(paramIndex, (Boolean) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.TINYINT:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setByte(paramIndex, (Byte) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.BINARY:
+                    case java.sql.Types.VARBINARY:
+                    case java.sql.Types.LONGVARBINARY:
+                        //                        File file = new File("1.wma");  
+                        //                        fis = new FileInputStream(file);  
+                        //                        stmt.setBinaryStream(1,fis,fis.available();  
+                        //                        fis.close();  
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setBytes(paramIndex, (byte[]) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.CLOB:
+//                        File file = new File("1.wma");  
+//                        fis = new FileInputStream(file);  
+//                        stmt.setBinaryStream(1,fis,fis.available();  
+//                        fis.close();  
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setClob(paramIndex, (Clob) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.REF_CURSOR:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            throw new Exception(
+                                    "invalid datatype return (SYS_REFCURSOR)!");
+                        }
+                        break;
+                    case java.sql.Types.DATE:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setDate(paramIndex,
+                                    DateStack.convertDate2SQLDate(
+                                            dbpm.getValue().toString(),
+                                            "MM/dd/yyyy H:m:s"));
+                        }
+                        break;
+                    case java.sql.Types.DOUBLE:
+                    case java.sql.Types.FLOAT:
+                    case java.sql.Types.REAL:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setDouble(paramIndex, ((BigDecimal) dbpm.getValue()).doubleValue());
+                            } else if (dbpm.getValue().getClass().equals(Float.class)) {
+                                stmt.setFloat(paramIndex, (Float) dbpm.getValue());
+                            } else {
+                                stmt.setDouble(paramIndex, (Double) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.INTEGER:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setInt(paramIndex, ((BigDecimal) dbpm.getValue()).intValue());
+                            } else {
+                                stmt.setInt(paramIndex, (Integer) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.BIGINT:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setFloat(paramIndex, ((BigDecimal) dbpm.getValue()).longValue());
+                            } else {
+                                stmt.setLong(paramIndex, (Long) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.ROWID:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setRowId(paramIndex, (RowId) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.SMALLINT:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                stmt.setShort(paramIndex, ((BigDecimal) dbpm.getValue()).shortValue());
+                            } else {
+                                stmt.setShort(paramIndex, (Short) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.CHAR:
+                    case java.sql.Types.VARCHAR:
+                    case java.sql.Types.LONGVARCHAR:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setString(paramIndex, (String) dbpm.getValue());
+                        }
+                        break;
+                    case java.sql.Types.TIME:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setDate(paramIndex,
+                                    DateStack.convertDate2SQLDate(
+                                            dbpm.getValue().toString(),
+                                            "MM/dd/yyyy H:m:s"));
+                        }
+                        break;
+                    case java.sql.Types.TIMESTAMP:
+                        //stmt.setTimestamp(paramIndex, DateStack.convertDate2SQLTimestamp(dbpm.getValue().toString(), "MM/dd/yyyy H:m:s"));
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setTimestamp(paramIndex,
+                                    (java.sql.Timestamp) dbpm.getValue());
+                        }
+                        break;
+                    default:
+                        if (dbpm.getValue() == null) {
+                            stmt.setNull(paramIndex, java.sql.Types.NULL);
+                        } else {
+                            stmt.setString(paramIndex, (String) dbpm.getValue());
+                        }
+                        break;
+                }
+
+                paramIndex++;
+            }
+        }
+    }
+
+    public static void setParameterValue(CallableStatement stmt,
+            ArrayList<DatabaseParameter> params) throws Exception {
+        int paramIndex = 1;
+
+        if (params != null) {
+            for (DatabaseParameter dbpm : params) {
+                switch (dbpm.getType()) {
+                    case java.sql.Types.ARRAY:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.ARRAY);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                ArrayDescriptor ad = ArrayDescriptor.createDescriptor("STR_ARRAY_TYP", stmt.getConnection());
+                                ARRAY ar = new ARRAY(ad, stmt.getConnection(), dbpm.getValue());
+                                stmt.setArray(paramIndex, ar);
+                            }
+                        }
+                        break;
+                    case java.sql.Types.DECIMAL:
+                    case java.sql.Types.NUMERIC:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.DOUBLE);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setBigDecimal(paramIndex, (BigDecimal) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.BLOB:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.BLOB);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setBlob(paramIndex, (Blob) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.BIT:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.BOOLEAN);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setBoolean(paramIndex, (Boolean) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.TINYINT:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.BOOLEAN);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setByte(paramIndex, (Byte) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.BINARY:
+                    case java.sql.Types.VARBINARY:
+                    case java.sql.Types.LONGVARBINARY:
+                        //                        File file = new File("1.wma");  
+                        //                        fis = new FileInputStream(file);  
+                        //                        stmt.setBinaryStream(1,fis,fis.available();  
+                        //                        fis.close();  
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex, java.sql.Types.ARRAY);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setBytes(paramIndex, (byte[]) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.CLOB:
+//                        File file = new File("1.wma");  
+//                        fis = new FileInputStream(file);  
+//                        stmt.setBinaryStream(1,fis,fis.available();  
+//                        fis.close();  
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.CLOB);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setClob(paramIndex, (Clob) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.REF_CURSOR:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    OracleTypes.CURSOR);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            throw new Exception(
+                                    "invalid datatype input (SYS_REFCURSOR)!");
+                        }
+                        break;
+                    case java.sql.Types.DATE:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.DATE);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setDate(paramIndex,
+                                        DateStack.convertDate2SQLDate(
+                                                dbpm.getValue().toString(),
+                                                dbpm.getFormat()));
+                            }
+                        }
+                        break;
+                    case java.sql.Types.DOUBLE:
+                    case java.sql.Types.FLOAT:
+                    case java.sql.Types.REAL:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.DOUBLE);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                    stmt.setDouble(paramIndex, ((BigDecimal) dbpm.getValue()).doubleValue());
+                                } else if (dbpm.getValue().getClass().equals(Float.class)) {
+                                    stmt.setFloat(paramIndex, (Float) dbpm.getValue());
+                                } else {
+                                    stmt.setDouble(paramIndex, (Double) dbpm.getValue());
+                                }
+                            }
+                        }
+                        break;
+                    case java.sql.Types.INTEGER:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.INTEGER);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                    stmt.setInt(paramIndex, ((BigDecimal) dbpm.getValue()).intValue());
+                                } else {
+                                    stmt.setInt(paramIndex, (Integer) dbpm.getValue());
+                                }
+                            }
+                        }
+                        break;
+                    case java.sql.Types.BIGINT:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.BIGINT);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                    stmt.setLong(paramIndex, ((BigDecimal) dbpm.getValue()).longValue());
+                                } else {
+                                    stmt.setLong(paramIndex, (Long) dbpm.getValue());
+                                }
+                            }
+                        }
+                        break;
+                    case java.sql.Types.ROWID:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.ROWID);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setRowId(paramIndex, (RowId) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.SMALLINT:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.SMALLINT);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                if (dbpm.getValue().getClass().equals(BigDecimal.class)) {
+                                    stmt.setShort(paramIndex, ((BigDecimal) dbpm.getValue()).shortValue());
+                                } else {
+                                    stmt.setShort(paramIndex, (Short) dbpm.getValue());
+                                }
+                            }
+                        }
+                        break;
+                    case java.sql.Types.CHAR:
+                    case java.sql.Types.VARCHAR:
+                    case java.sql.Types.LONGVARCHAR:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.VARCHAR);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setString(paramIndex, (String) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    case java.sql.Types.TIME:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.TIME);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setDate(paramIndex,
+                                        DateStack.convertDate2SQLDate(
+                                                dbpm.getValue().toString(),
+                                                dbpm.getFormat()));
+                            }
+                        }
+                        break;
+                    case java.sql.Types.TIMESTAMP:
+                        //stmt.setTimestamp(paramIndex, DateStack.convertDate2SQLTimestamp(dbpm.getValue().toString(), "MM/dd/yyyy H:m:s"));
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.TIMESTAMP);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setTimestamp(paramIndex,
+                                        (java.sql.Timestamp) dbpm.getValue());
+                            }
+                        }
+                        break;
+                    default:
+                        if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
+                            stmt.registerOutParameter(paramIndex,
+                                    java.sql.Types.VARCHAR);
+                        }
+                        if (dbpm.getIO() == DatabaseParameterType.INPUT) {
+                            if (dbpm.getValue() == null) {
+                                stmt.setNull(paramIndex, java.sql.Types.NULL);
+                            } else {
+                                stmt.setString(paramIndex, (String) dbpm.getValue());
+                            }
+                        }
+                        break;
+                }
+
+                paramIndex++;
+            }
+        }
     }
 
     public void idle(long delay) {

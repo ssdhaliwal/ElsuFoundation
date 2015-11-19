@@ -26,47 +26,96 @@ import javax.sql.rowset.serial.*;
  */
 public class DatabaseStack {
 
-    public static DatabaseDataType getDataType(Object o) {
-        DatabaseDataType result = DatabaseDataType.dtstring;
+    // return the java object to sql type mapping
+    public static int getDbDataType(Object o) {
+        int result = java.sql.Types.VARCHAR;
 
-        if (o == null) {
-            result = DatabaseDataType.dtnull;
-        } else if (o.getClass().equals(Array.class)) {
-            result = DatabaseDataType.dtarray;
-        } else if (o.getClass().equals(BigDecimal.class)) {
-            result = DatabaseDataType.dtbigDecimal;
-        } else if (o.getClass().equals(Blob.class)) {
-            result = DatabaseDataType.dtblob;
-        } else if (o.getClass().equals(Boolean.class)) {
-            result = DatabaseDataType.dtboolean;
-        } else if (o.getClass().equals(Byte.class)) {
-            result = DatabaseDataType.dtbyte;
-        } else if (o.getClass().equals(Byte[].class)) {
-            result = DatabaseDataType.dtbyteArray;
-        } else if (o.getClass().equals(Clob.class)) {
-            result = DatabaseDataType.dtclob;
-        } else if (o.getClass().equals(java.sql.Date.class)) {
-            result = DatabaseDataType.dtdate;
-        } else if (o.getClass().equals(Double.class)) {
-            result = DatabaseDataType.dtdouble;
-        } else if (o.getClass().equals(Float.class)) {
-            result = DatabaseDataType.dtfloat;
-        } else if (o.getClass().equals(Integer.class)) {
-            result = DatabaseDataType.dtint;
+        if (o.getClass().equals(Array.class)) {
+            result = java.sql.Types.ARRAY;
         } else if (o.getClass().equals(Long.class)) {
-            result = DatabaseDataType.dtlong;
-        } else if (o.getClass().equals(RowId.class)) {
-            result = DatabaseDataType.dtrowid;
+            result = java.sql.Types.BIGINT;
+        } else if (o.getClass().equals(Boolean.class)) {
+            result = java.sql.Types.BIT;
+        } else if (o.getClass().equals(Blob.class)) {
+            result = java.sql.Types.BLOB;
+        } else if (o.getClass().equals(Clob.class)) {
+            result = java.sql.Types.CLOB;
+        } else if (o.getClass().equals(java.sql.Date.class)) {
+            result = java.sql.Types.DATE;
+        } else if (o.getClass().equals(Double.class)) {
+            result = java.sql.Types.DOUBLE;
+        } else if (o.getClass().equals(Integer.class)) {
+            result = java.sql.Types.INTEGER;
+        } else if (o.getClass().equals(Float.class)) {
+            result = java.sql.Types.REAL;
+        } else if (o.getClass().equals(BigDecimal.class)) {
+            result = java.sql.Types.NUMERIC;
+        } else if (o.getClass().equals(Ref.class)) {
+            result = java.sql.Types.REF;
+        } else if (o.getClass().equals(SQLXML.class)) {
+            result = java.sql.Types.SQLXML;
         } else if (o.getClass().equals(Short.class)) {
-            result = DatabaseDataType.dtshort;
-        } else if (o.getClass().equals(Stream.class)) {
-            result = DatabaseDataType.dtstream;
-        } else if (o.getClass().equals(String.class)) {
-            result = DatabaseDataType.dtstring;
-        } else if (o.getClass().equals(Time.class)) {
-            result = DatabaseDataType.dttime;
+            result = java.sql.Types.SMALLINT;
+        } else if (o.getClass().equals(Struct.class)) {
+            result = java.sql.Types.STRUCT;
+        } else if (o.getClass().equals(java.sql.Time.class)) {
+            result = java.sql.Types.TIME;
         } else if (o.getClass().equals(java.sql.Timestamp.class)) {
-            result = DatabaseDataType.dttimestamp;
+            result = java.sql.Types.TIMESTAMP;
+        } else if (o.getClass().equals(Byte.class)) {
+            result = java.sql.Types.TINYINT;
+        } else if (o.getClass().equals(Byte[].class)) {
+            result = java.sql.Types.VARBINARY;
+        } else if (o.getClass().equals(String.class)) {
+            result = java.sql.Types.VARCHAR;
+        }
+
+        return result;
+    }
+
+    public static int getDbDataType(String value) {
+        int result = java.sql.Types.VARCHAR;
+
+        if ((value == null) || (value.length() == 0)) {
+            result = java.sql.Types.VARCHAR;
+        } else if (value.equals("ARRAY")) {
+            result = java.sql.Types.ARRAY;
+        } else if ((value.equals("BIGINT")) || (value.equals("LONG"))) {
+            result = java.sql.Types.BIGINT;
+        } else if ((value.equals("BIT")) || (value.equals("BOOLEAN"))) {
+            result = java.sql.Types.BIT;
+        } else if (value.equals("BLOB")) {
+            result = java.sql.Types.BLOB;
+        } else if (value.equals("CLOB")) {
+            result = java.sql.Types.CLOB;
+        } else if (value.equals("DATE")) {
+            result = java.sql.Types.DATE;
+        } else if (value.equals("DOUBLE")) {
+            result = java.sql.Types.DOUBLE;
+        } else if (value.equals("INTEGER")) {
+            result = java.sql.Types.INTEGER;
+        } else if ((value.equals("REAL")) || (value.equals("FLOAT"))) {
+            result = java.sql.Types.REAL;
+        } else if ((value.equals("NUMERIC")) || (value.equals("BIGDECIMAL"))) {
+            result = java.sql.Types.NUMERIC;
+        } else if (value.equals("REF")) {
+            result = java.sql.Types.REF;
+        } else if (value.equals("SQLXML")) {
+            result = java.sql.Types.SQLXML;
+        } else if ((value.equals("SMALLINT")) || (value.equals("SHORT"))) {
+            result = java.sql.Types.SMALLINT;
+        } else if (value.equals("STRUCT")) {
+            result = java.sql.Types.STRUCT;
+        } else if (value.equals("TIME")) {
+            result = java.sql.Types.TIME;
+        } else if (value.equals("TIMESTAMP")) {
+            result = java.sql.Types.TIMESTAMP;
+        } else if ((value.equals("TINYINT")) || (value.equals("BYTE"))) {
+            result = java.sql.Types.TINYINT;
+        } else if ((value.equals("VARBINARY")) || (value.equals("BYTEARRAY"))) {
+            result = java.sql.Types.VARBINARY;
+        } else if ((value.equals("VARCHAR")) || (value.equals("STRING"))) {
+            result = java.sql.Types.VARCHAR;
         }
 
         return result;
@@ -278,7 +327,7 @@ public class DatabaseStack {
                 }
             }
         }
-        
+
         return result;
     }
 
