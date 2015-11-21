@@ -26,6 +26,16 @@ import javax.sql.rowset.serial.*;
  */
 public class DatabaseStack {
 
+    private static String _dbCharacterSet = "US-ASCII";
+    
+    public static String getDbCharacterSet() {
+        return _dbCharacterSet;
+    }
+    
+    public static void setDbCharacterSet(String value) {
+        _dbCharacterSet = value;
+    }
+    
     // return the java object to sql type mapping
     public static int getDbDataType(Object o) {
         int result = java.sql.Types.VARCHAR;
@@ -40,7 +50,7 @@ public class DatabaseStack {
             result = java.sql.Types.BLOB;
         } else if (o.getClass().equals(Clob.class)) {
             result = java.sql.Types.CLOB;
-        } else if (o.getClass().equals(java.sql.Date.class)) {
+        } else if ((o.getClass().equals(java.sql.Date.class)) || (o.getClass().equals(Date.class))) {
             result = java.sql.Types.DATE;
         } else if (o.getClass().equals(Double.class)) {
             result = java.sql.Types.DOUBLE;
@@ -58,9 +68,9 @@ public class DatabaseStack {
             result = java.sql.Types.SMALLINT;
         } else if (o.getClass().equals(Struct.class)) {
             result = java.sql.Types.STRUCT;
-        } else if (o.getClass().equals(java.sql.Time.class)) {
+        } else if ((o.getClass().equals(java.sql.Time.class)) || (o.getClass().equals(Time.class))){
             result = java.sql.Types.TIME;
-        } else if (o.getClass().equals(java.sql.Timestamp.class)) {
+        } else if ((o.getClass().equals(java.sql.Timestamp.class)) || (o.getClass().equals(Timestamp.class))) {
             result = java.sql.Types.TIMESTAMP;
         } else if (o.getClass().equals(Byte.class)) {
             result = java.sql.Types.TINYINT;
@@ -724,48 +734,44 @@ public class DatabaseStack {
         }
     }
 
-    public static Object cloneObject(Object value, int dataType) throws Exception {
+    public static Object cloneObject(Object value) throws Exception {
         // check for NULL
         if (value == null) {
             return null;
         }
 
         // if primitive, return original back to source
-        if (isNumeric(dataType)) {
-            return convertNumeric(value, dataType, dataType);
-        } else if (isBoolean(dataType)) {
-            return convertBoolean(value, dataType, dataType);
-        } else if (isTemporal(dataType)) {
-            return convertTemporal(value, dataType, dataType);
+        if (isPrimitive(value)) {
+            return value;
         } else {
-            switch (dataType) {
+            switch (getDbDataType(value)) {
                 case java.sql.Types.ARRAY:
                     return getArray(value);
                 case java.sql.Types.BLOB:
                     return new SerialBlob((Blob) value);
                 case java.sql.Types.CLOB:
                 case java.sql.Types.NCLOB:
-                    return getCharStream(value, dataType);
+                    return getCharStream(value, java.sql.Types.VARCHAR);
                 case java.sql.Types.DATALINK:
                     return (java.net.URL) value;
                 case java.sql.Types.DISTINCT:
-                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + ")");
                 case java.sql.Types.JAVA_OBJECT:
                     return value;
                 case java.sql.Types.NULL:
                     return null;
                 case java.sql.Types.OTHER:
-                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + ")");
                 case java.sql.Types.REF:
-                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + ")");
                 case java.sql.Types.ROWID:
                     return ((RowId) value).toString();
                 case java.sql.Types.SQLXML:
                     return ((SQLXML) value).toString();
                 case java.sql.Types.STRUCT:
-                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + ")");
                 default:
-                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + "/" + dataType + ")");
+                    throw new Exception("cloneObject conversion failed. (" + value.toString().trim() + ")");
             }
         }
     }

@@ -12,5 +12,6 @@ package elsu.database;
 public enum DatabaseParameterType {
 
     INPUT,
-    OUTPUT
+    OUTPUT,
+    INPUT_OUTPUT
 }

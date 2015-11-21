@@ -773,7 +773,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
                 if (DatabaseStack.isPrimitive(fieldsById[i - 1].getType())) {
                     rd.setValue(i, rs.getObject(i));
                 } else {
-                    
+                    rd.setValue(i, DatabaseStack.cloneObject(rs.getObject(i)));
                 }
             }
 
@@ -889,10 +889,10 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
                         }
                         break;
                     case java.sql.Types.CLOB:
-//                        File file = new File("1.wma");  
-//                        fis = new FileInputStream(file);  
-//                        stmt.setBinaryStream(1,fis,fis.available();  
-//                        fis.close();  
+                        //                        File file = new File("1.wma");  
+                        //                        fis = new FileInputStream(file);  
+                        //                        stmt.setBinaryStream(1,fis,fis.available();  
+                        //                        fis.close();  
                         if (dbpm.getValue() == null) {
                             stmt.setNull(paramIndex, java.sql.Types.NULL);
                         } else {
