@@ -36,6 +36,7 @@ public class ConfigLoader {
     private Object _runtimeSync = new Object();
 
     // static property for app.config store and extraction from jar file
+    private static String _WEBREALPATH = "";
     private static String _APPCONFIG = "config/app.config";
 
     // static property for data format across the application for display 
@@ -80,7 +81,7 @@ public class ConfigLoader {
      * updated to parse the config variable to determine if it is not a properly
      * formatted xml (starts with "<?xml ")
      *
-     * @param configData is the XML data passed from the calling function.
+     * @param config is the XML data or file passed from the calling function.
      * @param suppressPath is array of strings which should be removed from key
      * @throws Exception
      */
@@ -93,7 +94,7 @@ public class ConfigLoader {
 
             // if config is null, then use the default
             if ((config == null) || (config.isEmpty())) {
-                config = ConfigLoader._APPCONFIG;
+                config = _WEBREALPATH + ConfigLoader._APPCONFIG;
             }
 
             // check the format, if raw xml?
@@ -103,7 +104,7 @@ public class ConfigLoader {
                 _xmlr = new XMLReader(config);
             } else {
                 // load the resource or file path
-                ConfigLoader._APPCONFIG = config;
+                ConfigLoader._APPCONFIG = _WEBREALPATH + config;
                 String configFile;
 
                 // check is app.config and log4j.properties file is stored in the
@@ -146,6 +147,48 @@ public class ConfigLoader {
     }
 
     /**
+     * ConfigLoader(...) constructor is used to load custom configuration passed
+     * through the string variable. Normally used by control service to pass
+     * custom XML sent from the client.
+     *
+     * @param config is the Map<String, Object> data passed from the calling
+     * function.
+     * @throws Exception
+     */
+    public ConfigLoader(Map<String, Object> config) throws Exception {
+        try {
+            // if config is null, then throw exception
+            if ((config == null) || (config.size() == 0)) {
+                throw new Exception("config passed is empty.");
+            }
+
+            // display the config to the user
+            showConfig(config);
+
+            // load the config into application or service properties hashMaps
+            initializeConfig(config);
+
+            // open log if provided
+            for (String key : getProperties().keySet()) {
+                if (key.equals(_logConfig)) {
+                    try {
+                        initializeLogger(getProperties().get(key).toString());
+                    } catch (Exception ex) {
+                        System.out.println("log4J configuration error, " + ex.getMessage());
+                    }
+
+                    break;
+                }
+            }
+
+            logInfo("configuration loaded.");
+        } catch (Exception ex) {
+            // display exception to the user and exit
+            System.out.println(getClass().toString() + "//" + ex.getMessage());
+        }
+    }
+
+    /**
      * initializeConfig() clears the storage application and service hashMaps
      * and then loads the app.config using XPath to reference each property.
      *
@@ -156,9 +199,23 @@ public class ConfigLoader {
         getProperties().clear();
         loadConfig(_xmlr.getDocument(), "", 1);
     }
+    
+    private void initializeConfig(Map<String, Object> config) throws Exception {
+        // clear the storage hashMaps
+        getProperties().clear();
+        _properties = config;
+    }
     // </editor-fold>
 
     // <editor-fold desc="class getter/setters">
+    public static String getWEBReapPath() {
+        return _WEBREALPATH;
+    }
+
+    public static void setWEBReapPath(String path) {
+        _WEBREALPATH = path;
+    }
+
     public static String getConfigPath() {
         return _APPCONFIG;
     }
@@ -198,9 +255,10 @@ public class ConfigLoader {
                 result.add(key);
             }
         }
-        
+
         return result;
     }
+
     public List<String> getClassSet(String partialKey) {
         List<String> result = new ArrayList<>();
 
@@ -209,7 +267,7 @@ public class ConfigLoader {
                 result.add(key);
             }
         }
-        
+
         return result;
     }
 
@@ -326,6 +384,13 @@ public class ConfigLoader {
         //    System.out.println("---" + nl.item(i).getNodeName());
         //    showConfigNodes(nl.item(i), 1);
         //}
+    }
+
+    private void showConfig(Map<String, Object> config) {
+        // assign new config to the variable
+        for (String key : config.keySet()) {
+            System.out.println(key + " (TEXT=" + config.get(key) +")");
+        }
     }
 
     /**
@@ -502,7 +567,7 @@ public class ConfigLoader {
         // if yes, then load it into the global suppressPath variable
         if (key.endsWith(".config.suppressPath")) {
             _suppressPath = value.split(",");
-            
+
             // now do a quick cleanup of the already loaded values
             Object cValue;
             for (String cKey : getProperties().keySet()) {
@@ -512,11 +577,11 @@ public class ConfigLoader {
                 for (String suppress : _suppressPath) {
                     cKey = cKey.replaceFirst(suppress, "");
                 }
-                
+
                 getProperties().put(cKey, cValue);
             }
         }
-        
+
         // check and remove the values in _suppressPath variable
         for (String suppress : _suppressPath) {
             key = key.replaceFirst(suppress, "");
@@ -562,11 +627,11 @@ public class ConfigLoader {
      */
     public Logger getLogger() {
         Logger result = null;
-        
+
         synchronized (this._runtimeSync) {
             result = this._log4JManager.getLogger();
         }
-        
+
         return result;
     }
 
