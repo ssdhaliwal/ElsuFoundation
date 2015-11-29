@@ -20,12 +20,12 @@ public class EntityDescriptor implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 5099557402995654788L;
 
-    private transient int _columnCount = 0;
-    private transient int _rowCount = 0;
+    private int _columnCount = 0;
+    private int _rowCount = 0;
 
-    private transient Map<String, ColumnDescriptor> _columns = null;
+    private Map<String, ColumnDescriptor> _columns = null;
     private transient ColumnDescriptor[] _columnsById = null;
-    private transient ArrayList<RowDescriptor> _rows = null;
+    private ArrayList<RowDescriptor> _rows = null;
 
     public EntityDescriptor(Map<String, ColumnDescriptor> columns,
             ArrayList<RowDescriptor> rows) {

@@ -208,11 +208,11 @@ public class ConfigLoader {
     // </editor-fold>
 
     // <editor-fold desc="class getter/setters">
-    public static String getWEBReapPath() {
+    public static String getWEBRealPath() {
         return _WEBREALPATH;
     }
 
-    public static void setWEBReapPath(String path) {
+    public static void setWEBRealPath(String path) {
         _WEBREALPATH = path;
     }
 
