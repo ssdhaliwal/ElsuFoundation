@@ -21,7 +21,7 @@ public class ElsuConfigTest {
             ConfigLoader cl = new ConfigLoader();
             
             for(String key : cl.getProperties().keySet()) {
-                System.out.println(key + "=" + cl.getProperties().get(key).toString());
+                System.out.println(key + "=" + cl.getProperty(key).toString());
             }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());

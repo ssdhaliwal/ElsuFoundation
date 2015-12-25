@@ -52,17 +52,12 @@ public abstract class AbstractEventManager implements IEventPublisher {
             String message, Object o) {
         Object result = null;
 
-        // if listeners are not setup, then just output to console
-        if (getEventListeners().size() == 0) {
-            System.out.println(status.getName() + ":" + message);
-        } else {
-            for (IEventSubscriber sub : getEventListeners()) {
-                try {
-                    result = sub.EventHandler(sender, status, message, o);
-                } catch (Exception ex) {
-                    System.out.println(getClass().toString() + ", notifyListeners(), "
-                            + ex.getMessage());
-                }
+        for (IEventSubscriber sub : getEventListeners()) {
+            try {
+                result = sub.EventHandler(sender, status, message, o);
+            } catch (Exception ex) {
+                System.out.println(getClass().toString() + ", notifyListeners(), "
+                        + ex.getMessage());
             }
         }
 
