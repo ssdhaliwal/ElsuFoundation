@@ -23,6 +23,19 @@ public class ElsuConfigTest {
             for(String key : cl.getProperties().keySet()) {
                 System.out.println(key + "=" + cl.getProperty(key).toString());
             }
+            
+            Log4JManager log4JManager = null;
+            
+            try {
+                String logPropertyFile = "config/log4j_1.properties";
+                String logClass = "logTest45";
+                String fileName = "ElsuConfigTest.log";
+                
+                log4JManager = ConfigLoader.initializeLogger(logPropertyFile, logClass, fileName);
+                log4JManager.info("this is a test/info");
+                log4JManager.error("this is a test/error");
+                log4JManager.debug("this is a test/debug");
+            } catch (Exception ex) { }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
