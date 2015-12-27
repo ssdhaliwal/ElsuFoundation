@@ -41,6 +41,7 @@ public class ConfigLoader {
     private static String _APPCONFIG = "config/app.config";
     private static String _LOGCONFIG = "log4j.properties";
     private static String _LOGCLASS = "logDefault";
+    private static String _LOGDATETIME = "yyyyMMdd_HHmmss";
 
     // static property for data format across the application for display 
     // purposes
@@ -235,6 +236,14 @@ public class ConfigLoader {
     public static void setDTGFormat(String format) {
         _DTGFORMAT = format;
     }
+    
+    public static String getLOGDATETIME() {
+        return _LOGDATETIME;
+    }
+    
+    public static void setLOGDATETIME(String logDatetime) {
+        _LOGDATETIME = logDatetime;
+    }
 
     /**
      * getApplicationProperties() method returns the hashMap containing the
@@ -289,12 +298,12 @@ public class ConfigLoader {
 
     public static String getTempLogName() {
         return String.format("TMPLOG_%s.LOG",
-                new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime()));
+                new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
     }
 
     public static String getLogName(String name) {
         return String.format(name + "_%s.LOG",
-                new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime()));
+                new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
     }
     // </editor-fold>
 
