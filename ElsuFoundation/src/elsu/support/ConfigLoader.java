@@ -297,12 +297,12 @@ public class ConfigLoader {
     }
 
     public static String getTempLogName() {
-        return String.format("TMPLOG_%s.LOG",
+        return String.format("TMPLOG%s.LOG", "_" + 
                 new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
     }
 
     public static String getLogName(String name) {
-        return String.format(name + "_%s.LOG",
+        return String.format(name + "%s.LOG", "_" + 
                 new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
     }
     // </editor-fold>
