@@ -53,8 +53,11 @@ public class ConfigLoader {
     // store all properties from app.config
     private Map<String, Object> _properties = new HashMap<>();
 
+    // array of path strings which need to be filtered from hashmap
+    private String[] _filterPath = new String[]{};
+
     // array of path strings which need to be removed from hashmap
-    private String[] _suppressPath = new String[]{};
+    private String[] _maskPath = new String[]{};
 
     // system logger if configured
     public static String _LOGFILENAMEPROPERTY = "log.filename";
@@ -78,23 +81,24 @@ public class ConfigLoader {
         this(ConfigLoader._APPCONFIG, null);
     }
 
-    /**
-     * ConfigLoader(...) constructor is used to load custom configuration passed
-     * through the string variable. Normally used by control service to pass
-     * custom XML sent from the client.
-     *
-     * updated to parse the config variable to determine if it is not a properly
-     * formatted xml (starts with "<?xml ")
-     *
-     * @param config is the XML data or file passed from the calling function.
-     * @param suppressPath is array of strings which should be removed from key
-     * @throws Exception
-     */
-    public ConfigLoader(String config, String[] suppressPath) throws Exception {
+    public ConfigLoader(String[] filterPath) throws Exception {
+        this(ConfigLoader._APPCONFIG, filterPath, null);
+    }
+
+    public ConfigLoader(String config, String[] filterPath) throws Exception {
+        this(config, filterPath, null);
+    }
+
+    public ConfigLoader(String config, String[] filterPath, String[] maskPath) {
         try {
-            // update suppress path before processing
-            if (suppressPath != null) {
-                this._suppressPath = suppressPath;
+            // update filter path before processing
+            if (filterPath != null) {
+                this._filterPath = filterPath;
+            }
+
+            // update mask path before processing
+            if (maskPath != null) {
+                this._maskPath = maskPath;
             }
 
             // if config is null, then use the default
@@ -236,11 +240,11 @@ public class ConfigLoader {
     public static void setDTGFormat(String format) {
         _DTGFORMAT = format;
     }
-    
+
     public static String getLOGDATETIME() {
         return _LOGDATETIME;
     }
-    
+
     public static void setLOGDATETIME(String logDatetime) {
         _LOGDATETIME = logDatetime;
     }
@@ -297,13 +301,13 @@ public class ConfigLoader {
     }
 
     public static String getTempLogName() {
-        return String.format("TMPLOG%s.LOG", "_" + 
-                new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
+        return String.format("TMPLOG%s.LOG", "_"
+                + new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
     }
 
     public static String getLogName(String name) {
-        return String.format(name + "%s.LOG", "_" + 
-                new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
+        return String.format(name + "%s.LOG", "_"
+                + new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
     }
     // </editor-fold>
 
@@ -586,10 +590,10 @@ public class ConfigLoader {
     }
 
     private void addMap(String key, String value) {
-        // check if the key ends with config.suppressPath
-        // if yes, then load it into the global suppressPath variable
-        if (key.endsWith(".config.suppressPath")) {
-            _suppressPath = value.split(",");
+        // check if the key exists with config.maskPath
+        // if yes, then load it into the global maskPath variable
+        if (key.endsWith(".config.maskPath")) {
+            _maskPath = value.split(",");
 
             // now do a quick cleanup of the already loaded values
             Object cValue;
@@ -597,21 +601,42 @@ public class ConfigLoader {
                 cValue = getProperties().get(cKey);
                 getProperties().remove(cKey);
 
-                for (String suppress : _suppressPath) {
-                    cKey = cKey.replaceFirst(suppress, "");
+                for (String mask : _maskPath) {
+                    cKey = cKey.replaceFirst(mask, "");
                 }
 
                 getProperties().put(cKey, cValue);
             }
+            
+            return;
         }
 
-        // check and remove the values in _suppressPath variable
-        for (String suppress : _suppressPath) {
-            key = key.replaceFirst(suppress, "");
+        // check the filterPath to ensure the key does not start with the filter
+        if (_filterPath.length > 0) {
+            Boolean match = false;
+            for (String filter : _filterPath) {
+                if (key.startsWith(filter)) {
+                    match = true;
+                    break;
+                }
+            }
+            
+            if (!match) {
+                return;
+            }
         }
 
+        // check and remove the values in _maskPath variable
+        if (_maskPath.length > 0) {
+            for (String mask : _maskPath) {
+                key = key.replaceFirst(mask, "");
+            }
+        }
+
+        // add the key to the keymap for utilization
         getProperties().put(key, value);
         System.out.println(key + "=" + value);
+
     }
     // </editor-fold>
 
@@ -647,13 +672,13 @@ public class ConfigLoader {
 
     public static Log4JManager initializeLogger(String logClass, String fileName) throws Exception {
         Log4JManager log4JManager = null;
-        
+
         if (logClass.isEmpty() || (logClass.length() == 0)) {
             log4JManager = new Log4JManager(ConfigLoader._LOGCONFIG, ConfigLoader._LOGCLASS, getLogName(fileName));
         } else {
             log4JManager = new Log4JManager(ConfigLoader._LOGCONFIG, logClass, getLogName(fileName));
         }
-        
+
         return log4JManager;
     }
 
@@ -670,7 +695,7 @@ public class ConfigLoader {
         } else {
             log4JManager = new Log4JManager(logPropertyFile, logClass, fileName);
         }
-        
+
         return log4JManager;
     }
 

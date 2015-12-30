@@ -23,9 +23,15 @@ public class ElsuConfigTest {
             for(String key : cl.getProperties().keySet()) {
                 System.out.println(key + "=" + cl.getProperty(key).toString());
             }
+
+            System.out.println("---------------------------------------------");
+            cl = new ConfigLoader(new String[]{"application.framework.", "application.groupExtensions."});
+            for(String key : cl.getProperties().keySet()) {
+                System.out.println(key + "=" + cl.getProperty(key).toString());
+            }
             
-            Log4JManager log4JManager = null;
-            
+            System.out.println("---------------------------------------------");
+            Log4JManager log4JManager = null;            
             try {
                 String logPropertyFile = "config/log4j_1.properties";
                 String logClass = "logTest45";
