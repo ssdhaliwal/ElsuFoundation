@@ -6,7 +6,7 @@
 package elsu.database.rowset;
 
 import elsu.common.*;
-import elsu.database.DatabaseStack;
+import elsu.database.DatabaseUtils;
 import elsu.support.*;
 import java.io.*;
 import java.math.*;
@@ -41,7 +41,7 @@ public class RowDescriptor implements Serializable, Cloneable {
         this._columns = columns;
         this._columnsById = columnsById;
 
-        RowDescriptor rd = (RowDescriptor) GsonXMLStack.JSon2Object(jsonRow, RowDescriptor.class);
+        RowDescriptor rd = (RowDescriptor) GsonXMLUtils.JSon2Object(jsonRow, RowDescriptor.class);
         this.cloneRow(rd);
     }
 
@@ -141,7 +141,7 @@ public class RowDescriptor implements Serializable, Cloneable {
         // column index is offset 1 not 0 but array offset is 0
         for (int i : indexes) {
             value = this._currentRow[i - 1].toString();
-            value = (fixedLength ? StringStack.padString(value, getColumnLength(i - 1)) : value);
+            value = (fixedLength ? StringUtils.padString(value, getColumnLength(i - 1)) : value);
 
             result += (result.isEmpty() ? value : "," + value);
         }
@@ -263,7 +263,7 @@ public class RowDescriptor implements Serializable, Cloneable {
         // column index is offset 1 not 0 but array offset is 0
         for (int i = 1; i <= getColumnCount(); i++) {
             // if primitive then direct copy, else instantiate the class
-            if (DatabaseStack.isPrimitive(getColumnType(i))) {
+            if (DatabaseUtils.isPrimitive(getColumnType(i))) {
                 this._originalRow[i - 1] = row._originalRow[i - 1];
                 this._currentRow[i - 1] = row._currentRow[i - 1];
             } else {
@@ -363,7 +363,7 @@ public class RowDescriptor implements Serializable, Cloneable {
     @Override
     public String toString() {
         String result = "";
-        result = GsonXMLStack.Object2JSon(this);
+        result = GsonXMLUtils.Object2JSon(this);
 
         return result;
     }

@@ -11,7 +11,7 @@ import org.apache.commons.codec.binary.*;
  * @author: Seraj.Dhaliwal
  *
  */
-public class EncodingStack {
+public class EncodingUtils {
 
     /**
      * encode returns updated url by replacing special chars with %hh
@@ -107,10 +107,10 @@ public class EncodingStack {
         String out;
 
         byte[] encodedBytes;
-        encodedBytes = org.apache.commons.codec.binary.Base64.encodeBase64(StringUtils
-                .getBytesUtf8(value));
+        encodedBytes = org.apache.commons.codec.binary.Base64.encodeBase64(
+                org.apache.commons.codec.binary.StringUtils.getBytesUtf8(value));
 
-        out = StringUtils.newStringUtf8(encodedBytes);
+        out = org.apache.commons.codec.binary.StringUtils.newStringUtf8(encodedBytes);
 
         return out;
     }
@@ -128,7 +128,7 @@ public class EncodingStack {
         String out;
 
         byte[] decode = base64.decode(value);
-        out = StringUtils.newStringUtf8(decode);
+        out = org.apache.commons.codec.binary.StringUtils.newStringUtf8(decode);
 
         return out;
     }

@@ -39,7 +39,7 @@ public class EntityDescriptor implements Serializable, Cloneable {
         Type columnType = new TypeToken<Map<String, ColumnDescriptor>>() {
         }.getType();
         this._columns
-                = (Map<String, ColumnDescriptor>) GsonXMLStack.JSon2Object(jsonColumns, columnType);
+                = (Map<String, ColumnDescriptor>) GsonXMLUtils.JSon2Object(jsonColumns, columnType);
         this._columnsById = setColumnsById(this._columns);
 
         this._rows = new ArrayList<RowDescriptor>();
@@ -160,7 +160,7 @@ public class EntityDescriptor implements Serializable, Cloneable {
     @Override
     public String toString() {
         String result = "";
-        result = GsonXMLStack.Object2JSon(this);
+        result = GsonXMLUtils.Object2JSon(this);
 
         return result;
     }

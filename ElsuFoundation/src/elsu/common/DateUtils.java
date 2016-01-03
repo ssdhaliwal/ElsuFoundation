@@ -7,14 +7,14 @@ import java.text.*;
  *
  * @author SSDhaliwal
  */
-public class DateStack {
+public class DateUtils {
 
     static public java.util.Date getDate() {
         return new java.util.Date(Calendar.getInstance().getTimeInMillis());
     }
 
     static public java.sql.Timestamp getTimeStamp() {
-        return new java.sql.Timestamp(DateStack.getDate().getTime());
+        return new java.sql.Timestamp(DateUtils.getDate().getTime());
     }
 
     // routines to convert regular Date to different formats
@@ -29,7 +29,7 @@ public class DateStack {
 
         // set defaults for data format conversions
         // if empty, set to default format
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             sdf2 = new SimpleDateFormat("MM/dd/yyyy");
         } else {
             sdf2 = new SimpleDateFormat(pFormat);
@@ -50,14 +50,14 @@ public class DateStack {
 
         // set defaults for data format conversions
         // if empty, set to default format
-        if (StringStack.IsNull(pFmtFrom)) {
+        if (StringUtils.IsNull(pFmtFrom)) {
             sdf2 = new SimpleDateFormat("yyyy-MM-dd");
         } else {
             sdf2 = new SimpleDateFormat(pFmtFrom);
         }
 
         // if empty, set to default format
-        if (StringStack.IsNull(pFmtTo)) {
+        if (StringUtils.IsNull(pFmtTo)) {
             sdf3 = new SimpleDateFormat("MM/dd/yyyy");
         } else {
             sdf3 = new SimpleDateFormat(pFmtTo);
@@ -93,7 +93,7 @@ public class DateStack {
 
         // set defaults for data format conversions
         // if empty, set to default format
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             sdf2 = new SimpleDateFormat("MM/dd/yyyy");
         } else {
             sdf2 = new SimpleDateFormat(pFormat);
@@ -119,7 +119,7 @@ public class DateStack {
 
         // set defaults for data format conversions
         // if empty, set to default format
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             sdf2 = new SimpleDateFormat("MM/dd/yyyy");
         } else {
             sdf2 = new SimpleDateFormat(pFormat);
@@ -148,7 +148,7 @@ public class DateStack {
         java.util.Date d;
 
         // if empty, set to default format
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             sdf2 = new SimpleDateFormat("HH:mm:ss");
         } else {
             sdf2 = new SimpleDateFormat(pFormat);
@@ -175,7 +175,7 @@ public class DateStack {
         java.util.Date d;
 
         // if empty, set to default format
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             sdf2 = new SimpleDateFormat("MM/dd/yyyy");
         } else {
             sdf2 = new SimpleDateFormat(pFormat);
@@ -203,7 +203,7 @@ public class DateStack {
         java.util.Date d;
 
         // if empty, set to default format
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             sdf2 = new SimpleDateFormat("MM/dd/yyyy H:m:s");
         } else {
             sdf2 = new SimpleDateFormat(pFormat);

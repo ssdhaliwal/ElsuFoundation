@@ -21,7 +21,7 @@ class ExtensionFilter implements FilenameFilter {
     }
 }
 
-public class FileStack {
+public class FileUtils {
 
     public static ArrayList<String> findFiles(String root, String mask) {
         return findFiles(root, mask, false, 0);
@@ -341,7 +341,7 @@ public class FileStack {
      * @return <code>String</code> temp file name
      */
     public static String tempFile(int length, String extension) {
-        return StringStack.randomString(length)
+        return StringUtils.randomString(length)
                 + (extension.contains(".") ? extension : "." + extension);
     }
 
@@ -356,7 +356,7 @@ public class FileStack {
      * @return <code>String</code> temp file name
      */
     public static String tempFile(int length, String prefix, String suffix, String extension) {
-        String name = prefix + StringStack.randomString(length) + suffix;
+        String name = prefix + StringUtils.randomString(length) + suffix;
         return name
                 + (extension.contains(".") ? extension : "." + extension);
     }

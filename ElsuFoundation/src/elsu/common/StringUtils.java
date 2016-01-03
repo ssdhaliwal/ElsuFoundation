@@ -15,7 +15,7 @@ import java.util.*;
  * boolean with string value is null/empty
  *
  */
-public class StringStack {
+public class StringUtils {
 
     /**
      * IsNull returns the default value specified. It is handy when evaluating

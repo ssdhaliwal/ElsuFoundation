@@ -6,12 +6,12 @@ import java.text.*;
  *
  * @author SSDhaliwal
  */
-public class NumberStack {
+public class NumberUtils {
 
     static public String NumberFormat(int pNumber, String pFormat) {
         DecimalFormat nf;
 
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             nf = new DecimalFormat("###,###,###,###");
         } else {
             nf = new DecimalFormat(pFormat);
@@ -23,7 +23,7 @@ public class NumberStack {
     static public String FloatFormat(Float pFloat, String pFormat) {
         DecimalFormat nf;
 
-        if (StringStack.IsNull(pFormat)) {
+        if (StringUtils.IsNull(pFormat)) {
             nf = new DecimalFormat("###,###,###,###.00");
         } else {
             nf = new DecimalFormat(pFormat);

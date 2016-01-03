@@ -60,7 +60,7 @@ public class ColumnDescriptor implements Serializable, Cloneable {
     }
 
     public ColumnDescriptor(String jsonColumn) {
-        ColumnDescriptor fd = (ColumnDescriptor) GsonXMLStack.JSon2Object(jsonColumn, ColumnDescriptor.class);
+        ColumnDescriptor fd = (ColumnDescriptor) GsonXMLUtils.JSon2Object(jsonColumn, ColumnDescriptor.class);
         this.cloneColumn(fd);
     }
 
@@ -171,7 +171,7 @@ public class ColumnDescriptor implements Serializable, Cloneable {
     @Override
     public String toString() {
         String result = "";
-        result = GsonXMLStack.Object2JSon(this);
+        result = GsonXMLUtils.Object2JSon(this);
 
         return result;
     }

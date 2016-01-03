@@ -6,7 +6,7 @@ import com.google.gson.*;
  *
  * @author dhaliwal-admin
  */
-public class GsonXMLStack {
+public class GsonXMLUtils {
 
     public static String Object2JSon(Object obj) {
         String result = "";

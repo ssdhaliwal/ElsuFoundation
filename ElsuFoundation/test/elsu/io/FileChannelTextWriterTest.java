@@ -133,7 +133,7 @@ public class FileChannelTextWriterTest extends TestCase {
                         while (count++ < records) {
                             try {
                                 int result = instance.writeline(threadId + " -> dtg " + 
-                                        DateStack.convertDate2String(Calendar.getInstance().getTime(), "yyyyMMdd_HHmmss.S") + " record # " + count);
+                                        DateUtils.convertDate2String(Calendar.getInstance().getTime(), "yyyyMMdd_HHmmss.S") + " record # " + count);
                             } catch (Exception ex){
                             }
 
@@ -173,7 +173,7 @@ public class FileChannelTextWriterTest extends TestCase {
                         while (count++ < records) {
                             try {
                                 int result = instance.writeline(threadId + " -> dtg " + 
-                                        DateStack.convertDate2String(Calendar.getInstance().getTime(), "yyyyMMdd_HHmmss.S") + " record # " + count);
+                                        DateUtils.convertDate2String(Calendar.getInstance().getTime(), "yyyyMMdd_HHmmss.S") + " record # " + count);
                             } catch (Exception ex){
                             }
 

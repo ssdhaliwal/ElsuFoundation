@@ -5,16 +5,12 @@
  */
 package test.elsurowset;
 
-import ac.core.*;
 import ac.factory.*;
-import com.google.gson.*;
-import com.google.gson.reflect.*;
+import elsu.database.*;
 import elsu.database.rowset.*;
 import elsu.events.*;
 import elsu.support.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.sql.*;
 
 /**
  *
@@ -52,13 +48,15 @@ public class EntityRowSetTest implements IEventSubscriber {
             EntityRowSetTest rut1 = new EntityRowSetTest();
 
             try {
-                EntityDescriptor wrs = rut1.af.getDbManager().getDataED("SELECT * FROM ncs3.vwSite",
+                Object dbManager = rut1.af.getDbManager();
+                Connection conn = ((DatabaseManager)dbManager).getConnection();
+                EntityDescriptor wrs = DatabaseUtils.getEntityDescriptor(conn, "SELECT * FROM ncs3.vwSite",
                         null);
                 //System.out.println(ActionObject.toXML(wrs));
                 //System.out.println(".. records selected: " + wrs.size());
 
-                String jFields = GsonXMLStack.Object2JSon(wrs.getColumns());
-                String jRows = GsonXMLStack.Object2JSon(wrs.getRows());
+                String jFields = GsonXMLUtils.Object2JSon(wrs.getColumns());
+                String jRows = GsonXMLUtils.Object2JSon(wrs.getRows());
 
                 //System.out.println(jFields);
                 //Type fieldType = new TypeToken<Map<String, FieldDescriptor>>() {}.getType();

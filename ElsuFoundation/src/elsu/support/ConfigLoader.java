@@ -39,7 +39,7 @@ public class ConfigLoader {
     // static property for app.config store and extraction from jar file
     private static String _WEBREALPATH = "";
     private static String _APPCONFIG = "config/app.config";
-    private static String _LOGCONFIG = "log4j.properties";
+    private static String _LOGCONFIGREALPATH = "log4j.properties";
     private static String _LOGCLASS = "logDefault";
     private static String _LOGDATETIME = "yyyyMMdd_HHmmss";
 
@@ -56,13 +56,10 @@ public class ConfigLoader {
     // array of path strings which need to be filtered from hashmap
     private String[] _filterPath = new String[]{};
 
-    // array of path strings which need to be removed from hashmap
-    private String[] _maskPath = new String[]{};
-
     // system logger if configured
-    public static String _LOGFILENAMEPROPERTY = "log.filename";
-    public static String _LOGCONFIGPROPERTY = "log.config";
-    public static String _LOGCLASSPROPERTY = "log.class";
+    public static String _LOGFILENAMEPROPERTY = "application.framework.attributes.key.log.filename";
+    public static String _LOGCONFIGPROPERTY = "application.framework.attributes.key.log.config";
+    public static String _LOGCLASSPROPERTY = "application.framework.attributes.key.log.class";
     private Log4JManager _log4JManager = null;
     // </editor-fold>
 
@@ -82,23 +79,14 @@ public class ConfigLoader {
     }
 
     public ConfigLoader(String[] filterPath) throws Exception {
-        this(ConfigLoader._APPCONFIG, filterPath, null);
+        this(ConfigLoader._APPCONFIG, filterPath);
     }
 
     public ConfigLoader(String config, String[] filterPath) throws Exception {
-        this(config, filterPath, null);
-    }
-
-    public ConfigLoader(String config, String[] filterPath, String[] maskPath) {
-        try {
+         try {
             // update filter path before processing
             if (filterPath != null) {
                 this._filterPath = filterPath;
-            }
-
-            // update mask path before processing
-            if (maskPath != null) {
-                this._maskPath = maskPath;
             }
 
             // if config is null, then use the default
@@ -256,7 +244,7 @@ public class ConfigLoader {
      *
      * @return <code>hashMap</code> key/value set of all application properties
      */
-    public Map<String, Object> getProperties() {
+    private Map<String, Object> getProperties() {
         return this._properties;
     }
 
@@ -264,6 +252,10 @@ public class ConfigLoader {
         return getProperties().get(key);
     }
 
+    public Set<String> getKeySet() {
+        return getProperties().keySet();
+    }
+    
     public List<String> getClassSet() {
         List<String> result = new ArrayList<>();
 
@@ -474,7 +466,7 @@ public class ConfigLoader {
         // indentation
         if (level == 1) {
             // display the parent node name
-            String data = StringUtils.repeat('~', level) + parent.getNodeName();
+            String data = org.apache.commons.lang3.StringUtils.repeat('~', level) + parent.getNodeName();
 
             // use the sub function to extract node attributes
             data += showNode.displayNodeAttributes(parent);
@@ -486,7 +478,7 @@ public class ConfigLoader {
         // parse the list of child nodes for the node being processed
         for (Object node : nodes) {
             // display the parent node name
-            String data = StringUtils.repeat('\t', level)
+            String data = org.apache.commons.lang3.StringUtils.repeat('\t', level)
                     + ((org.w3c.dom.Node) node).getNodeName();
 
             // use the sub function to extract node attributes
@@ -542,7 +534,7 @@ public class ConfigLoader {
                     // append the attribute details (key/text) to the string
                     // builder object
                     if (!na.getNodeName().equals(nodeAttrKey)) {
-                        addMap(nodePath + "." + na.getNodeName(), na.getNodeValue());
+                        addProperty(nodePath + "." + na.getNodeName(), na.getNodeValue());
                         //System.out.println(nodePath + "." + na.getNodeName()
                         //        + "=" + na.getNodeValue());
                     }
@@ -554,7 +546,7 @@ public class ConfigLoader {
 
             // if node has a text value, display the text
             if (_xmlr.getNodeText(node) != null) {
-                addMap(nodePath, _xmlr.getNodeText(node));
+                addProperty(nodePath, _xmlr.getNodeText(node));
                 //System.out.println(nodePath
                 //        + "=" + _xmlr.getNodeText(node));
 
@@ -589,28 +581,13 @@ public class ConfigLoader {
         return result;
     }
 
-    private void addMap(String key, String value) {
-        // check if the key exists with config.maskPath
-        // if yes, then load it into the global maskPath variable
-        if (key.endsWith(".config.maskPath")) {
-            _maskPath = value.split(",");
-
-            // now do a quick cleanup of the already loaded values
-            Object cValue;
-            for (String cKey : getProperties().keySet()) {
-                cValue = getProperties().get(cKey);
-                getProperties().remove(cKey);
-
-                for (String mask : _maskPath) {
-                    cKey = cKey.replaceFirst(mask, "");
-                }
-
-                getProperties().put(cKey, cValue);
-            }
-            
-            return;
+    public void addProperties(Map<String, Object> properties) {
+        for (String key : properties.keySet()) {
+            addProperty(key, properties.get(key));
         }
+    }
 
+    public void addProperty(String key, Object value) {
         // check the filterPath to ensure the key does not start with the filter
         if (_filterPath.length > 0) {
             Boolean match = false;
@@ -620,16 +597,9 @@ public class ConfigLoader {
                     break;
                 }
             }
-            
+
             if (!match) {
                 return;
-            }
-        }
-
-        // check and remove the values in _maskPath variable
-        if (_maskPath.length > 0) {
-            for (String mask : _maskPath) {
-                key = key.replaceFirst(mask, "");
             }
         }
 
@@ -651,15 +621,15 @@ public class ConfigLoader {
         String logFileName = getProperty(ConfigLoader._LOGFILENAMEPROPERTY).toString();
 
         if (!log.contains("\\") && !log.contains("/")) {
-            ConfigLoader._LOGCONFIG
+            ConfigLoader._LOGCONFIGREALPATH
                     = (new File(getClass().getName().replace(".", "\\"))).getParent()
                     + "\\" + log;
         } else {
-            ConfigLoader._LOGCONFIG = log;
+            ConfigLoader._LOGCONFIGREALPATH = log;
         }
 
         // check if the log property file exists, if not extract it 
-        extractConfigFile(ConfigLoader._LOGCONFIG);
+        extractConfigFile(ConfigLoader._LOGCONFIGREALPATH);
 
         // if log.filename is empty, then assign a temporary one
         if ((logFileName == null) || (logFileName.isEmpty())) {
@@ -667,16 +637,16 @@ public class ConfigLoader {
         }
 
         ConfigLoader._LOGCLASS = getProperty(ConfigLoader._LOGCLASSPROPERTY).toString();
-        _log4JManager = new Log4JManager(ConfigLoader._LOGCONFIG, ConfigLoader._LOGCLASS, logFileName);
+        _log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGREALPATH, ConfigLoader._LOGCLASS, logFileName);
     }
 
     public static Log4JManager initializeLogger(String logClass, String fileName) throws Exception {
         Log4JManager log4JManager = null;
 
         if (logClass.isEmpty() || (logClass.length() == 0)) {
-            log4JManager = new Log4JManager(ConfigLoader._LOGCONFIG, ConfigLoader._LOGCLASS, getLogName(fileName));
+            log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGREALPATH, ConfigLoader._LOGCLASS, getLogName(fileName));
         } else {
-            log4JManager = new Log4JManager(ConfigLoader._LOGCONFIG, logClass, getLogName(fileName));
+            log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGREALPATH, logClass, getLogName(fileName));
         }
 
         return log4JManager;

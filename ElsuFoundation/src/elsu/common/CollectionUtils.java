@@ -6,7 +6,7 @@ import java.util.*;
  *
  * @author ss.dhaliwal_admin
  */
-public class CollectionStack {
+public class CollectionUtils {
 
     public static String getMapValueAsString(Map list, String key) {
         return list.get(key).toString();

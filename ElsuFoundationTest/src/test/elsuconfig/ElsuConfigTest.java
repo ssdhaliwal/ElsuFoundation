@@ -20,13 +20,13 @@ public class ElsuConfigTest {
         try {
             ConfigLoader cl = new ConfigLoader();
             
-            for(String key : cl.getProperties().keySet()) {
+            for(String key : cl.getKeySet()) {
                 System.out.println(key + "=" + cl.getProperty(key).toString());
             }
 
             System.out.println("---------------------------------------------");
             cl = new ConfigLoader(new String[]{"application.framework.", "application.groupExtensions."});
-            for(String key : cl.getProperties().keySet()) {
+            for(String key : cl.getKeySet()) {
                 System.out.println(key + "=" + cl.getProperty(key).toString());
             }
             
