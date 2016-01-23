@@ -48,7 +48,7 @@ public class EntityRowSetTest implements IEventSubscriber {
             EntityRowSetTest rut1 = new EntityRowSetTest();
 
             try {
-                Object dbManager = rut1.af.getDbManager();
+                Object dbManager = rut1.af.getDbManager("NCS");
                 Connection conn = ((DatabaseManager)dbManager).getConnection();
                 EntityDescriptor wrs = DatabaseUtils.getEntityDescriptor(conn, "SELECT * FROM ncs3.vwSite",
                         null);
