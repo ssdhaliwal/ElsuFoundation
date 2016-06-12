@@ -259,8 +259,11 @@ public class XMLReader {
      * @return text (string) or null
      */
     public String getNodeText(Node node) {
+        if (node.getChildNodes() == null) {
+            return null;
+        }
         if (node.getChildNodes().getLength() == 1) {
-            if (node.getNextSibling().getNodeType() == Node.TEXT_NODE) {
+            if (node.getFirstChild().getNodeType() == Node.TEXT_NODE) {
                 // java 1.5 return(node.getTextContent());
                 return (node.getFirstChild().getNodeValue());
             }

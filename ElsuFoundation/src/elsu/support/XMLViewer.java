@@ -50,6 +50,11 @@ public class XMLViewer {
 
             // loop through the node attributes for the node passed
             String displayNodeAttributes(org.w3c.dom.Node node) {
+                // if node is null, return empty string
+                if (node == null) {
+                    return "";
+                }
+
                 // create string build object to support string concatanation
                 StringBuilder sb = new StringBuilder();
 
@@ -62,10 +67,12 @@ public class XMLViewer {
                     for (Object na : nAttributes) {
                         // append the attribute details (key/text) to the string
                         // builder object
-                        sb.append(" [ATTR=").append(((org.w3c.dom.Node) na).getNodeName())
-                                .append("//")
-                                .append(((org.w3c.dom.Node) na).getNodeValue())
-                                .append("]");
+                        if (na != null) {
+                            sb.append(" [ATTR=").append(((org.w3c.dom.Node) na).getNodeName())
+                                    .append("//")
+                                    .append(((org.w3c.dom.Node) na).getNodeValue())
+                                    .append("]");
+                        }
 
                         // yield processing to other threads
                         Thread.yield();
