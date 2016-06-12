@@ -53,8 +53,8 @@ libs.Elsu_Shared_Library.classpath=\
     ${base}/Elsu_Shared_Library/xpp3_min-1.1.4c.jar:\
     ${base}/Elsu_Shared_Library/xstream-1.4.7.jar:\
     ${base}/Elsu_Shared_Library/xstream-benchmark-1.4.7.jar:\
-    ${base}/Elsu_Shared_Library/xstream-hibernate-1.4.7.jar:\
-    ${base}/Elsu_Shared_Library/JavaAPIforKml.jar
+    ${base}/Elsu_Shared_Library/xstream-hibernate-1.4.7.jar
+libs.Elsu_Shared_Library.displayName=Elsu Shared Library
 libs.Elsu_Shared_Library.javadoc=\
     ${base}/Elsu_Shared_Library/commons-cli-1.2-javadoc.jar!//:\
     ${base}/Elsu_Shared_Library/commons-codec-1.9-javadoc.jar!//:\
@@ -87,8 +87,7 @@ libs.Elsu_Shared_Library.src=\
     ${base}/Elsu_Shared_Library/commons-pool2-2.1-sources.jar!//:\
     ${base}/Elsu_Shared_Library/gson-2.2.4-sources.jar!//:\
     ${base}/Elsu_Shared_Library/gson-2.3.1-sources.jar!//:\
-    ${base}/Elsu_Shared_Library/json-lib-2.4-jdk15-sources.jar!//:\
-    ${base}/Elsu_Shared_Library/JavaAPIforKml-sources.jar!//
+    ${base}/Elsu_Shared_Library/json-lib-2.4-jdk15-sources.jar!//
 libs.hamcrest.classpath=\
     ${base}/hamcrest/hamcrest-core-1.3.jar
 libs.hamcrest.displayName=Hamcrest 1.3

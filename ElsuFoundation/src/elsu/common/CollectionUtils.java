@@ -16,6 +16,13 @@ public class CollectionUtils {
         return Integer.parseInt(getMapValueAsString(list, key));
     }
     
+    public static String ArrayListToString(ArrayList<String> values) {
+        return CollectionUtils.ArrayToString(values.toArray(new String[values.size()]));
+    }
+    public static String ArrayListToString(ArrayList<String> values, char delimiter) {
+        return CollectionUtils.ArrayToString(values.toArray(new String[values.size()]), delimiter);
+    }
+    
     public static String ArrayToString(String[] values) {
         return ArrayToString(values, ',');
     }

@@ -110,7 +110,7 @@ public class FileUtils {
      * @return <code>ArrayList</code> collection of file data
      * @throws java.lang.Exception
      */
-    public static ArrayList<String> readFile(String filename)
+    public static String readFile(String filename)
             throws Exception {
         return readFile(filename, false, false);
     }
@@ -124,7 +124,7 @@ public class FileUtils {
      * @return <code>ArrayList</code> collection of file data
      * @throws java.lang.Exception
      */
-    public static ArrayList<String> readFile(String filename,
+    public static String readFile(String filename,
             boolean deleteOnExit)
             throws Exception {
         return readFile(filename, deleteOnExit, false);
@@ -141,7 +141,247 @@ public class FileUtils {
      * @return <code>ArrayList</code> collection of file data
      * @throws java.lang.Exception
      */
-    public static ArrayList<String> readFile(String filename,
+    public static String readFile(String filename,
+            boolean deleteOnExit,
+            boolean ignoreExceptions)
+            throws Exception {
+        // return variable
+        StringBuilder sb = new StringBuilder();
+
+        // open the file to be read
+        BufferedReader reader = null;
+
+        // var to track if there was an exception in processing 
+        boolean error = false;
+
+        // if there is an exception in saving we need
+        // to notify the client and exit.
+        try {
+            // open the output stream, reverse the overwrite since the file
+            // writer is looking for append (true/false)
+            reader = new BufferedReader(new FileReader(filename));
+
+            // loop until the entire file has been read
+            while (true) {
+                // read the line from file
+                String line = reader.readLine();
+
+                // if line is null, then exit
+                if (line == null) {
+                    break;
+                } else {
+                    // store the line in buffer
+                    sb.append(line);
+                    sb.append(GlobalStack.LINESEPARATOR);
+                }
+            }
+        } catch (Exception ex){
+            // set error tracker to true
+            error = true;
+
+            // return the exception for notification
+            if (!ignoreExceptions) {
+                throw new Exception(ex);
+            }
+        } finally {
+            // close the stream (if open), if not
+            // ignore the exception
+            try {
+                reader.close();
+            } catch (Exception exi){
+            }
+
+            // if deleteOnExit then try to delete based on the ignoreException
+            // option (if true, then delete always, else no delete)
+            if (deleteOnExit
+                    && ((ignoreExceptions)
+                    || (!ignoreExceptions && !error))) {
+                try {
+                    new File(filename.toString()).delete();
+                } catch (Exception exi){
+                }
+
+            }
+        }
+
+        // return the data
+        return sb.toString();
+    }
+
+    /**
+     * readFile(...) method reads text file and returns the number of lines
+     * requested from top.
+     *
+     * @param filename
+     * @param lines
+     * @return <code>ArrayList</code> collection of file dat
+     * @throws java.lang.Exceptiona
+     */
+    public static String readFile(String filename, long lines)
+            throws Exception {
+        // return variable
+        StringBuilder sb = new StringBuilder();
+
+        // open the file to be read
+        BufferedReader reader = null;
+
+        // if there is an exception in saving we need
+        // to notify the client and exit.
+        try {
+            // open the output stream, reverse the overwrite since the file
+            // writer is looking for append (true/false)
+            reader = new BufferedReader(new FileReader(filename));
+
+            // loop until the file has been read to the lines required
+            int count = 0;
+            while (count < lines) {
+                // read the line from file
+                String line = reader.readLine();
+
+                // if line is null, then exit
+                if (line == null) {
+                    break;
+                } else {
+                    // store the line in buffer
+                    sb.append(line);
+                    sb.append(GlobalStack.LINESEPARATOR);
+
+                    // valid data, increase count
+                    count++;
+                }
+            }
+        } catch (Exception ex){
+            // return the exception for notification
+            throw new Exception(ex);
+        } finally {
+            // close the stream (if open), if not
+            // ignore the exception
+            try {
+                reader.close();
+            } catch (Exception exi){
+            }
+        }
+
+        // return the data
+        return sb.toString();
+    }
+
+    /**
+     * readFile(...) method reads text file and returns the number of lines
+     * requested from start position.
+     *
+     * @param filename
+     * @param start
+     * @param lines
+     * @return <code>ArrayList</code> collection of file dat
+     * @throws java.lang.Exceptiona
+     */
+    public static String readFile(String filename, long start,
+            long lines)
+            throws Exception {
+        // return variable
+        StringBuilder sb = new StringBuilder();
+
+        // open the file to be read
+        BufferedReader reader = null;
+
+        // if there is an exception in saving we need
+        // to notify the client and exit.
+        try {
+            // open the output stream, reverse the overwrite since the file
+            // writer is looking for append (true/false)
+            reader = new BufferedReader(new FileReader(filename));
+
+            // loop until the file has been read to the lines required from
+            // the start position specified
+            int index = 0;
+            int count = 0;
+            while (count < lines) {
+                // read the line from file
+                String line = reader.readLine();
+
+                // if line is null, then exit
+                if (line == null) {
+                    break;
+                } else {
+                    // check if the file is at the start position, if not,
+                    // increase the index, and reloop
+                    if (index < start) {
+                        index++;
+                        continue;
+                    }
+
+                    // store the line in buffer
+                    sb.append(line);
+                    sb.append(GlobalStack.LINESEPARATOR);
+
+                    // valid data, increase count
+                    count++;
+                }
+            }
+        } catch (Exception ex){
+            // return the exception for notification
+            throw new Exception(ex);
+        } finally {
+            // close the stream (if open), if not
+            // ignore the exception
+            try {
+                reader.close();
+            } catch (Exception exi){
+            }
+        }
+
+        // return the data
+        return sb.toString();
+    }
+
+    /**
+     * readFileToList(...) method reads all the data from the text file. If
+     * deleteOnExit option is set to true, the file is removed after reading
+     * <p>
+     * Two overloads are available: readFile(filename, deleteOnExit) method will
+     * delete the file once all the content has been read into memory.
+     *
+     * readFile(filename, deleteOnExit, ignoreExceptions) method will delete the
+     * file once all the content has been read into memory and will ignore any
+     * exceptions in processing (so file will be deleted always)
+     *
+     * @param filename
+     * @return <code>ArrayList</code> collection of file data
+     * @throws java.lang.Exception
+     */
+    public static ArrayList<String> readFileToList(String filename)
+            throws Exception {
+        return readFileToList(filename, false, false);
+    }
+
+    /**
+     * readFileToList(...) method reads all the data from the text file and delete the
+     * file once all the content has been read into memory.
+     *
+     * @param filename
+     * @param deleteOnExit
+     * @return <code>ArrayList</code> collection of file data
+     * @throws java.lang.Exception
+     */
+    public static ArrayList<String> readFileToList(String filename,
+            boolean deleteOnExit)
+            throws Exception {
+        return readFileToList(filename, deleteOnExit, false);
+    }
+
+    /**
+     * readFileToList(...) method reads all the data from the text file and delete the
+     * file once all the content has been read into memory even if there are
+     * exceptions in processing.
+     *
+     * @param filename
+     * @param deleteOnExit
+     * @param ignoreExceptions
+     * @return <code>ArrayList</code> collection of file data
+     * @throws java.lang.Exception
+     */
+    public static ArrayList<String> readFileToList(String filename,
             boolean deleteOnExit,
             boolean ignoreExceptions)
             throws Exception {
@@ -208,7 +448,7 @@ public class FileUtils {
     }
 
     /**
-     * readFile(...) method reads text file and returns the number of lines
+     * readFileToList(...) method reads text file and returns the number of lines
      * requested from top.
      *
      * @param filename
@@ -216,7 +456,7 @@ public class FileUtils {
      * @return <code>ArrayList</code> collection of file dat
      * @throws java.lang.Exceptiona
      */
-    public static ArrayList<String> readFile(String filename, long lines)
+    public static ArrayList<String> readFileToList(String filename, long lines)
             throws Exception {
         // return variable
         ArrayList<String> result = new ArrayList<>();
@@ -265,7 +505,7 @@ public class FileUtils {
     }
 
     /**
-     * readFile(...) method reads text file and returns the number of lines
+     * readFileToList(...) method reads text file and returns the number of lines
      * requested from start position.
      *
      * @param filename
@@ -274,7 +514,7 @@ public class FileUtils {
      * @return <code>ArrayList</code> collection of file dat
      * @throws java.lang.Exceptiona
      */
-    public static ArrayList<String> readFile(String filename, long start,
+    public static ArrayList<String> readFileToList(String filename, long start,
             long lines)
             throws Exception {
         // return variable

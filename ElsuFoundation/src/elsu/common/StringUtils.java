@@ -1,5 +1,6 @@
 package elsu.common;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -200,5 +201,27 @@ public class StringUtils {
         
         // return the new value
         return result;
+    }
+    
+    // http://stackoverflow.com/questions/216894/get-an-outputstream-into-a-string
+    // example: 
+    //      OutputStream output = StringUtils.StreamforString();
+    //      xx.Write(output);
+    //      string value = output.toString();
+    //      output.close();
+    public static OutputStream StreamforString() {
+        return new OutputStream() {
+            private StringBuilder string = new StringBuilder();
+            
+            @Override
+            public void write(int b) throws IOException {
+                this.string.append((char) b);
+            }
+            
+            @Override
+            public String toString() {
+                return this.string.toString();
+            }
+        };
     }
 }

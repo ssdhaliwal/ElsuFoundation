@@ -37,26 +37,28 @@ public class RowDescriptor implements Serializable, Cloneable {
     }
 
     public RowDescriptor(Map<String, ColumnDescriptor> columns, ColumnDescriptor[] columnsById,
-            String jsonRow) {
+            String jsonRow) throws Exception {
         this._columns = columns;
         this._columnsById = columnsById;
 
         RowDescriptor rd = (RowDescriptor) GsonXMLUtils.JSon2Object(jsonRow, RowDescriptor.class);
+
+        this._originalRow = new Object[getColumnCount()];
+        this._currentRow = new Object[getColumnCount()];
+
         this.cloneRow(rd);
     }
 
     public RowDescriptor(Map<String, ColumnDescriptor> columns, ColumnDescriptor[] columnsById,
             Object[] currentRow) throws Exception {
-        if ((columns.size() != columnsById.length)
-                || (columns.size() != currentRow.length)) {
-            throw new Exception("column count does not match values provided in current row array");
-        }
-
         this._columns = columns;
         this._columnsById = columnsById;
 
         this._deleted = false;
         this._changed = false;
+
+        this._originalRow = new Object[getColumnCount()];
+        this._currentRow = new Object[getColumnCount()];
 
         // store data passed into current row
         for (int i = 0; i < getColumnCount(); i++) {
@@ -256,7 +258,7 @@ public class RowDescriptor implements Serializable, Cloneable {
         return result;
     }
 
-    public void cloneRow(RowDescriptor row) {
+    public void cloneRow(RowDescriptor row) throws Exception {
         this._deleted = row._deleted;
         this._changed = row._changed;
 
@@ -267,7 +269,7 @@ public class RowDescriptor implements Serializable, Cloneable {
                 this._originalRow[i - 1] = row._originalRow[i - 1];
                 this._currentRow[i - 1] = row._currentRow[i - 1];
             } else {
-                
+                throw new Exception("Cloning of non-primitive objects is not supported.");
             }
         }
     }
