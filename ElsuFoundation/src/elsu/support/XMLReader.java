@@ -195,10 +195,27 @@ public class XMLReader {
             return null;
         }
     }
+    public NodeList getNodeListByXPath(String expression, Node node) {
+        try {
+            return (NodeList) _xPath.compile(expression).evaluate(node,
+                    XPathConstants.NODESET);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
 
     public Node getNodeByXPath(String expression) {
         try {
             return (Node) _xPath.compile(expression).evaluate(getDocument(),
+                    XPathConstants.NODE);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
+
+    public Node getNodeByXPath(String expression, Node node) {
+        try {
+            return (Node) _xPath.compile(expression).evaluate(node,
                     XPathConstants.NODE);
         } catch (Exception exi) {
             return null;
@@ -213,9 +230,26 @@ public class XMLReader {
         }
     }
 
+    public String getNodeValueByXPath(String expression, Node node) {
+        try {
+            return _xPath.compile(expression).evaluate(node);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
+
     public NodeList getNodeAttributesByXPath(String expression) {
         try {
             return (NodeList) _xPath.compile(expression).evaluate(getDocument(),
+                    XPathConstants.NODESET);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
+
+    public NodeList getNodeAttributesByXPath(String expression, Node node) {
+        try {
+            return (NodeList) _xPath.compile(expression).evaluate(node,
                     XPathConstants.NODESET);
         } catch (Exception exi) {
             return null;
@@ -262,6 +296,7 @@ public class XMLReader {
         if (node.getChildNodes() == null) {
             return null;
         }
+        
         if (node.getChildNodes().getLength() == 1) {
             if (node.getFirstChild().getNodeType() == Node.TEXT_NODE) {
                 // java 1.5 return(node.getTextContent());

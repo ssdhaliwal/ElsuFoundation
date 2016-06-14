@@ -5,15 +5,21 @@
  */
 package elsu.support;
 
+import elsu.common.*;
 import java.util.*;
+import static java.util.UUID.*;
+import javax.xml.parsers.*;
+import javax.xml.xpath.*;
 
 /**
  *
  * @author ssdhaliwal
  */
 public class XML2Map {
+
     // variable to store the xml document object from XMLReader class
     protected XMLReader _xmlr = null;
+    private String _dupkeySuffix = randomUUID().toString();
 
     // store all properties from app.config
     private Map<String, Object> _properties = new HashMap<>();
@@ -66,63 +72,79 @@ public class XML2Map {
         return this._properties;
     }
 
+    public Object getProperty(String key) {
+        return getProperties().get(key);
+    }
+
     protected void loadConfig(org.w3c.dom.Node parent, String nodePath, int level) {
         // retrieve the child nodes for processing
         ArrayList<org.w3c.dom.Node> nodes = _xmlr.getNodeChildren(parent);
 
         // parse the list of child nodes for the node being processed
         ArrayList<org.w3c.dom.Node> nAttributes = null;
-        String nodePathHold = nodePath;
         String nodeAttrKey = "";
-        for (org.w3c.dom.Node node : nodes) {
-            nodePath += (nodePath.isEmpty() ? node.getNodeName() : "." + node.getNodeName());
-            nAttributes = _xmlr.getNodeAttributes(node);
+        String nodePathHold = nodePath;
 
-            // loop through the attributes array and append them to the
-            // string builder object
-            nodeAttrKey = "";
-            if (nAttributes != null) {
-                // get id, name, class attribute if any
-                nodeAttrKey = getAttributeKey(nAttributes);
+        if (nodes != null) {
+            for (org.w3c.dom.Node node : nodes) {
+                // adjust for special match on nodePath
+                //if (this._childPath.length > 1) {
+                //    if (nodePath.equals(this._childPath[0])) {
+                //        System.out.println("2>" + _xmlr.getNodeValueByXPath(this._childPath[1], node));
+                //        System.out.println("2>" + _xmlr.getNodeValueByXPath(this._childPath[2], node));
+                //        System.out.println("2>" + _xmlr.getNodeValueByXPath(this._childPath[3], node));
+                //    }
+                //}
 
-                // get the key value for path
-                for (org.w3c.dom.Node na : nAttributes) {
-                    if (na.getNodeName().equals(nodeAttrKey)) {
-                        nodePath += "." + na.getNodeValue();
-                        break;
+                nodePath += (nodePath.isEmpty() ? node.getNodeName() : "." + node.getNodeName());
+                nAttributes = _xmlr.getNodeAttributes(node);
+                //System.out.println(nodePath);
+
+                // loop through the attributes array and append them to the
+                // string builder object
+                nodeAttrKey = "";
+                if (nAttributes != null) {
+                    // get id, name, class attribute if any
+                    nodeAttrKey = getAttributeKey(nAttributes);
+
+                    // get the key value for path
+                    for (org.w3c.dom.Node na : nAttributes) {
+                        if (na.getNodeName().equals(nodeAttrKey)) {
+                            nodePath += "." + na.getNodeValue();
+                            break;
+                        }
+                    }
+
+                    // first get the key or if none; set it to first value
+                    for (org.w3c.dom.Node na : nAttributes) {
+                        // append the attribute details (key/text) to the string
+                        // builder object
+                        if (!na.getNodeName().equals(nodeAttrKey)) {
+                            addProperty(nodePath + "." + na.getNodeName(), na.getNodeValue());
+                            //System.out.println(nodePath + "." + na.getNodeName()
+                            //        + "=" + na.getNodeValue());
+                        }
+
+                        // yield processing to other threads
+                        Thread.yield();
                     }
                 }
 
-                // first get the key or if none; set it to first value
-                for (org.w3c.dom.Node na : nAttributes) {
-                    // append the attribute details (key/text) to the string
-                    // builder object
-                    if (!na.getNodeName().equals(nodeAttrKey)) {
-                        addProperty(nodePath + "." + na.getNodeName(), na.getNodeValue());
-                        //System.out.println(nodePath + "." + na.getNodeName()
-                        //        + "=" + na.getNodeValue());
-                    }
-
-                    // yield processing to other threads
-                    Thread.yield();
+                // if node has a text value, display the text
+                if (_xmlr.getNodeText(node) != null) {
+                    addProperty(nodePath, _xmlr.getNodeText(node));
+                    //System.out.println(nodePath
+                    //        + "=" + _xmlr.getNodeText(node));
                 }
+
+                // recall the function (recursion) to see if the node has child 
+                // nodes and preocess them in hierarchial level
+                loadConfig(node, nodePath, (level + 1));
+                nodePath = nodePathHold;
+
+                // yield processing to other threads
+                Thread.yield();
             }
-
-            // if node has a text value, display the text
-            if (_xmlr.getNodeText(node) != null) {
-                addProperty(nodePath, _xmlr.getNodeText(node));
-                //System.out.println(nodePath
-                //        + "=" + _xmlr.getNodeText(node));
-
-            }
-
-            // recall the function (recursion) to see if the node has child 
-            // nodes and preocess them in hierarchial level
-            loadConfig(node, nodePath, (level + 1));
-            nodePath = nodePathHold;
-
-            // yield processing to other threads
-            Thread.yield();
         }
     }
 
@@ -146,6 +168,11 @@ public class XML2Map {
     }
 
     public void addProperty(String key, Object value) {
+        // if value is null, exit
+        if (value == null) {
+            return;
+        }
+
         // check the filterPath to ensure the key does not start with the filter
         if (_filterPath.length > 0) {
             Boolean match = false;
@@ -162,7 +189,14 @@ public class XML2Map {
         }
 
         // add the key to the keymap for utilization
-        getProperties().put(key, value);
-        System.out.println(key + "=" + value);
+        if (getProperties().containsKey(key)) {
+            if (getProperties().containsKey(key + "_" + this._dupkeySuffix)) {
+                this._dupkeySuffix = randomUUID().toString();
+            }
+
+            getProperties().put(key + "_" + this._dupkeySuffix, value);
+        } else {
+            getProperties().put(key, value);
+        }
     }
 }
