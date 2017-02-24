@@ -8,11 +8,23 @@ import java.util.*;
  */
 public class CollectionUtils {
 
-    public static String getMapValueAsString(Map list, String key) {
+    public static Map<String, Object> getMapValueSubset(Map<String, Object> list, String pattern) {
+    	HashMap<String, Object> result = new HashMap<>();
+    	
+    	for(String key : list.keySet()) {
+    		if (key.matches(pattern)) {
+    			result.put(key, list.get(key));
+    		}
+    	}
+    		
+        return result;
+    }
+
+    public static String getMapValueAsString(Map<String, Object> list, String key) {
         return list.get(key).toString();
     }
 
-    public static int getMapValueAsInteger(Map list, String key) {
+    public static int getMapValueAsInteger(Map<String, Object> list, String key) {
         return Integer.parseInt(getMapValueAsString(list, key));
     }
     

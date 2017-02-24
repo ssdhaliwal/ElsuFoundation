@@ -24,12 +24,18 @@ class ExtensionFilter implements FilenameFilter {
 public class FileUtils {
 
     public static ArrayList<String> findFiles(String root, String mask) {
-        return findFiles(root, mask, false, 0);
+        return findFiles(root, mask, false, true, 0);
+    }
+
+    public static ArrayList<String> findFiles(String root, String mask, boolean includeRootPath) {
+        return findFiles(root, mask, false, includeRootPath, 0);
     }
 
     public static ArrayList<String> findFiles(String root, String mask,
-            boolean recurse, final int maxFiles) {
+            boolean recurse, boolean includeRootPath, final int maxFiles) {
         final ArrayList<String> result = new ArrayList<>();
+        final String rootPath = root;
+        final boolean includePath = includeRootPath; 
 
         // create filename filter
         final String fMask = "(?i)" + mask;
@@ -63,7 +69,7 @@ public class FileUtils {
                     String sFile = fObject.getAbsolutePath().toString();
 
                     if (fObject.isFile()) {
-                        result.add(sFile);
+                        result.add((includePath) ? sFile : sFile.replaceFirst(rootPath, ""));
 
                         if ((maxFiles > 0) && (result.size() >= maxFiles)) {
                             break;
@@ -77,7 +83,7 @@ public class FileUtils {
             }
         }
 
-        (new fileScanner(mask.toLowerCase(), recurse)).scan(root, result);
+        (new fileScanner(mask.toLowerCase(), recurse)).scan(rootPath, result);
         return result;
     }
 
@@ -86,7 +92,7 @@ public class FileUtils {
     }
 
     public static void deleteFiles(String root, String mask, boolean recurse) {
-        ArrayList<String> fList = findFiles(root, mask, recurse, 0);
+        ArrayList<String> fList = findFiles(root, mask, recurse, true, 0);
         File fObject;
 
         for (String file : fList) {
@@ -625,6 +631,39 @@ public class FileUtils {
 
             // write the message with terminator
             writer.write(data);
+
+            // flush the text file to disk
+            writer.flush();
+        } catch (Exception ex){
+            // return the exception for notification
+            throw new Exception(ex);
+        } finally {
+            // close the stream (if open), if not
+            // ignore the exception
+            try {
+                writer.close();
+            } catch (Exception exi){
+            }
+        }
+    }
+    
+    // 20170127 - added to save list to file
+    public static void writeFile(String filename, List<String> data, boolean overwrite)
+            throws Exception {
+        // storage for the file stream for saving the message
+        FileWriter writer = null;
+
+        // if there is an exception in saving we need
+        // to notify the client and exit.
+        try {
+            // open the output stream, reverse the overwrite since the file
+            // writer is looking for append (true/false)
+            writer = new FileWriter(filename, !overwrite);
+
+            // write the message with terminator
+            for(String line : data) {
+            	writer.write(line + GlobalStack.LINESEPARATOR);
+            }
 
             // flush the text file to disk
             writer.flush();

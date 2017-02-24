@@ -7,6 +7,8 @@ package elsu.support;
 
 import java.util.*;
 
+import org.w3c.dom.*;
+
 /**
  *
  * @author ssdhaliwal
@@ -59,7 +61,7 @@ public class XMLViewer {
                 StringBuilder sb = new StringBuilder();
 
                 // retrieve node attributes (if any)
-                ArrayList nAttributes = _xmlr.getNodeAttributes(node);
+                ArrayList<Node> nAttributes = _xmlr.getNodeAttributes(node);
 
                 // loop through the attributes array and append them to the
                 // string builder object
@@ -89,7 +91,7 @@ public class XMLViewer {
         SubShowNode showNode = new SubShowNode();
 
         // retrieve the child nodes for processing
-        ArrayList nodes = _xmlr.getNodeChildren(parent);
+        ArrayList<Node> nodes = _xmlr.getNodeChildren(parent);
 
         // if node level is 1, then this is root node, display it with no
         // indentation

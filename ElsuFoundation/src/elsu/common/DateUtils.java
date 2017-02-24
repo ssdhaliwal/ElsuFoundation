@@ -145,7 +145,6 @@ public class DateUtils {
     static public java.sql.Time convertDate2SQLTime(String pTime, String pFormat) {
         SimpleDateFormat sdf2;
         SimpleDateFormat sdf;
-        java.util.Date d;
 
         // if empty, set to default format
         if (StringUtils.IsNull(pFormat)) {
@@ -172,7 +171,6 @@ public class DateUtils {
     static public java.sql.Date convertDate2SQLDate(String pDate, String pFormat) {
         SimpleDateFormat sdf2;
         SimpleDateFormat sdf;
-        java.util.Date d;
 
         // if empty, set to default format
         if (StringUtils.IsNull(pFormat)) {
@@ -200,7 +198,6 @@ public class DateUtils {
             String pFormat) {
         SimpleDateFormat sdf2;
         SimpleDateFormat sdf;
-        java.util.Date d;
 
         // if empty, set to default format
         if (StringUtils.IsNull(pFormat)) {
@@ -218,5 +215,13 @@ public class DateUtils {
         } catch (Exception exi){
             return null;
         }
+    }
+    
+    // 20170114 - added method to convert time in milliseonds to java date
+    static public java.util.Date convertMilliseconds2Date(long pMilliSeconds) {
+    	Calendar local = Calendar.getInstance();
+    	local.setTimeInMillis(pMilliSeconds);
+    	
+    	return local.getTime();
     }
 }

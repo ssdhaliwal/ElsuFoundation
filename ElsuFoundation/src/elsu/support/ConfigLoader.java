@@ -10,8 +10,8 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.Paths;
 import java.text.*;
-import org.apache.commons.lang3.*;
-import org.apache.log4j.*;
+import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.core.*;
 
 /**
  * ConfigLoader is the base class for factory. The core purpose is to load the
@@ -40,13 +40,17 @@ public class ConfigLoader {
     private Object _runtimeSync = new Object();
 
     // static property for app.config store and extraction from jar file
-    private static String _APPCONFIG = "config/app.config";
+    // 20170110 - changed from _APPCONFIG to _RESOURCEPATH
+    private static String _RESOURCEPATH = "config/app.config";
     private static String _LOGCONFIGFILE = "log4j.properties";
     private static String _LOGCLASS = "logDefault";
     private static String _LOGDATETIME = "yyyyMMdd_HHmmss";
+
     // .52 added to allow specification of alternate extract directory when
     // security permissions deny write into deployed location
-    private static String _TEMPPATH = "";
+    private static String _LOGPATH = "";
+    // 20170110 - changed from _TEMPPATH to _LOCALPATH
+    private static String _LOCALPATH = "";
 
     // static property for data format across the application for display 
     // purposes
@@ -62,6 +66,7 @@ public class ConfigLoader {
     public static String _LOGFILENAMEPROPERTY = "application.framework.attributes.key.log.filename";
     public static String _LOGCONFIGPROPERTY = "application.framework.attributes.key.log.config";
     public static String _LOGCLASSPROPERTY = "application.framework.attributes.key.log.class";
+    public static String _LOGPATHPROPERTY = "application.framework.attributes.key.log.path";
     private Log4JManager _log4JManager = null;
     // </editor-fold>
 
@@ -77,11 +82,11 @@ public class ConfigLoader {
      * @throws Exception
      */
     public ConfigLoader() throws Exception {
-        this(ConfigLoader._APPCONFIG, null);
+        this(ConfigLoader._RESOURCEPATH, null);
     }
 
     public ConfigLoader(String[] filterPath) throws Exception {
-        this(ConfigLoader._APPCONFIG, filterPath);
+        this(ConfigLoader._RESOURCEPATH, filterPath);
     }
 
     // .52 updated to allow specification of alternate extract directory when
@@ -97,7 +102,7 @@ public class ConfigLoader {
 
             // if config is null, then use the default
             if ((config == null) || (config.isEmpty())) {
-                config = ConfigLoader._APPCONFIG;
+                config = ConfigLoader._RESOURCEPATH;
             }
 
             // check the format, if raw xml?
@@ -107,17 +112,17 @@ public class ConfigLoader {
                 file = config;
             } else {
                 // load the resource or file path
-                ConfigLoader._APPCONFIG = config;
+                ConfigLoader._RESOURCEPATH = config;
                 String configFile;
 
                 // check is app.config and log4j.properties file is stored in the
                 // application; note, if variable already contains a path then 
                 // external config is used view package extraction
-                configFile = ConfigLoader._APPCONFIG;
+                configFile = ConfigLoader._RESOURCEPATH;
 
                 // extract file to local file system
-                if (!elsu.common.StringUtils.IsNull(getTempPath())) {
-                    String tempFile = extractConfigFile(configFile, getTempPath());
+                if (!elsu.common.StringUtils.IsNull(getLocalPath())) {
+                    String tempFile = extractConfigFile(configFile, getLocalPath());
 
                     // try to create the XML reader instance for XML document parsing
                     // using the app.config file location
@@ -135,7 +140,8 @@ public class ConfigLoader {
             showConfig(file);
 
             // load the config into application or service properties hashMaps
-            initializeConfig(file);
+            getProperties().clear();
+            this._properties = initializeConfig(file);
 
             // open log if provided
             for (String key : getProperties().keySet()) {
@@ -204,13 +210,17 @@ public class ConfigLoader {
      * and then loads the app.config using XPath to reference each property.
      *
      * @throws Exception
+     * 
+     * 20170105 - updated from private to public static
      */
-    private void initializeConfig(String file) throws Exception {
-        // clear the storage hashMaps
-        getProperties().clear();
+    public static Map<String, Object> initializeConfig(String file) throws Exception {
+    	Map<String, Object> result = null;
+    	
         XML2Map xml = new XML2Map(file);
-        this._properties = xml.getProperties();
+        result = xml.getProperties();
         xml = null;
+        
+        return result;
     }
 
     private void initializeConfig(Map<String, Object> config) throws Exception {
@@ -221,12 +231,12 @@ public class ConfigLoader {
     // </editor-fold>
 
     // <editor-fold desc="class getter/setters">
-    public static String getConfigPath() {
-        return _APPCONFIG;
+    public static String getResourcePath() {
+        return _RESOURCEPATH;
     }
 
-    public static void setConfigPath(String path) {
-        _APPCONFIG = path;
+    public static void setResourcePath(String path) {
+    	_RESOURCEPATH = path;
     }
 
     public static String getDTGFormat() {
@@ -245,12 +255,20 @@ public class ConfigLoader {
         _LOGDATETIME = logDatetime;
     }
 
-    public static String getTempPath() {
-        return _TEMPPATH;
+    public static String getLocalPath() {
+        return _LOCALPATH;
     }
 
-    public static void setTempPath(String path) {
-        _TEMPPATH = path;
+    public static void setLocalPath(String path) {
+    	_LOCALPATH = path;
+    }
+
+    public static String getLogPath() {
+        return _LOGPATH;
+    }
+
+    public static void setLogPath(String path) {
+        _LOGPATH = path;
     }
 
     /**
@@ -341,7 +359,9 @@ public class ConfigLoader {
         if (elsu.common.StringUtils.IsNull(tempPath)) {
             result = filename;
         } else {
-            result = tempPath + "/" + Paths.get(filename).getFileName();
+            result = tempPath + 
+            		(tempPath.endsWith("/") ? "" : "/") + 
+            		Paths.get(filename).getFileName();
 
             System.out.println("config file redirect: " + result);
         }
@@ -477,7 +497,6 @@ public class ConfigLoader {
 
         // add the key to the keymap for utilization
         getProperties().put(key, value);
-        System.out.println(key + "=" + value);
     }
     // </editor-fold>
 
@@ -493,6 +512,12 @@ public class ConfigLoader {
         // part of the file name - if yes, then ignore class path
         String tempFile = null;
         String logFileName = getProperty(ConfigLoader._LOGFILENAMEPROPERTY).toString();
+        String logPath = getLogPath();
+        
+        // check if logpath is overridden
+        if ((getLogPath() == null) || (getLogPath().isEmpty()) || (getLogPath().length() == 0)) {
+        	logPath = getProperty(ConfigLoader._LOGPATHPROPERTY).toString();
+        }
 
         if (!log.contains("\\") && !log.contains("/")) {
             ConfigLoader._LOGCONFIGFILE
@@ -502,9 +527,9 @@ public class ConfigLoader {
             ConfigLoader._LOGCONFIGFILE = log;
         }
 
-        // check if the log property file exists, if not extract it 
-        if (!elsu.common.StringUtils.IsNull(getTempPath())) {
-            tempFile = extractConfigFile(ConfigLoader._LOGCONFIGFILE, getTempPath());
+        // are we trying to extract to a location outside execution folder 
+        if (!elsu.common.StringUtils.IsNull(getLocalPath())) {
+            tempFile = extractConfigFile(ConfigLoader._LOGCONFIGFILE, getLocalPath());
         } else {
             extractConfigFile(ConfigLoader._LOGCONFIGFILE);
         }
@@ -513,7 +538,15 @@ public class ConfigLoader {
         if ((logFileName == null) || (logFileName.isEmpty())) {
             logFileName = "$TMP_LOG$.LOG";
         } else if (!elsu.common.StringUtils.IsNull(tempFile)) {
-            logFileName = getTempPath() + "/" + Paths.get(logFileName).getFileName();
+            logFileName = Paths.get(logFileName).getFileName().toString();
+        }
+        
+        // fix if logPath is provided
+        if ((logPath == null) || (logPath.isEmpty())) {
+        	logFileName = getLocalPath() + 
+        			(getLocalPath().endsWith("/") ? "" : "/") + logFileName;
+        } else {
+        	logFileName = logPath + logFileName;
         }
 
         ConfigLoader._LOGCLASS = getProperty(ConfigLoader._LOGCLASSPROPERTY).toString();
@@ -528,19 +561,19 @@ public class ConfigLoader {
         System.out.println("log file location: " + logFileName);
     }
 
-    public static Log4JManager initializeLogger(String logClass, String fileName) throws Exception {
+    public static Log4JManager initializeLogger(String logPath, String logClass, String fileName) throws Exception {
         Log4JManager log4JManager = null;
 
-        if (logClass.isEmpty() || (logClass.length() == 0)) {
-            log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGFILE, ConfigLoader._LOGCLASS, getLogName(fileName));
+        if (logPath.isEmpty() || (logPath.length() == 0)) {
+            return null;
         } else {
-            log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGFILE, logClass, getLogName(fileName));
+            log4JManager = new Log4JManager(logPath, logClass, getLogName(fileName));
         }
 
         return log4JManager;
     }
-
-    public static Log4JManager initializeLogger(String logPropertyFile, String logClass, String fileName) throws Exception {
+    /*
+    public static Log4JManager initializeLogger(String logPropertyFile, String fileName) throws Exception {
         // log attribute value is defined, set the static variable to the 
         // log property file location; also, check if path is provided as
         Log4JManager log4JManager = null;
@@ -548,20 +581,15 @@ public class ConfigLoader {
         // check if the log property file exists, if not extract it 
         extractConfigFile(logPropertyFile);
 
-        if (logClass.isEmpty() || (logClass.length() == 0)) {
-            log4JManager = new Log4JManager(logPropertyFile, ConfigLoader._LOGCLASS, getLogName(fileName));
-        } else {
-            log4JManager = new Log4JManager(logPropertyFile, logClass, fileName);
-        }
-
+        log4JManager = new Log4JManager(logPropertyFile, fileName);
         return log4JManager;
     }
-
+	*/
     /**
      *
      */
-    public Logger getLogger() {
-        Logger result = null;
+    public org.apache.logging.log4j.Logger getLogger() {
+    	org.apache.logging.log4j.Logger result = null;
 
         synchronized (this._runtimeSync) {
             result = this._log4JManager.getLogger();
@@ -580,10 +608,17 @@ public class ConfigLoader {
      *
      * @param info is the object whose string representation will be stored in
      * the log file
+     * 
+     * 20170114 - added exception handler to close out the synchronized block
+     * 			- cleanly
      */
     public void logDebug(Object info) {
         synchronized (this._runtimeSync) {
-            getLogger().debug(info.toString());
+            try {
+            	getLogger().debug(info.toString());
+            } catch (Exception ex) { 
+            	System.out.println("ConfigLoader, logDebug(), " + ex.getMessage());
+            }
         }
     }
 
@@ -597,10 +632,17 @@ public class ConfigLoader {
      *
      * @param info is the object whose string representation will be stored in
      * the log file
+     * 
+     * 20170114 - added exception handler to close out the synchronized block
+     * 			- cleanly
      */
     public void logError(Object info) {
         synchronized (this._runtimeSync) {
+        	try {
             getLogger().error(info.toString());
+            } catch (Exception ex) { 
+            	System.out.println("ConfigLoader, logError(), " + ex.getMessage());
+            }
         }
     }
 
@@ -614,11 +656,31 @@ public class ConfigLoader {
      *
      * @param info is the object whose string representation will be stored in
      * the log file
+     * 
+     * 20170114 - added exception handler to close out the synchronized block
+     * 			- cleanly
      */
     public void logInfo(Object info) {
         synchronized (this._runtimeSync) {
-            getLogger().info(info.toString());
+            try {
+            	getLogger().info(info.toString());
+            } catch (Exception ex) { 
+            	System.out.println("ConfigLoader, logInfo(), " + ex.getMessage());
+            }
         }
     }
     // </editor-fold>
+
+    @Override
+    public String toString() {
+    	String result = "";
+    	
+    	try {
+    		result = JsonXMLUtils.Object2JSon(_properties);
+    	} catch (Exception ex) {
+    		result = this.getClass().toString() + ".toString(), \n" + ex.getMessage() + "\n" + ex.getStackTrace();
+    	}
+    	
+    	return result;
+    }
 }

@@ -265,7 +265,7 @@ public class XMLReader {
      */
     public String getNodeAttributeValue(Node node, String attribute) {
         ArrayList<Node> al;
-        Enumeration emr;
+        Enumeration<Node> emr;
         Node n;
 
         // get attributes
@@ -274,7 +274,7 @@ public class XMLReader {
             emr = Collections.enumeration(al);
 
             while (emr.hasMoreElements()) {
-                n = (Node) emr.nextElement();
+                n = emr.nextElement();
 
                 if (n.getNodeName().equalsIgnoreCase(attribute)) {
                     return (n.getNodeValue());

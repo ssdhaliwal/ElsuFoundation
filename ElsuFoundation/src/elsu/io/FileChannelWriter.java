@@ -1,7 +1,5 @@
 package elsu.io;
 
-import static elsu.io.AbstractFileChannel.*;
-
 /**
  *
  * @author ssd.administrator

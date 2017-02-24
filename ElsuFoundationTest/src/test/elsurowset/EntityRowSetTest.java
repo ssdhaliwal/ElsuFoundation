@@ -20,18 +20,11 @@ public class EntityRowSetTest implements IEventSubscriber {
 
     public ActionFactory af = null;
 
-    public EntityRowSetTest() {
-        try {
-            af = new ActionFactory();
-            af.addEventListener(this);
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-        }
-    }
-
     public EntityRowSetTest(String config) {
         try {
-            af = new ActionFactory(config);
+        	ConfigLoader cl = new ConfigLoader(config, null);
+        	
+            af = new ActionFactory(cl);
             af.addEventListener(this);
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
@@ -45,7 +38,7 @@ public class EntityRowSetTest implements IEventSubscriber {
         try {
             // instantiate the main controller class and call its run()
             // method to start service factory
-            EntityRowSetTest rut1 = new EntityRowSetTest();
+            EntityRowSetTest rut1 = new EntityRowSetTest("config/app.config");
 
             try {
                 Object dbManager = rut1.af.getDbManager("NCS");
@@ -55,8 +48,8 @@ public class EntityRowSetTest implements IEventSubscriber {
                 //System.out.println(ActionObject.toXML(wrs));
                 //System.out.println(".. records selected: " + wrs.size());
 
-                String jFields = GsonXMLUtils.Object2JSon(wrs.getColumns());
-                String jRows = GsonXMLUtils.Object2JSon(wrs.getRows());
+                String jFields = JsonXMLUtils.Object2JSon(wrs.getColumns());
+                String jRows = JsonXMLUtils.Object2JSon(wrs.getRows());
 
                 //System.out.println(jFields);
                 //Type fieldType = new TypeToken<Map<String, FieldDescriptor>>() {}.getType();

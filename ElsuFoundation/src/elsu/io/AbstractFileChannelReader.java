@@ -137,7 +137,7 @@ public abstract class AbstractFileChannelReader extends AbstractFileChannel {
     public String getNextRecoveryFile() {
         // get the list of all pending files
         ArrayList<String> files = FileUtils.findFiles(getFileLocation() + "\\",
-                String.format(getFileMask(), ".*"), false, 0);
+                String.format(getFileMask(), ".*"), false, true, 0);
 
         // list of all files which need to be deleted
         ArrayList<String> fileDeletes = new ArrayList<>();

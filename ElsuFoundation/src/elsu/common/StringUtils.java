@@ -179,30 +179,39 @@ public class StringUtils {
 
         return new String(result);
     }
+
+    // 20170114 - added truncate method
+    public static String truncate(String value, int length) {
+    	return truncate(value, 0, length);
+    }
+
+    public static String truncate(String value, int start, int length) {
+    	return value.substring(start, (value.length()<length ? value.length() : length));
+    }
     
     public static String padString(String value, int length) {
         return padString(value, length, " ", null);
     }
-    
+
     public static String padString(String value, int length, String padWith) {
         return padString(value, length, padWith, null);
     }
-    
+
     public static String padString(String value, int length, String padWith, String delimiter) {
         String result = value;
-        
-        for(int i = 0; i < length; i++) {
+
+        for (int i = 0; i < length; i++) {
             if ((i > 0) && (delimiter != null)) {
                 result += delimiter + padWith;
             } else {
                 result += padWith;
             }
         }
-        
+
         // return the new value
         return result;
     }
-    
+
     // http://stackoverflow.com/questions/216894/get-an-outputstream-into-a-string
     // example: 
     //      OutputStream output = StringUtils.StreamforString();
@@ -212,16 +221,24 @@ public class StringUtils {
     public static OutputStream StreamforString() {
         return new OutputStream() {
             private StringBuilder string = new StringBuilder();
-            
+
             @Override
             public void write(int b) throws IOException {
                 this.string.append((char) b);
             }
-            
+
             @Override
             public String toString() {
                 return this.string.toString();
             }
         };
+    }
+
+    // http://www.javapractices.com/topic/TopicAction.do?Id=78
+    public static String getStackTrace(Throwable stack) {
+        Writer result = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(result);
+        stack.printStackTrace(printWriter);
+        return result.toString();
     }
 }

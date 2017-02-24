@@ -5,11 +5,8 @@
  */
 package elsu.support;
 
-import elsu.common.*;
 import java.util.*;
 import static java.util.UUID.*;
-import javax.xml.parsers.*;
-import javax.xml.xpath.*;
 
 /**
  *
@@ -19,6 +16,7 @@ public class XML2Map {
 
     // variable to store the xml document object from XMLReader class
     protected XMLReader _xmlr = null;
+    private int _dependencyIndex = 0;
     private String _dupkeySuffix = randomUUID().toString();
 
     // store all properties from app.config
@@ -26,6 +24,7 @@ public class XML2Map {
 
     // array of path strings which need to be filtered from hashmap
     private String[] _filterPath = new String[]{};
+    private String[] _dependencyPath = new String[]{};
 
     public XML2Map(String document) throws Exception {
         _xmlr = new XMLReader(document);
@@ -36,6 +35,21 @@ public class XML2Map {
         // update filter path before processing
         if (filterPath != null) {
             this._filterPath = filterPath;
+        }
+
+        _xmlr = new XMLReader(document);
+        loadConfig(_xmlr.getDocument(), "", 1);
+    }
+
+    public XML2Map(String document, String[] filterPath, String[] dependencyPath) throws Exception {
+        // update filter path before processing
+        if (filterPath != null) {
+            this._filterPath = filterPath;
+        }
+
+        // update dependency path before processing
+        if (dependencyPath != null) {
+            this._dependencyPath = dependencyPath;
         }
 
         _xmlr = new XMLReader(document);
@@ -55,6 +69,20 @@ public class XML2Map {
         loadConfig(document, "", 1);
     }
 
+    public XML2Map(org.w3c.dom.Node document, String[] filterPath, String[] dependencyPath) {
+        // update filter path before processing
+        if (filterPath != null) {
+            this._filterPath = filterPath;
+        }
+
+        // update dependency path before processing
+        if (dependencyPath != null) {
+            this._dependencyPath = dependencyPath;
+        }
+
+        loadConfig(document, "", 1);
+    }
+
     public XML2Map(org.w3c.dom.Node document, int level) {
         loadConfig(document, "", level);
     }
@@ -63,6 +91,20 @@ public class XML2Map {
         // update filter path before processing
         if (filterPath != null) {
             this._filterPath = filterPath;
+        }
+
+        loadConfig(document, "", level);
+    }
+
+    public XML2Map(org.w3c.dom.Node document, int level, String[] filterPath, String[] dependencyPath) {
+        // update filter path before processing
+        if (filterPath != null) {
+            this._filterPath = filterPath;
+        }
+
+        // update dependency path before processing
+        if (dependencyPath != null) {
+            this._dependencyPath = dependencyPath;
         }
 
         loadConfig(document, "", level);
@@ -168,15 +210,17 @@ public class XML2Map {
     }
 
     public void addProperty(String key, Object value) {
+        boolean dependency = false;
+        
         // if value is null, exit
         if (value == null) {
             return;
         }
 
         // check the filterPath to ensure the key does not start with the filter
-        if (_filterPath.length > 0) {
+        if (this._filterPath.length > 0) {
             Boolean match = false;
-            for (String filter : _filterPath) {
+            for (String filter : this._filterPath) {
                 if (key.startsWith(filter)) {
                     match = true;
                     break;
@@ -188,15 +232,33 @@ public class XML2Map {
             }
         }
 
+        // check the filterPath to ensure the key does not start with the filter
+        if (this._dependencyPath.length > 0) {
+            for (String filter : this._dependencyPath) {
+                if (key.startsWith(filter)) {
+                    dependency = true;
+                    break;
+                }
+            }
+        }
+
         // add the key to the keymap for utilization
         if (getProperties().containsKey(key)) {
-            if (getProperties().containsKey(key + "_" + this._dupkeySuffix)) {
-                this._dupkeySuffix = randomUUID().toString();
-            }
+            if (dependency) {
+                this._dependencyIndex++;
+                getProperties().put(key + "_" + this._dupkeySuffix + "_" + this._dependencyIndex, value);
+            } else {
+                if (getProperties().containsKey(key + "_" + this._dupkeySuffix)) {
+                    this._dupkeySuffix = randomUUID().toString();
+                }
 
-            getProperties().put(key + "_" + this._dupkeySuffix, value);
+                this._dependencyIndex = 0;
+
+                getProperties().put(key + "_" + this._dupkeySuffix, value);
+            }
         } else {
             getProperties().put(key, value);
+            this._dependencyIndex = 0;
         }
     }
 }
