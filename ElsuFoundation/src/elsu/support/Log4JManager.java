@@ -2,7 +2,9 @@ package elsu.support;
 
 import java.io.*;
 import java.util.*;
-import org.apache.log4j.*;
+
+import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.core.*;
 
 /**
  *
@@ -10,124 +12,195 @@ import org.apache.log4j.*;
  */
 public class Log4JManager {
 
-    private String _logConfig = "./log4j.properties";
-    private Logger _logger = null;
-    private int _maxMemoryLogSize = 10;
-    private List<String> _memoryLog = new ArrayList<>();
+	private Object _runtimeSync = new Object();
+	private String _logConfig = "./log4j.properties";
+	private int _maxMemoryLogSize = 10;
+	private org.apache.logging.log4j.Logger _logger = null;
+	private List<String> _memoryLog = new ArrayList<>();
 
-    public Log4JManager(String logConfig, String logClass, String fileName) throws Exception {
-        if ((getLogConfig() == null) || (getLogConfig().isEmpty())) {
-            throw new Exception(this.getClass() + ", constructor(), logConfig param is null.");
-        }
-        
-        // if the log4j-init-file context parameter is not set, then no point in trying
-        setLogConfig(logConfig);
-        
-        if (getLogConfig() != null) {
-            File logFile = new File(getLogConfig());
+	public Log4JManager(String logConfig, String logClass, String fileName) throws Exception {
+		// if ((getLogConfig() == null) || (getLogConfig().isEmpty())) {
+		// throw new Exception(this.getClass() + ", constructor(), logConfig
+		// param is null.");
+		// }
 
-            if (logFile.exists()) {
-                // update the log file property
-                System.setProperty("log4j.log.filename", fileName);
+		// if the log4j-init-file context parameter is not set, then no point in
+		// trying
+		setLogConfig(logConfig);
 
-                PropertyConfigurator.configure(getLogConfig());
-            } else {
-                BasicConfigurator.configure();
-            }
+		
+		if (getLogConfig() != null) {
+			File logFile = new File(getLogConfig());
 
-            setLogger(Logger.getLogger(logClass));
-        } else {
-            BasicConfigurator.configure();
-        }
-    }
+			if (logFile.exists()) {
+				// update the log file property
+				System.setProperty("log4j.log.filename", fileName);
+				System.setProperty("log4j.configurationFile", logConfig);
 
-    public String getLogConfig()
-    {
-        return this._logConfig;
-    }
-    public void setLogConfig(String logConfig)
-    {
-        this._logConfig = logConfig;
-    }
-    
-    public int getMaxMemoryLogSize() {
-        return this._maxMemoryLogSize;
-    }
-    public void setMaxMemoryLogSize(int size) {
-        this._maxMemoryLogSize = size;
-    }
-    
-    public List<String> getLog() {
-        return this._memoryLog;
-    }
+				// store class logger instance
+				setLogger(logClass);
+			}
+		} else {
+			throw new Exception(this.getClass() + ", constructor(), logConfig param is null.");
+		}
+	}
 
-    public Logger getLogger() {
-        return this._logger;
-    }
-    private void setLogger(Logger logger) {
-        this._logger = logger;
-    }
-    
-    protected void checkMemoryLog(Object message) {
-        while (getLog().size() >= getMaxMemoryLogSize()) {
-            getLog().remove(0);
-        }
-        
-        getLog().add(message.toString());
-    }
-    
-    public synchronized void clearMemoryLog() {
-        getLog().clear();
-    }
-    
-    public synchronized List<String> getMemoryLog() {
-        List<String> result = new ArrayList<>();
-        
-        // copy the contents of the error log to the user
-        for(String s : getLog()) {
-            result.add(s);
-        }
-        
-        return result;
-    }
-    
-    public synchronized void debug(Object message) {
-        getLogger().debug(message);
-        checkMemoryLog("debug, " + message);
-    }
+	public String getLogConfig() {
+		String result = "";
 
-    public synchronized void debug(Object message, Throwable t) {
-        getLogger().debug(message, t);
-        checkMemoryLog("debug, " + message);
-    }
+		synchronized (this._runtimeSync) {
+			result = this._logConfig;
+		}
 
-    public synchronized void error(Object message) {
-        getLogger().error(message);
-        checkMemoryLog("error, " + message);
-    }
+		return result;
+	}
 
-    public synchronized void error(Object message, Throwable t) {
-        getLogger().error(message, t);
-        checkMemoryLog("error, " + message);
-    }
+	public void setLogConfig(String logConfig) {
+		synchronized (this._runtimeSync) {
+			this._logConfig = logConfig;
+			System.setProperty("log4j.configurationFile", logConfig);
+		}
+	}
 
-    public synchronized void fatal(Object message) {
-        getLogger().fatal(message);
-        checkMemoryLog("fatal, " + message);
-    }
+	public int getMaxMemoryLogSize() {
+		int result = 0;
 
-    public synchronized void fatal(Object message, Throwable t) {
-        getLogger().fatal(message, t);
-        checkMemoryLog("fatal, " + message);
-    }
+		synchronized (this._runtimeSync) {
+			result = this._maxMemoryLogSize;
+		}
 
-    public synchronized void info(Object message) {
-        getLogger().info(message);
-        checkMemoryLog("info, " + message);
-    }
+		return result;
+	}
 
-    public synchronized void info(Object message, Throwable t) {
-        getLogger().info(message, t);
-        checkMemoryLog("info, " + message);
-    }
+	public void setMaxMemoryLogSize(int size) {
+		synchronized (this._runtimeSync) {
+			this._maxMemoryLogSize = size;
+		}
+	}
+
+	public List<String> getLog() {
+		List<String> result = null;
+
+		synchronized (this._runtimeSync) {
+			result = this._memoryLog;
+		}
+
+		return result;
+	}
+
+	public org.apache.logging.log4j.Logger getRootLogger() {
+		org.apache.logging.log4j.Logger result = null;
+
+		synchronized (this._runtimeSync) {
+			result = LogManager.getRootLogger();
+		}
+
+		return result;
+	}
+
+	public org.apache.logging.log4j.Logger getLogger() {
+		org.apache.logging.log4j.Logger result = null;
+
+		synchronized (this._runtimeSync) {
+			result = this._logger;
+		}
+
+		return result;
+	}
+
+	private void setLogger(String logClass) {
+		this._logger = LogManager.getLogger(logClass);
+	}
+
+	protected void checkMemoryLog(Object message) {
+		synchronized (this._runtimeSync) {
+			while (getLog().size() >= getMaxMemoryLogSize()) {
+				getLog().remove(0);
+			}
+
+			getLog().add(message.toString());
+		}
+	}
+
+	public void clearMemoryLog() {
+		synchronized (this._runtimeSync) {
+			getLog().clear();
+		}
+	}
+
+	public List<String> getMemoryLog() {
+		List<String> result = new ArrayList<>();
+
+		// copy the contents of the error log to the user
+		synchronized (this._runtimeSync) {
+			result.addAll(getLog());
+		}
+
+		return result;
+	}
+
+	public void debug(Object message) {
+		synchronized (this._runtimeSync) {
+			getLogger().debug(message);
+		}
+
+		checkMemoryLog("debug, " + message);
+	}
+
+	public void debug(Object message, Throwable t) {
+		synchronized (this._runtimeSync) {
+			getLogger().debug(message, t);
+		}
+
+		checkMemoryLog("debug, " + message);
+	}
+
+	public void error(Object message) {
+		synchronized (this._runtimeSync) {
+			getLogger().error(message);
+		}
+
+		checkMemoryLog("error, " + message);
+	}
+
+	public void error(Object message, Throwable t) {
+		synchronized (this._runtimeSync) {
+
+			getLogger().error(message, t);
+		}
+
+		checkMemoryLog("error, " + message);
+	}
+
+	public void fatal(Object message) {
+		synchronized (this._runtimeSync) {
+			getLogger().fatal(message);
+		}
+
+		checkMemoryLog("fatal, " + message);
+	}
+
+	public void fatal(Object message, Throwable t) {
+		synchronized (this._runtimeSync) {
+			getLogger().fatal(message, t);
+		}
+
+		checkMemoryLog("fatal, " + message);
+	}
+
+	public void info(Object message) {
+		synchronized (this._runtimeSync) {
+			getLogger().info(message);
+		}
+
+		checkMemoryLog("info, " + message);
+	}
+
+	public void info(Object message, Throwable t) {
+		synchronized (this._runtimeSync) {
+			getLogger().info(message, t);
+		}
+
+		checkMemoryLog("info, " + message);
+	}
 }

@@ -1,0 +1,86 @@
+name		state	archive		uri
+					https://mvnrepository.com/
+					http://www.extreme.indiana.edu/dist/java-repository/
+					
+
+cglib			testing			cglib-master	https://github.com/cglib/cglib
+								https://sourceforge.net/projects/cglib/files/
+common			eclipse			emf-xsd-update	http://www.eclipse.org/modeling/emf/downloads/?
+dom4j		current
+gson			json utils		gson		https://github.com/google/gson
+			google-collec (collections)		http://repo1.maven.org/maven2/com/google/code/
+						xmltool
+						sqlsheet
+						mathparser
+						javaparser
+javaapiforkml	legacy not maintained	https://labs.micromata.de/projects/jak.html
+  xjcpluginjavaapiforkml-master		XJC Plugin to generate the Java API for KML
+jdom			xml object		jdom		http://www.jdom.org/
+jettison		json utils		jettison	https://github.com/codehaus/jettison
+joda-time		date time		joda-time	http://www.joda.org/joda-time/
+jsonlib		current	json					http://json-lib.sourceforge.net/
+kml2		current	kml					http://www.kxml.org/
+log4j			logging			lo4j		http://logging.apache.org/log4j/2.x/download.html
+mysqlconnector		jdbc_odbc				mysqlconnector	https://dev.mysql.com/downloads/connector/j/
+ojdbc6			jdbc_odbc		ojdbc6		http://www.oracle.com/technetwork/database/features/jdbc/default-2280470.html
+ojdbc5			jdbc_odbc		ojdbc5
+			jdbc_odbc		ojdbc7
+			jdbc_odbc		ucp
+			jdbc_odbc		orai18n
+			jdbc_odbc		xdb6
+			jdbc_odbc		ons
+			jdbc_odbc		simplefan
+sax2			simple xml		sax2r3		https://sourceforge.net/projects/sax/files/sax/
+sqljdbc4					sqljdbc (5, 4.2, 4.1, 4.0)
+			jdbc_odbc				https://msdn.microsoft.com/en-us/library/ms378749(v=sql.110).aspx
+stax		current	xml					http://www.java2s.com/Code/Jar/s/Downloadstaxapi101jar.htm
+wstx			json xmlpull		woodstox	https://github.com/FasterXML/woodstox
+								https://github.com/FasterXML/stax2-api
+xmlpull		current xml pull parser	replaced by xpp2/xpp3
+	replaced				xpp2 		https://www.extreme.indiana.edu/xgws/xsoap/xpp/download/PullParser2/
+xom			xml object model	xom		http://www.xom.nu/
+xstream			xml parser		xstream		http://x-stream.github.io/
+hamcrest		expressions				http://hamcrest.org/JavaHamcrest/
+
+
+
+j2objc tool
+jarjar		current	jar packager				https://github.com/shevek/jarjar
+jaxen		current	xpath engine				https://sourceforge.net/projects/jaxen/
+xerces2		current	xml parser				http://xerces.apache.org/xerces2-j/
+		** not compatible with other xml used with log4j **
+jackson-*	current	json core utils				https://github.com/FasterXML
+						databind
+						core
+						annotations
+						module-jaxb-annotations
+						jaxrs-providers
+						dataformat-xml
+						dataformat-csv
+						dataformat-yaml
+						dataformat-properties
+						dataformat-cbor
+						dataformat-protobuf
+						dataformat-smile
+						dataformat-thrift
+						jaxrs-xml-provider
+						jaxrs-json-provider
+xalan		current						https://xml.apache.org/xalan-j/
+		** includes xerces2 - read notes for xerces2 **
+guava		new				google utilities
+						Base Utilities	https://github.com/google/guava
+						Collections
+						Graphs
+						Caches
+						Functional Idioms
+						Concurrency
+						Strings
+						Primitives
+						Ranges
+						I/O
+						Hashing
+						EventBus
+						Math
+						Reflection
+Apache Derby	new				Apache DB	https://db.apache.org/derby/
+Apache Commons	updated						https://commons.apache.org/

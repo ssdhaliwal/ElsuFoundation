@@ -195,10 +195,27 @@ public class XMLReader {
             return null;
         }
     }
+    public NodeList getNodeListByXPath(String expression, Node node) {
+        try {
+            return (NodeList) _xPath.compile(expression).evaluate(node,
+                    XPathConstants.NODESET);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
 
     public Node getNodeByXPath(String expression) {
         try {
             return (Node) _xPath.compile(expression).evaluate(getDocument(),
+                    XPathConstants.NODE);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
+
+    public Node getNodeByXPath(String expression, Node node) {
+        try {
+            return (Node) _xPath.compile(expression).evaluate(node,
                     XPathConstants.NODE);
         } catch (Exception exi) {
             return null;
@@ -213,9 +230,26 @@ public class XMLReader {
         }
     }
 
+    public String getNodeValueByXPath(String expression, Node node) {
+        try {
+            return _xPath.compile(expression).evaluate(node);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
+
     public NodeList getNodeAttributesByXPath(String expression) {
         try {
             return (NodeList) _xPath.compile(expression).evaluate(getDocument(),
+                    XPathConstants.NODESET);
+        } catch (Exception exi) {
+            return null;
+        }
+    }
+
+    public NodeList getNodeAttributesByXPath(String expression, Node node) {
+        try {
+            return (NodeList) _xPath.compile(expression).evaluate(node,
                     XPathConstants.NODESET);
         } catch (Exception exi) {
             return null;
@@ -231,7 +265,7 @@ public class XMLReader {
      */
     public String getNodeAttributeValue(Node node, String attribute) {
         ArrayList<Node> al;
-        Enumeration emr;
+        Enumeration<Node> emr;
         Node n;
 
         // get attributes
@@ -240,7 +274,7 @@ public class XMLReader {
             emr = Collections.enumeration(al);
 
             while (emr.hasMoreElements()) {
-                n = (Node) emr.nextElement();
+                n = emr.nextElement();
 
                 if (n.getNodeName().equalsIgnoreCase(attribute)) {
                     return (n.getNodeValue());
@@ -259,8 +293,12 @@ public class XMLReader {
      * @return text (string) or null
      */
     public String getNodeText(Node node) {
+        if (node.getChildNodes() == null) {
+            return null;
+        }
+        
         if (node.getChildNodes().getLength() == 1) {
-            if (node.getNextSibling().getNodeType() == Node.TEXT_NODE) {
+            if (node.getFirstChild().getNodeType() == Node.TEXT_NODE) {
                 // java 1.5 return(node.getTextContent());
                 return (node.getFirstChild().getNodeValue());
             }

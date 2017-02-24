@@ -172,7 +172,7 @@ public class FileChannelTextReader extends AbstractFileChannelReader {
     }
 
     @Override
-    public synchronized byte[] read() throws Exception {
+    public byte[] read() throws Exception {
         throw new Exception("not implemented in text reader.");
     }
 }

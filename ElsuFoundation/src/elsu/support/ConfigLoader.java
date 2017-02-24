@@ -6,11 +6,12 @@
 package elsu.support;
 
 import elsu.common.*;
-import elsu.support.*;
 import java.util.*;
 import java.io.*;
-import org.apache.commons.lang3.*;
-import org.apache.log4j.*;
+import java.nio.file.Paths;
+import java.text.*;
+import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.core.*;
 
 /**
  * ConfigLoader is the base class for factory. The core purpose is to load the
@@ -27,31 +28,45 @@ import org.apache.log4j.*;
  * log4j.properties is also extracted upon initial run of the program. Logging
  * is configured during the initial load.
  *
+ * 6/12/16 - moved xml show config to separate class XMLViewer
+ * 
  * @author Seraj Dhaliwal (seraj.s.dhaliwal@uscg.mil)
- * @version .51
+ * @version .53
  */
 public class ConfigLoader {
 
     // <editor-fold desc="class private storage">
+    // runtime sync object
+    private Object _runtimeSync = new Object();
+
     // static property for app.config store and extraction from jar file
-    private static String _APPCONFIG = "config/app.config";
+    // 20170110 - changed from _APPCONFIG to _RESOURCEPATH
+    private static String _RESOURCEPATH = "config/app.config";
+    private static String _LOGCONFIGFILE = "log4j.properties";
+    private static String _LOGCLASS = "logDefault";
+    private static String _LOGDATETIME = "yyyyMMdd_HHmmss";
+
+    // .52 added to allow specification of alternate extract directory when
+    // security permissions deny write into deployed location
+    private static String _LOGPATH = "";
+    // 20170110 - changed from _TEMPPATH to _LOCALPATH
+    private static String _LOCALPATH = "";
 
     // static property for data format across the application for display 
     // purposes
     private static String _DTGFORMAT = "YYYMMDD HH24:mm:ss";
 
-    // variable to store the xml document object from XMLReader class
-    protected XMLReader _xmlr = null;
-
     // store all properties from app.config
     private Map<String, Object> _properties = new HashMap<>();
 
-    // array of path strings which need to be removed from hashmap
-    private String[] _suppressPath = new String[]{};
+    // array of path strings which need to be filtered from hashmap
+    private String[] _filterPath = new String[]{};
 
     // system logger if configured
-    private String _logConfig = "log.config";
-    private String _logClass = "log.class";
+    public static String _LOGFILENAMEPROPERTY = "application.framework.attributes.key.log.filename";
+    public static String _LOGCONFIGPROPERTY = "application.framework.attributes.key.log.config";
+    public static String _LOGCLASSPROPERTY = "application.framework.attributes.key.log.class";
+    public static String _LOGPATHPROPERTY = "application.framework.attributes.key.log.path";
     private Log4JManager _log4JManager = null;
     // </editor-fold>
 
@@ -67,7 +82,85 @@ public class ConfigLoader {
      * @throws Exception
      */
     public ConfigLoader() throws Exception {
-        this(ConfigLoader._APPCONFIG, null);
+        this(ConfigLoader._RESOURCEPATH, null);
+    }
+
+    public ConfigLoader(String[] filterPath) throws Exception {
+        this(ConfigLoader._RESOURCEPATH, filterPath);
+    }
+
+    // .52 updated to allow specification of alternate extract directory when
+    // security permissions deny write into deployed location
+    public ConfigLoader(String config, String[] filterPath) throws Exception {
+        String file = "";
+        
+        try {
+            // update filter path before processing
+            if (filterPath != null) {
+                this._filterPath = filterPath;
+            }
+
+            // if config is null, then use the default
+            if ((config == null) || (config.isEmpty())) {
+                config = ConfigLoader._RESOURCEPATH;
+            }
+
+            // check the format, if raw xml?
+            if (config.startsWith("<?xml ")) {
+                // try to create the XML reader instance for XML document parsing
+                // using the app.config file location
+                file = config;
+            } else {
+                // load the resource or file path
+                ConfigLoader._RESOURCEPATH = config;
+                String configFile;
+
+                // check is app.config and log4j.properties file is stored in the
+                // application; note, if variable already contains a path then 
+                // external config is used view package extraction
+                configFile = ConfigLoader._RESOURCEPATH;
+
+                // extract file to local file system
+                if (!elsu.common.StringUtils.IsNull(getLocalPath())) {
+                    String tempFile = extractConfigFile(configFile, getLocalPath());
+
+                    // try to create the XML reader instance for XML document parsing
+                    // using the app.config file location
+                    file = tempFile;
+                } else {
+                    extractConfigFile(configFile);
+
+                    // try to create the XML reader instance for XML document parsing
+                    // using the app.config file location
+                    file = configFile;
+                }
+            }
+
+            // display the config to the user
+            showConfig(file);
+
+            // load the config into application or service properties hashMaps
+            getProperties().clear();
+            this._properties = initializeConfig(file);
+
+            // open log if provided
+            for (String key : getProperties().keySet()) {
+                if (key.equals(_LOGCONFIGPROPERTY)) {
+                    try {
+                        initializeLogger(getProperty(key).toString());
+                    } catch (Exception ex) {
+                        System.out.println("log4J configuration error, " + ex.getMessage());
+                    }
+
+                    break;
+                }
+            }
+
+            logInfo("configuration loaded.");
+        } catch (Exception ex) {
+            // display exception to the user and exit
+            System.out.println(getClass().toString() + "//" + ex.getMessage());
+        }
     }
 
     /**
@@ -75,59 +168,28 @@ public class ConfigLoader {
      * through the string variable. Normally used by control service to pass
      * custom XML sent from the client.
      *
-     * updated to parse the config variable to determine if it is not a properly
-     * formatted xml (starts with "<?xml ")
-     *
-     * @param configData is the XML data passed from the calling function.
-     * @param suppressPath is array of strings which should be removed from key
+     * @param config is the Map<String, Object> data passed from the calling
+     * function.
      * @throws Exception
      */
-    public ConfigLoader(String config, String[] suppressPath) throws Exception {
+    public ConfigLoader(Map<String, Object> config) throws Exception {
         try {
-            // update suppress path before processing
-            if (suppressPath != null) {
-                this._suppressPath = suppressPath;
-            }
-
-            // if config is null, then use the default
-            if ((config == null) || (config.isEmpty())) {
-                config = ConfigLoader._APPCONFIG;
-            }
-
-            // check the format, if raw xml?
-            if (config.startsWith("<?xml ")) {
-                // try to create the XML reader instance for XML document parsing
-                // using the app.config file location
-                _xmlr = new XMLReader(config);
-            } else {
-                // load the resource or file path
-                ConfigLoader._APPCONFIG = config;
-                String configFile;
-
-                // check is app.config and log4j.properties file is stored in the
-                // application; note, if variable already contains a path then 
-                // external config is used view package extraction
-                configFile = ConfigLoader._APPCONFIG;
-
-                // extract file to local file system
-                extractConfigFile(configFile);
-
-                // try to create the XML reader instance for XML document parsing
-                // using the app.config file location
-                _xmlr = new XMLReader(configFile);
+            // if config is null, then throw exception
+            if ((config == null) || (config.size() == 0)) {
+                throw new Exception("config passed is empty.");
             }
 
             // display the config to the user
-            showConfig();
+            showConfig(config);
 
             // load the config into application or service properties hashMaps
-            initializeConfig();
+            initializeConfig(config);
 
             // open log if provided
             for (String key : getProperties().keySet()) {
-                if (key.equals(_logConfig)) {
+                if (key.equals(_LOGCONFIGPROPERTY)) {
                     try {
-                        initializeLogger(getProperties().get(key).toString());
+                        initializeLogger(getProperty(key).toString());
                     } catch (Exception ex) {
                         System.out.println("log4J configuration error, " + ex.getMessage());
                     }
@@ -148,21 +210,33 @@ public class ConfigLoader {
      * and then loads the app.config using XPath to reference each property.
      *
      * @throws Exception
+     * 
+     * 20170105 - updated from private to public static
      */
-    private void initializeConfig() throws Exception {
+    public static Map<String, Object> initializeConfig(String file) throws Exception {
+    	Map<String, Object> result = null;
+    	
+        XML2Map xml = new XML2Map(file);
+        result = xml.getProperties();
+        xml = null;
+        
+        return result;
+    }
+
+    private void initializeConfig(Map<String, Object> config) throws Exception {
         // clear the storage hashMaps
         getProperties().clear();
-        loadConfig(_xmlr.getDocument(), "", 1);
+        _properties = config;
     }
     // </editor-fold>
 
     // <editor-fold desc="class getter/setters">
-    public static String getConfigPath() {
-        return _APPCONFIG;
+    public static String getResourcePath() {
+        return _RESOURCEPATH;
     }
 
-    public static void setConfigPath(String path) {
-        _APPCONFIG = path;
+    public static void setResourcePath(String path) {
+    	_RESOURCEPATH = path;
     }
 
     public static String getDTGFormat() {
@@ -171,6 +245,30 @@ public class ConfigLoader {
 
     public static void setDTGFormat(String format) {
         _DTGFORMAT = format;
+    }
+
+    public static String getLOGDATETIME() {
+        return _LOGDATETIME;
+    }
+
+    public static void setLOGDATETIME(String logDatetime) {
+        _LOGDATETIME = logDatetime;
+    }
+
+    public static String getLocalPath() {
+        return _LOCALPATH;
+    }
+
+    public static void setLocalPath(String path) {
+    	_LOCALPATH = path;
+    }
+
+    public static String getLogPath() {
+        return _LOGPATH;
+    }
+
+    public static void setLogPath(String path) {
+        _LOGPATH = path;
     }
 
     /**
@@ -188,6 +286,10 @@ public class ConfigLoader {
         return getProperties().get(key);
     }
 
+    public Set<String> getKeySet() {
+        return getProperties().keySet();
+    }
+
     public List<String> getClassSet() {
         List<String> result = new ArrayList<>();
 
@@ -196,9 +298,10 @@ public class ConfigLoader {
                 result.add(key);
             }
         }
-        
+
         return result;
     }
+
     public List<String> getClassSet(String partialKey) {
         List<String> result = new ArrayList<>();
 
@@ -207,7 +310,7 @@ public class ConfigLoader {
                 result.add(key);
             }
         }
-        
+
         return result;
     }
 
@@ -222,6 +325,16 @@ public class ConfigLoader {
         }
         return result;
     }
+
+    public static String getTempLogName() {
+        return String.format("TMPLOG%s.LOG", "_"
+                + new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
+    }
+
+    public static String getLogName(String name) {
+        return String.format(name + "%s.LOG", "_"
+                + new SimpleDateFormat(_LOGDATETIME).format(Calendar.getInstance().getTime()));
+    }
     // </editor-fold>
 
     // <editor-fold desc="class methods">
@@ -233,9 +346,26 @@ public class ConfigLoader {
      * @param filename location of the config file
      * @throws Exception
      */
-    private void extractConfigFile(String filename) throws Exception {
+    public static String extractConfigFile(String filename) throws Exception {
+        return extractConfigFile(filename, null);
+    }
+
+    public static String extractConfigFile(String filename, String tempPath) throws Exception {
+        // storage for result
+        String result = null;
+
         // create a reference to the location of the configuration file
-        File cf = new File(filename);
+        File cf = null;
+        if (elsu.common.StringUtils.IsNull(tempPath)) {
+            result = filename;
+        } else {
+            result = tempPath + 
+            		(tempPath.endsWith("/") ? "" : "/") + 
+            		Paths.get(filename).getFileName();
+
+            System.out.println("config file redirect: " + result);
+        }
+        cf = new File(result);
 
         // if the file does not exist, try to extract it from the jar resource
         if (!cf.exists()) {
@@ -249,7 +379,7 @@ public class ConfigLoader {
             BufferedReader configIFile = null;
             configIFile = new BufferedReader(
                     new InputStreamReader(
-                            getClass().getClassLoader().getResourceAsStream(
+                            ConfigLoader.class.getClassLoader().getResourceAsStream(
                                     filename.replace("\\", "/"))));
 
             // declare storage for the output file
@@ -278,7 +408,7 @@ public class ConfigLoader {
                     System.out.println("config file extracted successfully");
                 } catch (Exception ex) {
                     // if exception during processing, return it to the user
-                    throw new Exception(getClass().toString() + "//"
+                    throw new Exception("ConfigLoader:extractConfigFile//"
                             + ex.getMessage());
                 } finally {
                     // close the input file to prevent resource leaks
@@ -302,16 +432,26 @@ public class ConfigLoader {
             }
         } else {
             // config file already existed, notify user we are using it
-            System.out.println("using config file: " + filename);
+            System.out.println("using config file: " + result);
         }
+
+        return result;
     }
 
+    /**
+     * extractWebConfig(...) method verifies if the external config exists, if
+     * not, it tries to extract the config file from jar file. If either are
+     * unsuccessful, exception is thrown to notify user of missing config.
+     *
+     * @param filename location of the config file
+     * @throws Exception
+     */
     /**
      * showConfig() method displays the configuration to the console output.
      *
      */
-    private void showConfig() {
-        showConfigNodes(_xmlr.getDocument(), 1);
+    private void showConfig(String config) throws Exception {
+        new XMLViewer(config, 1);
 
         //System.out.println("------------");
         //org.w3c.dom.NodeList nl = _xmlr.getNodesByElement("connections");
@@ -326,202 +466,37 @@ public class ConfigLoader {
         //}
     }
 
-    /**
-     * showConfigNodes(...) method is used to recursively scan the XML config
-     * file and display the nodes in tree format.
-     *
-     * @param parent
-     * @param level level of the node, increased for each child-node to allow
-     * tabbed tree display output
-     *
-     */
-    protected void showConfigNodes(org.w3c.dom.Node parent, int level) {
-        // create a local class to display node value/text and associated
-        // node attributes
-        class SubShowNode {
-
-            // loop through the node attributes for the node passed
-            String displayNodeAttributes(org.w3c.dom.Node node) {
-                // create string build object to support string concatanation
-                StringBuilder sb = new StringBuilder();
-
-                // retrieve node attributes (if any)
-                ArrayList nAttributes = _xmlr.getNodeAttributes(node);
-
-                // loop through the attributes array and append them to the
-                // string builder object
-                if (nAttributes != null) {
-                    for (Object na : nAttributes) {
-                        // append the attribute details (key/text) to the string
-                        // builder object
-                        sb.append(" [ATTR=").append(((org.w3c.dom.Node) na).getNodeName())
-                                .append("//")
-                                .append(((org.w3c.dom.Node) na).getNodeValue())
-                                .append("]");
-
-                        // yield processing to other threads
-                        Thread.yield();
-                    }
-                }
-
-                // return the string builder representation as a string
-                return sb.toString();
-            }
-        }
-
-        // declare the showNode class to allow methods to reference the display
-        // method to prevent duplicaion in code
-        SubShowNode showNode = new SubShowNode();
-
-        // retrieve the child nodes for processing
-        ArrayList nodes = _xmlr.getNodeChildren(parent);
-
-        // if node level is 1, then this is root node, display it with no
-        // indentation
-        if (level == 1) {
-            // display the parent node name
-            String data = StringUtils.repeat('~', level) + parent.getNodeName();
-
-            // use the sub function to extract node attributes
-            data += showNode.displayNodeAttributes(parent);
-
-            // display all collected data to the user output
-            System.out.println(data);
-        }
-
-        // parse the list of child nodes for the node being processed
-        for (Object node : nodes) {
-            // display the parent node name
-            String data = StringUtils.repeat('\t', level)
-                    + ((org.w3c.dom.Node) node).getNodeName();
-
-            // use the sub function to extract node attributes
-            data += showNode.displayNodeAttributes((org.w3c.dom.Node) node);
-
-            // if node has a text value, display the text
-            if (_xmlr.getNodeText((org.w3c.dom.Node) node) != null) {
-                data += " (TEXT=" + _xmlr.getNodeText((org.w3c.dom.Node) node)
-                        + ")";
-            }
-
-            // display all collected data to the user output
-            System.out.println(data);
-
-            // recall the function (recursion) to see if the node has child 
-            // nodes and preocess them in hierarchial level
-            showConfigNodes((org.w3c.dom.Node) node, (level + 1));
-
-            // yield processing to other threads
-            Thread.yield();
+    private void showConfig(Map<String, Object> config) {
+        // assign new config to the variable
+        for (String key : config.keySet()) {
+            System.out.println(key + " (TEXT=" + config.get(key) + ")");
         }
     }
 
-    protected void loadConfig(org.w3c.dom.Node parent, String nodePath, int level) {
-        // retrieve the child nodes for processing
-        ArrayList<org.w3c.dom.Node> nodes = _xmlr.getNodeChildren(parent);
-
-        // parse the list of child nodes for the node being processed
-        ArrayList<org.w3c.dom.Node> nAttributes = null;
-        String nodePathHold = nodePath;
-        String nodeAttrKey = "";
-        for (org.w3c.dom.Node node : nodes) {
-            nodePath += (nodePath.isEmpty() ? node.getNodeName() : "." + node.getNodeName());
-            nAttributes = _xmlr.getNodeAttributes(node);
-
-            // loop through the attributes array and append them to the
-            // string builder object
-            nodeAttrKey = "";
-            if (nAttributes != null) {
-                // get id, name, class attribute if any
-                nodeAttrKey = getAttributeKey(nAttributes);
-
-                // get the key value for path
-                for (org.w3c.dom.Node na : nAttributes) {
-                    if (na.getNodeName().equals(nodeAttrKey)) {
-                        nodePath += "." + na.getNodeValue();
-                        break;
-                    }
-                }
-
-                // first get the key or if none; set it to first value
-                for (org.w3c.dom.Node na : nAttributes) {
-                    // append the attribute details (key/text) to the string
-                    // builder object
-                    if (!na.getNodeName().equals(nodeAttrKey)) {
-                        addMap(nodePath + "." + na.getNodeName(), na.getNodeValue());
-                        //System.out.println(nodePath + "." + na.getNodeName()
-                        //        + "=" + na.getNodeValue());
-                    }
-
-                    // yield processing to other threads
-                    Thread.yield();
-                }
-            }
-
-            // if node has a text value, display the text
-            if (_xmlr.getNodeText(node) != null) {
-                addMap(nodePath, _xmlr.getNodeText(node));
-                //System.out.println(nodePath
-                //        + "=" + _xmlr.getNodeText(node));
-
-            }
-
-            // recall the function (recursion) to see if the node has child 
-            // nodes and preocess them in hierarchial level
-            loadConfig(node, nodePath, (level + 1));
-            nodePath = nodePathHold;
-
-            // yield processing to other threads
-            Thread.yield();
+    public void addProperties(Map<String, Object> properties) {
+        for (String key : properties.keySet()) {
+            addProperty(key, properties.get(key));
         }
     }
 
-    private String getAttributeKey(ArrayList<org.w3c.dom.Node> nodes) {
-        String result = "";
-
-        // attributes are in name order, so for class we keep looping
-        for (org.w3c.dom.Node na : nodes) {
-            if (na.getNodeName().equals("id")) {
-                result = "id";
-                break;
-            } else if (na.getNodeName().equals("name")) {
-                result = "name";
-                break;
-            } else if (na.getNodeName().equals("class")) {
-                result = "class";
-            }
-        }
-
-        return result;
-    }
-
-    private void addMap(String key, String value) {
-        // check if the key ends with config.suppressPath
-        // if yes, then load it into the global suppressPath variable
-        if (key.endsWith(".config.suppressPath")) {
-            _suppressPath = value.split(",");
-            
-            // now do a quick cleanup of the already loaded values
-            Object cValue;
-            for (String cKey : getProperties().keySet()) {
-                cValue = getProperties().get(cKey);
-                getProperties().remove(cKey);
-
-                for (String suppress : _suppressPath) {
-                    cKey = cKey.replaceFirst(suppress, "");
+    public void addProperty(String key, Object value) {
+        // check the filterPath to ensure the key does not start with the filter
+        if (_filterPath.length > 0) {
+            Boolean match = false;
+            for (String filter : _filterPath) {
+                if (key.startsWith(filter)) {
+                    match = true;
+                    break;
                 }
-                
-                getProperties().put(cKey, cValue);
+            }
+
+            if (!match) {
+                return;
             }
         }
-        
-        // check and remove the values in _suppressPath variable
-        for (String suppress : _suppressPath) {
-            key = key.replaceFirst(suppress, "");
-        }
 
+        // add the key to the keymap for utilization
         getProperties().put(key, value);
-        System.out.println(key + "=" + value);
     }
     // </editor-fold>
 
@@ -529,37 +504,98 @@ public class ConfigLoader {
     /**
      *
      */
+    // .52 updated to allow specification of alternate extract directory when
+    // security permissions deny write into deployed location
     private void initializeLogger(String log) throws Exception {
         // log attribute value is defined, set the static variable to the 
         // log property file location; also, check if path is provided as
         // part of the file name - if yes, then ignore class path
-        String configFile;
-        String logFileName = getProperty("log.filename").toString();
+        String tempFile = null;
+        String logFileName = getProperty(ConfigLoader._LOGFILENAMEPROPERTY).toString();
+        String logPath = getLogPath();
+        
+        // check if logpath is overridden
+        if ((getLogPath() == null) || (getLogPath().isEmpty()) || (getLogPath().length() == 0)) {
+        	logPath = getProperty(ConfigLoader._LOGPATHPROPERTY).toString();
+        }
 
         if (!log.contains("\\") && !log.contains("/")) {
-            configFile
+            ConfigLoader._LOGCONFIGFILE
                     = (new File(getClass().getName().replace(".", "\\"))).getParent()
                     + "\\" + log;
         } else {
-            configFile = log;
+            ConfigLoader._LOGCONFIGFILE = log;
         }
 
-        // check if the log property file exists, if not extract it 
-        extractConfigFile(configFile);
+        // are we trying to extract to a location outside execution folder 
+        if (!elsu.common.StringUtils.IsNull(getLocalPath())) {
+            tempFile = extractConfigFile(ConfigLoader._LOGCONFIGFILE, getLocalPath());
+        } else {
+            extractConfigFile(ConfigLoader._LOGCONFIGFILE);
+        }
 
         // if log.filename is empty, then assign a temporary one
         if ((logFileName == null) || (logFileName.isEmpty())) {
-            logFileName = System.getProperty("log.filename");
+            logFileName = "$TMP_LOG$.LOG";
+        } else if (!elsu.common.StringUtils.IsNull(tempFile)) {
+            logFileName = Paths.get(logFileName).getFileName().toString();
+        }
+        
+        // fix if logPath is provided
+        if ((logPath == null) || (logPath.isEmpty())) {
+        	logFileName = getLocalPath() + 
+        			(getLocalPath().endsWith("/") ? "" : "/") + logFileName;
+        } else {
+        	logFileName = logPath + logFileName;
         }
 
-        _log4JManager = new Log4JManager(configFile, getProperties().get(this._logClass).toString(), logFileName);
+        ConfigLoader._LOGCLASS = getProperty(ConfigLoader._LOGCLASSPROPERTY).toString();
+
+        // if temp file created, then we need to use it
+        if (!elsu.common.StringUtils.IsNull(tempFile)) {
+            _log4JManager = new Log4JManager(tempFile, ConfigLoader._LOGCLASS, logFileName);
+        } else {
+            _log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGFILE, ConfigLoader._LOGCLASS, logFileName);
+        }
+
+        System.out.println("log file location: " + logFileName);
     }
 
+    public static Log4JManager initializeLogger(String logPath, String logClass, String fileName) throws Exception {
+        Log4JManager log4JManager = null;
+
+        if (logPath.isEmpty() || (logPath.length() == 0)) {
+            return null;
+        } else {
+            log4JManager = new Log4JManager(logPath, logClass, getLogName(fileName));
+        }
+
+        return log4JManager;
+    }
+    /*
+    public static Log4JManager initializeLogger(String logPropertyFile, String fileName) throws Exception {
+        // log attribute value is defined, set the static variable to the 
+        // log property file location; also, check if path is provided as
+        Log4JManager log4JManager = null;
+
+        // check if the log property file exists, if not extract it 
+        extractConfigFile(logPropertyFile);
+
+        log4JManager = new Log4JManager(logPropertyFile, fileName);
+        return log4JManager;
+    }
+	*/
     /**
      *
      */
-    public synchronized Logger getLogger() {
-        return this._log4JManager.getLogger();
+    public org.apache.logging.log4j.Logger getLogger() {
+    	org.apache.logging.log4j.Logger result = null;
+
+        synchronized (this._runtimeSync) {
+            result = this._log4JManager.getLogger();
+        }
+
+        return result;
     }
 
     /**
@@ -572,9 +608,18 @@ public class ConfigLoader {
      *
      * @param info is the object whose string representation will be stored in
      * the log file
+     * 
+     * 20170114 - added exception handler to close out the synchronized block
+     * 			- cleanly
      */
-    public synchronized void logDebug(Object info) {
-        getLogger().debug(info.toString());
+    public void logDebug(Object info) {
+        synchronized (this._runtimeSync) {
+            try {
+            	getLogger().debug(info.toString());
+            } catch (Exception ex) { 
+            	System.out.println("ConfigLoader, logDebug(), " + ex.getMessage());
+            }
+        }
     }
 
     /**
@@ -587,9 +632,18 @@ public class ConfigLoader {
      *
      * @param info is the object whose string representation will be stored in
      * the log file
+     * 
+     * 20170114 - added exception handler to close out the synchronized block
+     * 			- cleanly
      */
-    public synchronized void logError(Object info) {
-        getLogger().error(info.toString());
+    public void logError(Object info) {
+        synchronized (this._runtimeSync) {
+        	try {
+            getLogger().error(info.toString());
+            } catch (Exception ex) { 
+            	System.out.println("ConfigLoader, logError(), " + ex.getMessage());
+            }
+        }
     }
 
     /**
@@ -602,9 +656,31 @@ public class ConfigLoader {
      *
      * @param info is the object whose string representation will be stored in
      * the log file
+     * 
+     * 20170114 - added exception handler to close out the synchronized block
+     * 			- cleanly
      */
-    public synchronized void logInfo(Object info) {
-        getLogger().info(info.toString());
+    public void logInfo(Object info) {
+        synchronized (this._runtimeSync) {
+            try {
+            	getLogger().info(info.toString());
+            } catch (Exception ex) { 
+            	System.out.println("ConfigLoader, logInfo(), " + ex.getMessage());
+            }
+        }
     }
     // </editor-fold>
+
+    @Override
+    public String toString() {
+    	String result = "";
+    	
+    	try {
+    		result = JsonXMLUtils.Object2JSon(_properties);
+    	} catch (Exception ex) {
+    		result = this.getClass().toString() + ".toString(), \n" + ex.getMessage() + "\n" + ex.getStackTrace();
+    	}
+    	
+    	return result;
+    }
 }

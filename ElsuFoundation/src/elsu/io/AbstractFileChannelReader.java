@@ -8,7 +8,7 @@ import java.nio.file.*;
 
 /**
  * AbstractFileChannelReader() class extends the FileChanneAbstract to provide
- concrete implementation for reading files using file recovery capability. The
+ * concrete implementation for reading files using file recovery capability. The
  * class supports two methods of recovery: LIVE and RECOVERY.
  * <p>
  * In LIVE mode the current date format file depending on the rollover
@@ -21,6 +21,9 @@ import java.nio.file.*;
  * @author ssd.administrator
  */
 public abstract class AbstractFileChannelReader extends AbstractFileChannel {
+
+    // runtime sync object
+    private Object _runtimeSync = new Object();
 
     // local storage, stores the reader file name being processed
     private volatile String _readerFilename = null;
@@ -49,7 +52,7 @@ public abstract class AbstractFileChannelReader extends AbstractFileChannel {
 
     // local storage, end of file marker reached
     private volatile boolean _endOfFile = true;
-    
+
     // local storage, has the file changed
     // 20141129 SSD added to signal file changed for client to process and reset
     private volatile boolean _fileChanged = false;
@@ -103,13 +106,22 @@ public abstract class AbstractFileChannelReader extends AbstractFileChannel {
     }
 
     // 20141129 SSD added to signal file changed for client to process
-    public synchronized boolean isFileChanged() {
-        return this._fileChanged;
+    public boolean isFileChanged() {
+        boolean result = false;
+
+        synchronized (this._runtimeSync) {
+            result = this._fileChanged;
+        }
+
+        return result;
     }
 
     // 20141129 SSD added to signal file changed for client to process
-    public synchronized boolean isFileChanged(boolean state) {
-        this._fileChanged = state;
+    public boolean isFileChanged(boolean state) {
+        synchronized (this._runtimeSync) {
+            this._fileChanged = state;
+        }
+
         return isFileChanged();
     }
 
@@ -124,8 +136,8 @@ public abstract class AbstractFileChannelReader extends AbstractFileChannel {
 
     public String getNextRecoveryFile() {
         // get the list of all pending files
-        ArrayList<String> files = FileStack.findFiles(getFileLocation() + "\\",
-                String.format(getFileMask(), ".*"), false, 0);
+        ArrayList<String> files = FileUtils.findFiles(getFileLocation() + "\\",
+                String.format(getFileMask(), ".*"), false, true, 0);
 
         // list of all files which need to be deleted
         ArrayList<String> fileDeletes = new ArrayList<>();
@@ -221,12 +233,21 @@ public abstract class AbstractFileChannelReader extends AbstractFileChannel {
         return getBufferSize();
     }
 
-    public synchronized boolean isEndOfFile() {
-        return this._endOfFile;
+    public boolean isEndOfFile() {
+        boolean result = false;
+
+        synchronized (this._runtimeSync) {
+            result = this._endOfFile;
+        }
+
+        return result;
     }
 
-    public synchronized boolean isEndOfFile(boolean state) {
-        this._endOfFile = state;
+    public boolean isEndOfFile(boolean state) {
+        synchronized (this._runtimeSync) {
+            this._endOfFile = state;
+        }
+
         return isEndOfFile();
     }
 
@@ -279,26 +300,28 @@ public abstract class AbstractFileChannelReader extends AbstractFileChannel {
         this._statusPosition = position;
     }
 
-    public synchronized void close() {
-        // set reader option
-        isReaderValid(false);
+    public void close() {
+        synchronized (this._runtimeSync) {
+            // set reader option
+            isReaderValid(false);
 
-        if (getReaderChannel() != null) {
-            try {
-                getReaderChannel().close();
-            } catch (Exception exi) {
+            if (getReaderChannel() != null) {
+                try {
+                    getReaderChannel().close();
+                } catch (Exception exi) {
+                }
             }
-        }
 
-        if (getStatusChannel() != null) {
-            try {
-                getStatusChannel().close();
-            } catch (Exception exi) {
+            if (getStatusChannel() != null) {
+                try {
+                    getStatusChannel().close();
+                } catch (Exception exi) {
+                }
             }
-        }
 
-        this._readerChannel = null;
-        this._statusChannel = null;
+            this._readerChannel = null;
+            this._statusChannel = null;
+        }
     }
 
     protected void closeReader() {

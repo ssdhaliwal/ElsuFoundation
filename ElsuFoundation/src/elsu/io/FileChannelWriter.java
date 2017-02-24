@@ -1,12 +1,13 @@
 package elsu.io;
 
-import static elsu.io.AbstractFileChannel.*;
-
 /**
  *
  * @author ssd.administrator
  */
 public class FileChannelWriter extends AbstractFileChannelWriter {
+
+    // runtime sync object
+    private Object _runtimeSync = new Object();
 
     public FileChannelWriter(String fileMask, String fileLocation) throws
             Exception {
@@ -32,8 +33,15 @@ public class FileChannelWriter extends AbstractFileChannelWriter {
     }
 
     @Override
-    public synchronized int write(byte[] buffer) throws Exception {
-        checkRollover();
-        return sharedWrite(getWriterChannel(), buffer, false);
+    public int write(byte[] buffer) throws Exception {
+        int result = 0;
+        
+        synchronized (this._runtimeSync) {
+            checkRollover();
+
+            result = sharedWrite(getWriterChannel(), buffer, false);
+        }
+
+        return result;
     }
 }
