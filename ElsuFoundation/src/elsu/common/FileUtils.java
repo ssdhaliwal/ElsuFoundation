@@ -31,6 +31,11 @@ public class FileUtils {
         return findFiles(root, mask, false, includeRootPath, 0);
     }
 
+    public static ArrayList<String> findFiles(String root, String mask, boolean includeRootPath,
+    		int maxFiles) {
+        return findFiles(root, mask, false, includeRootPath, maxFiles);
+    }
+
     public static ArrayList<String> findFiles(String root, String mask,
             boolean recurse, boolean includeRootPath, final int maxFiles) {
         final ArrayList<String> result = new ArrayList<>();
