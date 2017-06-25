@@ -31,9 +31,9 @@ public class FileUtils {
         return findFiles(root, mask, false, includeRootPath, 0);
     }
 
-    public static ArrayList<String> findFiles(String root, String mask, boolean includeRootPath,
+    public static ArrayList<String> findFiles(String root, String mask, boolean recurse,
     		int maxFiles) {
-        return findFiles(root, mask, false, includeRootPath, maxFiles);
+        return findFiles(root, mask, recurse, true, maxFiles);
     }
 
     public static ArrayList<String> findFiles(String root, String mask,
@@ -56,6 +56,7 @@ public class FileUtils {
         };
 
         // local class to support recursive search
+        // 20170407 - updated result.add to return fObject.getName() when path not required.
         class fileScanner {
 
             String lmask = "";
@@ -74,7 +75,7 @@ public class FileUtils {
                     String sFile = fObject.getAbsolutePath().toString();
 
                     if (fObject.isFile()) {
-                        result.add((includePath) ? sFile : sFile.replaceFirst(rootPath, ""));
+                        result.add((includePath) ? sFile : fObject.getName());
 
                         if ((maxFiles > 0) && (result.size() >= maxFiles)) {
                             break;
