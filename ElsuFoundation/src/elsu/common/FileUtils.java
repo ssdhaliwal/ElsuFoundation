@@ -23,6 +23,14 @@ class ExtensionFilter implements FilenameFilter {
 
 public class FileUtils {
 
+	public static String extractFilePath(String pAbsolutePath) {
+		return pAbsolutePath.substring(0, pAbsolutePath.lastIndexOf("/"));
+	}
+
+	public static String extractFileName(String pAbsolutePath) {
+		return pAbsolutePath.substring(pAbsolutePath.lastIndexOf("/")+1);
+	}
+	
     public static ArrayList<String> findFiles(String root, String mask) {
         return findFiles(root, mask, false, true, 0);
     }
@@ -47,7 +55,7 @@ public class FileUtils {
         final FilenameFilter fnFilter = new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                if ((new File(dir.getPath() + "\\" + name)).isDirectory()) {
+                if ((new File(dir.getPath() + "/" + name)).isDirectory()) {
                     return true;
                 } else {
                     return name.matches(fMask);
