@@ -24,11 +24,11 @@ class ExtensionFilter implements FilenameFilter {
 public class FileUtils {
 
 	public static String extractFilePath(String pAbsolutePath) {
-		return pAbsolutePath.substring(0, pAbsolutePath.lastIndexOf("/"));
+		return pAbsolutePath.substring(0, pAbsolutePath.lastIndexOf(GlobalStack.FILESEPARATOR));
 	}
 
 	public static String extractFileName(String pAbsolutePath) {
-		return pAbsolutePath.substring(pAbsolutePath.lastIndexOf("/")+1);
+		return pAbsolutePath.substring(pAbsolutePath.lastIndexOf(GlobalStack.FILESEPARATOR)+1);
 	}
 	
     public static ArrayList<String> findFiles(String root, String mask) {
@@ -55,7 +55,7 @@ public class FileUtils {
         final FilenameFilter fnFilter = new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                if ((new File(dir.getPath() + "/" + name)).isDirectory()) {
+                if ((new File(dir.getPath() + GlobalStack.FILESEPARATOR + name)).isDirectory()) {
                     return true;
                 } else {
                     return name.matches(fMask);
@@ -101,17 +101,22 @@ public class FileUtils {
         return result;
     }
 
+    public static void deleteFile(String file) {
+    	File fObject;
+    	
+    	fObject = new File(file);
+        fObject.delete();
+    }
+
     public static void deleteFiles(String root, String mask) {
         deleteFiles(root, mask, false);
     }
 
     public static void deleteFiles(String root, String mask, boolean recurse) {
         ArrayList<String> fList = findFiles(root, mask, recurse, true, 0);
-        File fObject;
 
         for (String file : fList) {
-            fObject = new File(file);
-            fObject.delete();
+            deleteFile(file);
         }
     }
 
