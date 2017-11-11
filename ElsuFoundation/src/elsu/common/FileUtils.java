@@ -31,6 +31,17 @@ public class FileUtils {
 		return pAbsolutePath.substring(pAbsolutePath.lastIndexOf(GlobalStack.FILESEPARATOR)+1);
 	}
 	
+	public static int fileExists(String root, String mask) {
+		int result = 0;
+		
+		ArrayList<String> als = FileUtils.findFiles(root, mask);
+		for(String name : als) {
+			result++;
+		}
+		
+		return result;
+	}
+	
     public static ArrayList<String> findFiles(String root, String mask) {
         return findFiles(root, mask, false, true, 0);
     }

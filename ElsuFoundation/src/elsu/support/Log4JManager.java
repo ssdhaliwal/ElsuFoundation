@@ -27,19 +27,17 @@ public class Log4JManager {
 		// if the log4j-init-file context parameter is not set, then no point in
 		// trying
 		setLogConfig(logConfig);
-
 		
 		if (getLogConfig() != null) {
 			File logFile = new File(getLogConfig());
-
 			if (logFile.exists()) {
 				// update the log file property
 				System.setProperty("log4j.log.filename", fileName);
 				System.setProperty("log4j.configurationFile", logConfig);
-
-				// store class logger instance
-				setLogger(logClass);
 			}
+
+			// store class logger instance
+			setLogger(logClass);
 		} else {
 			throw new Exception(this.getClass() + ", constructor(), logConfig param is null.");
 		}
