@@ -14,6 +14,7 @@ javac InstallCert.java
 java InstallCert [host]:[port]
 
 # Extract certificate from created jssecacerts keystore
+
 keytool -exportcert -alias [host]-1 -keystore jssecacerts -storepass changeit -file [host].cer
 
 # Import certificate into system keystore
