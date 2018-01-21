@@ -1171,7 +1171,7 @@ public class DatabaseUtils {
             result = getResultAsMap(stmt, params);
 
             // check if there is a cursor return param by name
-            if (result.containsKey("paramOCursor")) {
+            if ((result != null) && (result.containsKey("paramOCursor"))) {
                 EntityDescriptor ed = populateEntityDescriptor((ResultSet) result.get("paramOCursor"));
                 result.remove("paramOCursor");
                 result.put("paramOCursor", ed);
