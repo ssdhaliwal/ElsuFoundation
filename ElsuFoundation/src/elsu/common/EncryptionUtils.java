@@ -18,7 +18,7 @@ public class EncryptionUtils {
 			// 20171111 - fix key; if > 32 = 32, > 16 = 16, or > 8 = 8
 			if (len > 32) {
 				key = key.substring(0, 32);
-			} else if (len > 16) {
+			} else if (len >= 16) {
 				key = key.substring(0, 16);
 			} else {
 				key = key.substring(0, 8);
@@ -50,7 +50,7 @@ public class EncryptionUtils {
 			// 20171111 - fix key; if > 32 = 32, > 16 = 16, or > 8 = 8
 			if (len > 32) {
 				key = key.substring(0, 32);
-			} else if (len > 16) {
+			} else if (len >= 16) {
 				key = key.substring(0, 16);
 			} else {
 				key = key.substring(0, 8);

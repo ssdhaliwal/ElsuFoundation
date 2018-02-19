@@ -516,7 +516,9 @@ public class ConfigLoader {
         
         // check if logpath is overridden
         if ((getLogPath() == null) || (getLogPath().isEmpty()) || (getLogPath().length() == 0)) {
-        	logPath = getProperty(ConfigLoader._LOGPATHPROPERTY).toString();
+        	if (getProperty(ConfigLoader._LOGPATHPROPERTY) != null) {
+                    logPath = getProperty(ConfigLoader._LOGPATHPROPERTY).toString();
+                }
         }
 
         if (!logConfig.contains("\\") && !logConfig.contains("/")) {
