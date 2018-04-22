@@ -1,0 +1,30 @@
+Site list updated 21APR/2018	- seraj.dhaliwal
+
+-java InstallCert casoilresource.lawr.ucdavis.edu
+java InstallCert coast.noaa.gov:443							1..4
+java InstallCert gec.cr.usgs.gov:443						1..2
+-java InstallCert geodata.state.nj.us
+java InstallCert geonet.esri.com:443						1..3
+java InstallCert gis.boem.gov:443							1..2
+java InstallCert idpgis.ncep.noaa.gov:443					1..2
+java InstallCert maps.ngdc.noaa.gov:443						1..2
+java InstallCert maritimeboundaries.noaa.gov:443			1..2
+-java InstallCert mesonet.agron.iastate.edu
+java InstallCert nowcoast.noaa.gov:443						1..2
+java InstallCert rmgsc.cr.usgs.gov:443						1..2
+java InstallCert sampleserver1.arcgisonline.com:443			1..2
+java InstallCert sampleserver6.arcgisonline.com:443			1..2
+java InstallCert seamlessrnc.nauticalcharts.noaa.gov:443	1..2
+java InstallCert service.ncddc.noaa.gov:443					1..2
+java InstallCert tidesandcurrents.noaa.gov:443				1..2
+java InstallCert tileservice.charts.noaa.gov:443			1..2
+java InstallCert www.cpc.ncep.noaa.gov:443					1..2
+java InstallCert www.fws.gov:443							1..3
+-java InstallCert www.mapbox.com
+java InstallCert www.nauticalcharts.noaa.gov:443			1..2
+java InstallCert www.ncdc.noaa.gov:443						1..2
+java InstallCert www.nws.noaa.gov:443						1..2
+java InstallCert www.openstreetmap.org:443					1..2
+?java InstallCert www.spc.noaa.gov:443
+java InstallCert www.weather.gov:443						1..2
+?java InstallCert www.wpc.ncep.noaa.gov:443
