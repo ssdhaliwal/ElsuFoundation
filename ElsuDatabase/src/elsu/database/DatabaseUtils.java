@@ -16,8 +16,8 @@ import java.util.*;
 import javax.sql.rowset.*;
 import javax.sql.rowset.serial.*;
 // 20170124 - commented out due to conflict with DerbyDB
-import oracle.jdbc.*;
-import oracle.sql.*;
+//import oracle.jdbc.*;
+//import oracle.sql.*;
 
 /**
  *
@@ -1171,7 +1171,7 @@ public class DatabaseUtils {
             result = getResultAsMap(stmt, params);
 
             // check if there is a cursor return param by name
-            if (result.containsKey("paramOCursor")) {
+            if ((result != null) && (result.containsKey("paramOCursor"))) {
                 EntityDescriptor ed = populateEntityDescriptor((ResultSet) result.get("paramOCursor"));
                 result.remove("paramOCursor");
                 result.put("paramOCursor", ed);
@@ -1532,6 +1532,7 @@ public class DatabaseUtils {
                         }
                         break;
                     case java.sql.Types.BIT:
+                    case java.sql.Types.BOOLEAN:
                         if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
                             stmt.registerOutParameter(paramIndex,
                                     java.sql.Types.BOOLEAN);

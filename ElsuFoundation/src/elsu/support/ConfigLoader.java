@@ -506,7 +506,7 @@ public class ConfigLoader {
      */
     // .52 updated to allow specification of alternate extract directory when
     // security permissions deny write into deployed location
-    private void initializeLogger(String log) throws Exception {
+    private void initializeLogger(String logConfig) throws Exception {
         // log attribute value is defined, set the static variable to the 
         // log property file location; also, check if path is provided as
         // part of the file name - if yes, then ignore class path
@@ -516,15 +516,17 @@ public class ConfigLoader {
         
         // check if logpath is overridden
         if ((getLogPath() == null) || (getLogPath().isEmpty()) || (getLogPath().length() == 0)) {
-        	logPath = getProperty(ConfigLoader._LOGPATHPROPERTY).toString();
+        	if (getProperty(ConfigLoader._LOGPATHPROPERTY) != null) {
+                    logPath = getProperty(ConfigLoader._LOGPATHPROPERTY).toString();
+                }
         }
 
-        if (!log.contains("\\") && !log.contains("/")) {
+        if (!logConfig.contains("\\") && !logConfig.contains("/")) {
             ConfigLoader._LOGCONFIGFILE
                     = (new File(getClass().getName().replace(".", "\\"))).getParent()
-                    + "\\" + log;
+                    + "\\" + logConfig;
         } else {
-            ConfigLoader._LOGCONFIGFILE = log;
+            ConfigLoader._LOGCONFIGFILE = logConfig;
         }
 
         // are we trying to extract to a location outside execution folder 
@@ -561,13 +563,13 @@ public class ConfigLoader {
         System.out.println("log file location: " + logFileName);
     }
 
-    public static Log4JManager initializeLogger(String logPath, String logClass, String fileName) throws Exception {
+    public static Log4JManager initializeLogger(String logConfig, String logClass, String fileName) throws Exception {
         Log4JManager log4JManager = null;
 
-        if (logPath.isEmpty() || (logPath.length() == 0)) {
+        if (logConfig.isEmpty() || (logConfig.length() == 0)) {
             return null;
         } else {
-            log4JManager = new Log4JManager(logPath, logClass, getLogName(fileName));
+            log4JManager = new Log4JManager(logConfig, logClass, getLogName(fileName));
         }
 
         return log4JManager;
@@ -596,6 +598,12 @@ public class ConfigLoader {
         }
 
         return result;
+    }
+    
+    public void setLogger(Log4JManager pLog4JManager) {
+        synchronized (this._runtimeSync) {
+            this._log4JManager = pLog4JManager;
+        }
     }
 
     /**

@@ -23,12 +23,36 @@ class ExtensionFilter implements FilenameFilter {
 
 public class FileUtils {
 
+	public static String extractFilePath(String pAbsolutePath) {
+		return pAbsolutePath.substring(0, pAbsolutePath.lastIndexOf(GlobalStack.FILESEPARATOR));
+	}
+
+	public static String extractFileName(String pAbsolutePath) {
+		return pAbsolutePath.substring(pAbsolutePath.lastIndexOf(GlobalStack.FILESEPARATOR)+1);
+	}
+	
+	public static int fileExists(String root, String mask) {
+		int result = 0;
+		
+		ArrayList<String> als = FileUtils.findFiles(root, mask);
+		for(String name : als) {
+			result++;
+		}
+		
+		return result;
+	}
+	
     public static ArrayList<String> findFiles(String root, String mask) {
         return findFiles(root, mask, false, true, 0);
     }
 
     public static ArrayList<String> findFiles(String root, String mask, boolean includeRootPath) {
         return findFiles(root, mask, false, includeRootPath, 0);
+    }
+
+    public static ArrayList<String> findFiles(String root, String mask, boolean recurse,
+    		int maxFiles) {
+        return findFiles(root, mask, recurse, true, maxFiles);
     }
 
     public static ArrayList<String> findFiles(String root, String mask,
@@ -42,7 +66,7 @@ public class FileUtils {
         final FilenameFilter fnFilter = new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                if ((new File(dir.getPath() + "\\" + name)).isDirectory()) {
+                if ((new File(dir.getPath() + GlobalStack.FILESEPARATOR + name)).isDirectory()) {
                     return true;
                 } else {
                     return name.matches(fMask);
@@ -51,6 +75,7 @@ public class FileUtils {
         };
 
         // local class to support recursive search
+        // 20170407 - updated result.add to return fObject.getName() when path not required.
         class fileScanner {
 
             String lmask = "";
@@ -69,7 +94,7 @@ public class FileUtils {
                     String sFile = fObject.getAbsolutePath().toString();
 
                     if (fObject.isFile()) {
-                        result.add((includePath) ? sFile : sFile.replaceFirst(rootPath, ""));
+                        result.add((includePath) ? sFile : fObject.getName());
 
                         if ((maxFiles > 0) && (result.size() >= maxFiles)) {
                             break;
@@ -87,17 +112,22 @@ public class FileUtils {
         return result;
     }
 
+    public static void deleteFile(String file) {
+    	File fObject;
+    	
+    	fObject = new File(file);
+        fObject.delete();
+    }
+
     public static void deleteFiles(String root, String mask) {
         deleteFiles(root, mask, false);
     }
 
     public static void deleteFiles(String root, String mask, boolean recurse) {
         ArrayList<String> fList = findFiles(root, mask, recurse, true, 0);
-        File fObject;
 
         for (String file : fList) {
-            fObject = new File(file);
-            fObject.delete();
+            deleteFile(file);
         }
     }
 

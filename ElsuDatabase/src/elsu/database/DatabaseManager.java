@@ -20,8 +20,7 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
             = new ArrayList<>();
     private volatile int _totalConnections;
     private String _connectionString;
-    private String _user;
-    private String _password;
+    private HashMap<String, String> _properties;
     private String _connectionValidationSQL = "SELECT 1 FROM DUAL";
 
     public DatabaseManager(String dbDriver, String connectionString,
@@ -35,11 +34,10 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
     }
 
     public DatabaseManager(String dbDriver, String connectionString,
-            int totalConnections, String user, String password) throws Exception {
+            int totalConnections, HashMap<String, String> properties) throws Exception {
         this._totalConnections = totalConnections;
         this._connectionString = connectionString;
-        this._user = user;
-        this._password = password;
+        this._properties= properties;
 
         LoadDriver(dbDriver);
 
@@ -52,13 +50,16 @@ public class DatabaseManager extends AbstractEventManager implements IEventPubli
         int i = this.getConnections().size()
                 + this.getConnectionsActive().size();
         for (; i < this._totalConnections; i++) {
-            if (this._user.isEmpty() && this._password.isEmpty()) {
+    		if (this._properties == null) {
                 conn = DriverManager.getConnection(this._connectionString);
             } else {
             	// 20170120 - updated to use properties to support derby
         		Properties props = new Properties();
-        		props.put("user", this._user);
-        		props.put("password", this._password);
+        		if (this._properties != null) {
+	        		for(String key : this._properties.keySet()) {
+	        			props.put(key, this._properties.get(key));
+	        		}
+        		}
                 
         		//conn = DriverManager.getConnection(this._connectionString,
                 //        this._user, this._password);
