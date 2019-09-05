@@ -241,36 +241,4 @@ public class StringUtils {
         stack.printStackTrace(printWriter);
         return result.toString();
     }
-    
-    //json escape special chars
-    public static String jsonEscape(String value) {
-        String result = value;
-        
-        if (!IsNull(value)) {
-            value = value.replaceAll("\\", "\\\\");
-            value = value.replaceAll("\r", "\\r");
-            value = value.replaceAll("\n", "\\n");
-            value = value.replaceAll("\t", "\\t");
-            value = value.replaceAll("\f", "\\f");
-            value = value.replaceAll("\b", "\\b");
-            value = value.replaceAll("\"", "\\\"");
-        }
-        
-        return result;
-    }
-    public static String jsonUnescape(String value) {
-        String result = value;
-        
-        if (!IsNull(value)) {
-            value = value.replaceAll("\\\\", "\\");
-            value = value.replaceAll("\\r", "\r");
-            value = value.replaceAll("\\n", "\n");
-            value = value.replaceAll("\\t", "\t");
-            value = value.replaceAll("\\f", "\f");
-            value = value.replaceAll("\\b", "\b");
-            value = value.replaceAll("\\\"", "\"");
-        }
-        
-        return result;
-    }
 }

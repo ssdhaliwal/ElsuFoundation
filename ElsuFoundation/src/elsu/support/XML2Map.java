@@ -125,6 +125,8 @@ public class XML2Map {
         // parse the list of child nodes for the node being processed
         ArrayList<org.w3c.dom.Node> nAttributes = null;
         String nodeAttrKey = "";
+        String nodeKey = "";
+        String nodeText = "";
         String nodePathHold = nodePath;
 
         if (nodes != null) {
@@ -141,6 +143,11 @@ public class XML2Map {
                 nodePath += (nodePath.isEmpty() ? node.getNodeName() : "." + node.getNodeName());
                 nAttributes = _xmlr.getNodeAttributes(node);
                 //System.out.println(nodePath);
+                
+                nodeAttrKey = getNodeKey(node);
+                if (!nodeAttrKey.isEmpty()) {
+                    nodePath += "." + nodeAttrKey;
+                }
 
                 // loop through the attributes array and append them to the
                 // string builder object
@@ -148,37 +155,49 @@ public class XML2Map {
                 if (nAttributes != null) {
                     // get id, name, class attribute if any
                     nodeAttrKey = getAttributeKey(nAttributes);
-
-                    // get the key value for path
-                    for (org.w3c.dom.Node na : nAttributes) {
-                        if (na.getNodeName().equals(nodeAttrKey)) {
-                            nodePath += "." + na.getNodeValue();
-                            break;
-                        }
+                    if (!nodeAttrKey.isEmpty()) {
+                        nodePath += "." + nodeAttrKey;
                     }
 
                     // first get the key or if none; set it to first value
+                    nodeKey = nodePath;
+                    nodeText = "";
+
+                    // if node has a text value, display the text
+                    if (_xmlr.getNodeText(node) != null) {
+                        nodeText = _xmlr.getNodeText(node);
+                    }
+
                     for (org.w3c.dom.Node na : nAttributes) {
                         // append the attribute details (key/text) to the string
                         // builder object
                         if (!na.getNodeName().equals(nodeAttrKey)) {
-                            addProperty(nodePath + "." + na.getNodeName(), na.getNodeValue());
-                            //System.out.println(nodePath + "." + na.getNodeName()
-                            //        + "=" + na.getNodeValue());
+                            if (nodeText.isEmpty()) {
+                                addProperty(nodeKey + "." + na.getNodeName(), na.getNodeValue());
+                            } else {
+                            	if (!nodeKey.endsWith("." + na.getNodeName() + "." + na.getNodeValue())) {
+                            		nodeKey += "." + na.getNodeName() + "." + na.getNodeValue();
+                            	}
+                            }
                         }
 
                         // yield processing to other threads
                         Thread.yield();
                     }
-                }
 
-                // if node has a text value, display the text
-                if (_xmlr.getNodeText(node) != null) {
-                    addProperty(nodePath, _xmlr.getNodeText(node));
-                    //System.out.println(nodePath
-                    //        + "=" + _xmlr.getNodeText(node));
+                    if (!nodeText.isEmpty()) {
+                        //System.out.println("1001-A, " + nodeKey + "/" + nodeValue);
+                        addProperty(nodeKey, nodeText);
+                    }
+                } else {
+                    // if node has a text value, display the text
+                    if (_xmlr.getNodeText(node) != null) {
+                        //System.out.println("1001-N, " + nodePath
+                        //        + "=" + _xmlr.getNodeText(node));
+                        addProperty(nodePath, _xmlr.getNodeText(node));
+                    }
                 }
-
+                
                 // recall the function (recursion) to see if the node has child 
                 // nodes and preocess them in hierarchial level
                 loadConfig(node, nodePath, (level + 1));
@@ -190,19 +209,50 @@ public class XML2Map {
         }
     }
 
+    private String getNodeKey(org.w3c.dom.Node node) {
+        String result = "";
+
+        // attributes are in name order, so for class we keep looping
+        org.w3c.dom.Node na = null;
+
+        if ((node == null) || (node.getChildNodes() == null)) {
+            return result;
+        }
+
+        for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+            na = node.getChildNodes().item(i);
+
+            if (na.getNodeName().equals("id")) {
+                result = "id." + _xmlr.getNodeText(na);
+                break;
+            } else if (na.getNodeName().equals("name")) {
+                result = "name." + _xmlr.getNodeText(na);
+                break;
+            } else if (na.getNodeName().equals("class")) {
+                result = "class." + _xmlr.getNodeText(na);
+            }
+        }
+
+        return result;
+    }
+
     private String getAttributeKey(ArrayList<org.w3c.dom.Node> nodes) {
         String result = "";
 
         // attributes are in name order, so for class we keep looping
+        if (nodes == null) {
+            return result;
+        }
+
         for (org.w3c.dom.Node na : nodes) {
             if (na.getNodeName().equals("id")) {
-                result = "id";
+                result = "id." + na.getNodeValue();
                 break;
             } else if (na.getNodeName().equals("name")) {
-                result = "name";
+                result = "name." + na.getNodeValue();
                 break;
             } else if (na.getNodeName().equals("class")) {
-                result = "class";
+                result = "class." + na.getNodeValue();
             }
         }
 
@@ -211,7 +261,7 @@ public class XML2Map {
 
     public void addProperty(String key, Object value) {
         boolean dependency = false;
-        
+
         // if value is null, exit
         if (value == null) {
             return;

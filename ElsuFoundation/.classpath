@@ -1,38 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/MyLibrary"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
-	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7">
-		<attributes>
-			<attribute name="owner.project.facets" value="java"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/commons-codec-1.10.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/commons-io-2.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/json/gson-2.7.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/json/jackson-core-2.8.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/json/jackson-databind-2.8.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/xml/JavaAPIforKml.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/commons-lang3-3.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-1.2-api-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-api-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-appserver-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-cassandra-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-core-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-couchdb-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-flume-ng-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-iostreams-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-jcl-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-jdbc-dbcp2-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-jmx-gui-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-jpa-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-jul-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-liquibase-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-mongodb2-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-mongodb3-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-slf4j18-impl-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-slf4j-impl-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-taglib-2.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="../ElsuSharedLibraries/libraries/apache/log4j-web-2.11.1.jar"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="output" path="build/classes"/>
 </classpath>

@@ -63,10 +63,10 @@ public class ConfigLoader {
     private String[] _filterPath = new String[]{};
 
     // system logger if configured
-    public static String _LOGFILENAMEPROPERTY = "application.framework.attributes.key.log.filename";
-    public static String _LOGCONFIGPROPERTY = "application.framework.attributes.key.log.config";
-    public static String _LOGCLASSPROPERTY = "application.framework.attributes.key.log.class";
-    public static String _LOGPATHPROPERTY = "application.framework.attributes.key.log.path";
+    public static String _LOGFILENAMEPROPERTY = "application.framework.attributes.key.name.log.filename";
+    public static String _LOGCONFIGPROPERTY = "application.framework.attributes.key.name.log.config";
+    public static String _LOGCLASSPROPERTY = "application.framework.attributes.key.name.log.class";
+    public static String _LOGPATHPROPERTY = "application.framework.attributes.key.name.log.path";
     private Log4JManager _log4JManager = null;
     // </editor-fold>
 
@@ -513,7 +513,7 @@ public class ConfigLoader {
         String tempFile = null;
         String logFileName = getProperty(ConfigLoader._LOGFILENAMEPROPERTY).toString();
         String logPath = getLogPath();
-        
+
         // check if logpath is overridden
         if ((getLogPath() == null) || (getLogPath().isEmpty()) || (getLogPath().length() == 0)) {
         	if (getProperty(ConfigLoader._LOGPATHPROPERTY) != null) {
@@ -522,9 +522,12 @@ public class ConfigLoader {
         }
 
         if (!logConfig.contains("\\") && !logConfig.contains("/")) {
-            ConfigLoader._LOGCONFIGFILE
-                    = (new File(getClass().getName().replace(".", "\\"))).getParent()
-                    + "\\" + logConfig;
+        	String fileParent = (new File(getClass().getName().replace(".", "\\"))).getParent();
+        	if (!(fileParent == null) && !fileParent.isEmpty()) {
+                ConfigLoader._LOGCONFIGFILE = fileParent + "\\" + logConfig;
+        	} else {
+                ConfigLoader._LOGCONFIGFILE = logConfig;
+        	}
         } else {
             ConfigLoader._LOGCONFIGFILE = logConfig;
         }
