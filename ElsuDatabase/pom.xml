@@ -1,14 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>elsu.foundation</groupId>
-	<artifactId>ElsuFoundation</artifactId>
+	<groupId>elsu.database</groupId>
+	<artifactId>ElsuDatabase</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
 	<packaging>jar</packaging>
 	
 	<build>
-		<finalName>ElsuFoundation</finalName>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
 			<resource>
@@ -68,28 +67,6 @@
 		</plugins>
 	</build>
 	<dependencies>
-
-		<!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
-		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-			<version>1.12</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.6</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>3.8.1</version>
-		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -97,47 +74,64 @@
 			<version>2.8.5</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+		<!-- https://mvnrepository.com/artifact/com.oracle/ojdbc7 -->
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.9.9</version>
+		    <groupId>com.oracle</groupId>
+		    <artifactId>ojdbc7</artifactId>
+		    <version>12.1.0.2.0</version>
+			<scope>system</scope>
+		    <systemPath>${project.basedir}/../local-mvn-repo/ojdbc7-12.1.0.2/ojdbc7.jar</systemPath>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
+		<!-- https://mvnrepository.com/artifact/com.oracle.jdbc/ucp -->
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-			<version>2.9.9</version>
+			<groupId>com.oracle.jdbc</groupId>
+			<artifactId>ucp</artifactId>
+			<version>12.1.0.2</version>
+			<scope>system</scope>
+    		<systemPath>${project.basedir}/../local-mvn-repo/ojdbc7-12.1.0.2/ucp.jar</systemPath>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+		<!-- https://mvnrepository.com/artifact/com.oracle.jdbc/orai18n -->
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.9.9.3</version>
+			<groupId>com.oracle.jdbc</groupId>
+			<artifactId>orai18n</artifactId>
+			<version>12.1.0.2</version>
+			<scope>system</scope>
+    		<systemPath>${project.basedir}/../local-mvn-repo/ojdbc7-12.1.0.2/orai18n.jar</systemPath>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/de.micromata.jak/JavaAPIforKml -->
+		<!-- https://mvnrepository.com/artifact/com.oracle.jdbc/ons -->
 		<dependency>
-			<groupId>de.micromata.jak</groupId>
-			<artifactId>JavaAPIforKml</artifactId>
-			<version>2.2.0</version>
+			<groupId>com.oracle.jdbc</groupId>
+			<artifactId>ons</artifactId>
+			<version>12.1.0.2</version>
+			<scope>system</scope>
+    		<systemPath>${project.basedir}/../local-mvn-repo/ojdbc7-12.1.0.2/ons.jar</systemPath>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+		<!-- https://mvnrepository.com/artifact/com.oracle.ojdbc/simplefan -->
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>2.12.1</version>
+			<groupId>com.oracle.ojdbc</groupId>
+			<artifactId>simplefan</artifactId>
+			<version>12.1.0.2</version>
+			<scope>system</scope>
+    		<systemPath>${project.basedir}/../local-mvn-repo/ojdbc7-12.1.0.2/simplefan.jar</systemPath>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+		<!-- https://mvnrepository.com/artifact/com.oracle.ojdbc/xdb6 -->
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.12.1</version>
+			<groupId>com.oracle.ojdbc</groupId>
+			<artifactId>xdb6</artifactId>
+			<version>12.1.0.2</version>
+			<scope>system</scope>
+    		<systemPath>${project.basedir}/../local-mvn-repo/ojdbc7-12.1.0.2/xdb6.jar</systemPath>
 		</dependency>
 
+		<dependency>
+			<groupId>elsu.foundation</groupId>
+			<artifactId>ElsuFoundation</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 </project>

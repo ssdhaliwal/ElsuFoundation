@@ -16,8 +16,8 @@ import java.util.*;
 import javax.sql.rowset.*;
 import javax.sql.rowset.serial.*;
 // 20170124 - commented out due to conflict with DerbyDB
-//import oracle.jdbc.*;
-//import oracle.sql.*;
+// import oracle.jdbc.*;
+// import oracle.sql.*;
 
 /**
  *
@@ -888,7 +888,7 @@ public class DatabaseUtils {
 
         return wrs;
     }
-
+    /*
     public static CachedRowSet getCachedRowSetViaCursor(Connection conn, String sql, 
             ArrayList<DatabaseParameter> params) throws
             Exception {
@@ -1010,7 +1010,7 @@ public class DatabaseUtils {
 
         return wrs;
     }
-
+	*/
     public static void executeDML(Connection conn, String sql, 
             ArrayList<DatabaseParameter> params) throws SQLException,
             Exception {
@@ -1366,6 +1366,7 @@ public class DatabaseUtils {
                             stmt.setClob(paramIndex, (Clob) dbpm.getValue());
                         }
                         break;
+                    /*
                     case java.sql.Types.REF_CURSOR:
                         if (dbpm.getValue() == null) {
                             stmt.setNull(paramIndex, java.sql.Types.NULL);
@@ -1374,6 +1375,7 @@ public class DatabaseUtils {
                                     "invalid datatype return (SYS_REFCURSOR)!");
                         }
                         break;
+                    */
                     case java.sql.Types.DATE:
                         if (dbpm.getValue() == null) {
                             stmt.setNull(paramIndex, java.sql.Types.NULL);
@@ -1593,6 +1595,7 @@ public class DatabaseUtils {
                             }
                         }
                         break;
+                    /*
                     case java.sql.Types.REF_CURSOR:
                         if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
                         	stmt.registerOutParameter(paramIndex, java.sql.Types.REF_CURSOR);
@@ -1605,6 +1608,7 @@ public class DatabaseUtils {
                                     "invalid datatype input (SYS_REFCURSOR)!");
                         }
                         break;
+                    */
                     case java.sql.Types.DATE:
                         if (dbpm.getIO() == DatabaseParameterType.OUTPUT) {
                             stmt.registerOutParameter(paramIndex,
