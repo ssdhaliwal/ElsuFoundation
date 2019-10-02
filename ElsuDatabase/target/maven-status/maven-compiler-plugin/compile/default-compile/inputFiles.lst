@@ -1,0 +1,10 @@
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/DatabaseParameterType.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/DatabaseUtils.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/rowset/ColumnDescriptor.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/rowset/RowDescriptor.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/syncprovider/internal/DummyRowSetReader.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/syncprovider/internal/DummyRowSetWriter.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/DatabaseManager.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/DatabaseParameter.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/rowset/EntityDescriptor.java
+/home/development/opt/nbspace-mars/ElsuDatabase/src/elsu/database/syncprovider/DummyRowSetSyncProvider.java

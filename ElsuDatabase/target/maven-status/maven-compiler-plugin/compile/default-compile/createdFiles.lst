@@ -1,0 +1,11 @@
+elsu/database/rowset/ColumnDescriptor.class
+elsu/database/syncprovider/internal/DummyRowSetReader.class
+elsu/database/rowset/RowDescriptor.class
+elsu/database/DatabaseParameterType.class
+elsu/database/DatabaseUtils.class
+elsu/database/syncprovider/internal/DummyRowSetWriter.class
+elsu/database/rowset/EntityDescriptor.class
+elsu/database/DatabaseManager.class
+elsu/database/rowset/EntityDescriptor$1.class
+elsu/database/DatabaseParameter.class
+elsu/database/syncprovider/DummyRowSetSyncProvider.class
