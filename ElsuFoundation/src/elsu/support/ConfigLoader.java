@@ -294,7 +294,7 @@ public class ConfigLoader {
         List<String> result = new ArrayList<>();
 
         for (String key : getProperties().keySet()) {
-            if (key.endsWith(".class")) {
+            if (key.endsWith(".class") && !key.endsWith("key.log.class")) {
                 result.add(key);
             }
         }

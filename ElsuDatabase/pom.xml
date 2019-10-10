@@ -144,7 +144,6 @@
 			<scope>system</scope>
     		<systemPath>${project.basedir}/../local-mvn-repo/ojdbc7-12.1.0.2/xdb6.jar</systemPath>
 		</dependency>
-
 		<dependency>
 			<groupId>elsu.foundation</groupId>
 			<artifactId>ElsuFoundation</artifactId>
