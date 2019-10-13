@@ -3,9 +3,11 @@ elsu\gis\geohash\model\Coordinates.class
 elsu\common\FileUtils$1.class
 elsu\support\XMLReader.class
 elsu\io\AbstractFileChannelWriter.class
+elsu\io\AbstractFileChannel$1.class
 elsu\io\FileProcessingType.class
 elsu\common\EncryptionUtils.class
 elsu\common\CollectionUtils.class
+elsu\io\AbstractFileChannelWriter$1.class
 elsu\events\IEventSubscriber.class
 elsu\io\FileRolloverPeriodicityType.class
 elsu\support\Log4JManager.class

@@ -33,6 +33,7 @@ public abstract class AbstractFileChannel {
 
     // local storage, rollover cleanup threshold, default 5
     private volatile int _rolloverThreshold = 5;
+    private volatile int _rolloverFrequency = 1;
 
     // local storage, file date form mask for searching files
     private volatile String _fileDateFormatMask = "yyyyMMddHH";
@@ -249,13 +250,27 @@ public abstract class AbstractFileChannel {
     private void setRolloverFormat() {
         // if periodicity is DAY, then set the appropriate rollover format
         // and file date format masks
-        if (getRollverPeriodicity() == FileRolloverPeriodicityType.DAY) {
+    	switch (getRollverPeriodicity()) {
+    	case DAY:
             this._rolloverFormat = "dd";
             this._fileDateFormatMask = "yyyyMMdd";
-        } else if (getRollverPeriodicity() == FileRolloverPeriodicityType.HOUR) {
+            this._rolloverFrequency = 1;
+    		break;
+    	case HOUR:
             this._rolloverFormat = "HH";
             this._fileDateFormatMask = "yyyyMMddHH";
-        }
+            this._rolloverFrequency = 1;
+    		break;
+    	case MINUTE:
+            this._rolloverFormat = "mm";
+            this._fileDateFormatMask = "yyyyMMddHHmm";
+            this._rolloverFrequency = 5;
+    		break;
+    	default:
+            this._rolloverFormat = "dd";
+            this._fileDateFormatMask = "yyyyMMdd";
+            this._rolloverFrequency = 1;
+    	}
     }
 
     /**
@@ -277,6 +292,26 @@ public abstract class AbstractFileChannel {
      */
     protected int getRolloverThreshold() {
         return this._rolloverThreshold;
+    }
+
+    /**
+     * getRolloverFrequency() method returns the rollover time frequency for file
+     * to be changed. This is only applicable to the FileChannelWriter
+     *
+     * @return <code>int</code> value # of files to maintain.
+     */
+    protected int getRolloverFrequency() {
+        return this._rolloverFrequency;
+    }
+
+    /**
+     * setRolloverFrequency() method set the rollover time frequency for file
+     * to be changed. This is only applicable to the FileChannelWriter
+     *
+     * @return <code>int</code> value # of files to maintain.
+     */
+    protected void setRolloverFrequency(int frequency) {
+        this._rolloverFrequency = frequency;
     }
 
     /**

@@ -5,6 +5,8 @@ import java.util.*;
 import java.nio.channels.*;
 import java.nio.file.*;
 
+import org.joda.time.*;
+
 /**
  * AbstractFileChannelWriter() class extends the FileChanneAbstract to provide
  * concrete implementation for writing to file or files. Multiple threads can
@@ -26,7 +28,7 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
     private volatile SeekableByteChannel _writerChannel = null;
 
     // local storage, store the current rollover period
-    private volatile int _rolloverPeriod = 0;
+    private volatile long _rolloverPeriod = 0;
 
     // local storage, append the data if file exists
     private volatile boolean _appendIfExists = true;
@@ -70,6 +72,8 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
                         "fileMask should allow dateTime substition, ex: msg_file_%s.txt");
             }
         }
+        
+        setRolloverPeriod();
     }
 
     @Override
@@ -95,19 +99,34 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
         return this._writerChannel;
     }
 
-    private int getCurrentRolloverPeriod() {
-        return Integer.parseInt(
-                new SimpleDateFormat(getRolloverFormat()).format(
-                        Calendar.getInstance().getTime()));
+    private long getCurrentRolloverPeriod() {
+    	DateTime rollover = new DateTime();
+    	return rollover.getMillis();
     }
 
-    private int getRolloverPeriod() {
+    private long getRolloverPeriod() {
         return this._rolloverPeriod;
     }
 
     private void setRolloverPeriod() {
-        this._rolloverPeriod = Integer.parseInt(new SimpleDateFormat(
-                getRolloverFormat()).format(Calendar.getInstance().getTime()));
+    	// compare rollover frequency and format; offset date by appropriate time
+    	DateTime rollover = new DateTime();
+    	System.out.println(rollover);
+    	
+    	switch (getRollverPeriodicity()) {
+    	case DAY:
+    		rollover = rollover.plusDays(getRolloverFrequency());
+    		break;
+    	case HOUR:
+    		rollover = rollover.plusHours(getRolloverFrequency());
+    		break;
+    	case MINUTE:
+    		rollover = rollover.plusMinutes(getRolloverFrequency());
+    		break;
+    	default:
+    		rollover = rollover.plusDays(getRolloverFrequency());
+    	}
+		this._rolloverPeriod = rollover.getMillis();
     }
 
     /**
@@ -129,7 +148,7 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
             if (getProcessingType() != FileProcessingType.STANDARD) {
                 // check the file rollover is showing a change, if yes, then need to 
                 // close current file and open new one.
-                if (getRolloverPeriod() != getCurrentRolloverPeriod()) {
+                if (getRolloverPeriod() < getCurrentRolloverPeriod()) {
                     // signal that file is being changed
                     fileChange = true;
 

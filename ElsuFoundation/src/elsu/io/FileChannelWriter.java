@@ -24,6 +24,11 @@ public class FileChannelWriter extends AbstractFileChannelWriter {
         super(fileMask, fileLocation, rolloverPeriodicity);
     }
 
+    @Override
+    public void setRolloverFrequency(int frequency) {
+        super.setRolloverFrequency(frequency);
+    }
+    
     public int write(String data) throws Exception {
         return write(data.getBytes());
     }
