@@ -1,6 +1,7 @@
 package elsu.common;
 
 import java.text.*;
+import java.util.*;
 
 /**
  *
@@ -30,5 +31,17 @@ public class NumberUtils {
         }
 
         return nf.format(pFloat);
+    }
+
+    static public int RandomInt(int min, int max) {
+    	return ((int) (Math.random()*(max - min))) + min;
+    }
+
+    static public float RandomFloat(float min, float max) {
+    	return ((float) (Math.random()*(max - min))) + min;
+    }
+
+    static public double RandomDouble(double min, double max) {
+    	return ((double) (Math.random()*(max - min))) + min;
     }
 }
