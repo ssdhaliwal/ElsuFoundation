@@ -7,6 +7,8 @@ import org.apache.commons.codec.binary.*;
 public class EncryptionUtils {
 
 	// http://stackoverflow.com/questions/15554296/simple-java-aes-encrypt-decrypt-example
+	// key = 128-bit
+	// initVector - random 16-bytes
 	public static String encrypt(String key, String initVector, String value) {
 		try {
 			// 20171111 - if len < 8, null

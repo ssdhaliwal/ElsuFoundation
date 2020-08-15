@@ -678,7 +678,8 @@ public class FileUtils {
     }
     
     // 20170127 - added to save list to file
-    public static void writeFile(String filename, List<String> data, boolean overwrite)
+    // 20200815 - updated to save object to file
+    public static void writeFile(String filename, List<Object> data, boolean overwrite)
             throws Exception {
         // storage for the file stream for saving the message
         FileWriter writer = null;
@@ -691,7 +692,7 @@ public class FileUtils {
             writer = new FileWriter(filename, !overwrite);
 
             // write the message with terminator
-            for(String line : data) {
+            for(Object line : data) {
             	writer.write(line + GlobalStack.LINESEPARATOR);
             }
 
