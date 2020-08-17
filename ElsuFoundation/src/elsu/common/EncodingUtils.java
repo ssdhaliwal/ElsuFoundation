@@ -42,6 +42,12 @@ public class EncodingUtils {
                 case '\'':  // grace accent
                     out.append("&#39;");
                     break;
+                case '\\':  // backward slash
+                    out.append("&#92;");
+                    break;
+                case '/':  // forward slash
+                    out.append("&#47;");
+                    break;
                 default:
                     out.append(s[i]);
                     break;

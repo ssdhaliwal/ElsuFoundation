@@ -176,7 +176,7 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
             // notification to client
             try {
                 // create new file name for the current datehour
-                String filename = getFileLocation() + "\\"
+                String filename = getFileLocation() + "/"
                         + String.format(getFileMask(), getFileDate());
 
                 // try to open the writer for the new file, if not append exists
