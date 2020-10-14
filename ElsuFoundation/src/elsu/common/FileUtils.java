@@ -699,6 +699,7 @@ public class FileUtils {
             // flush the text file to disk
             writer.flush();
         } catch (Exception ex){
+        	System.out.println("elsu.FileUtils, " + "writeFile(), " + ex.getMessage());
             // return the exception for notification
             throw new Exception(ex);
         } finally {

@@ -145,7 +145,7 @@ public class ConfigLoader {
 					try {
 						initializeLogger(getProperty(key).toString());
 					} catch (Exception ex) {
-						System.out.println("log4J configuration error, " + ex.getMessage());
+						System.out.println(getClass().toString() + ", " + "ConfigLoader(), " + ex.getMessage());
 					}
 
 					break;
@@ -155,7 +155,7 @@ public class ConfigLoader {
 			logInfo("configuration loaded.");
 		} catch (Exception ex) {
 			// display exception to the user and exit
-			System.out.println(getClass().toString() + "//" + ex.getMessage());
+			System.out.println(getClass().toString() + ", " + "ConfigLoader(), " + ex.getMessage());
 		}
 	}
 
@@ -188,7 +188,7 @@ public class ConfigLoader {
 					try {
 						initializeLogger(getProperty(key).toString());
 					} catch (Exception ex) {
-						System.out.println("log4J configuration error, " + ex.getMessage());
+						System.out.println(getClass().toString() + ", " + "ConfigLoader()/2, " + ex.getMessage());
 					}
 
 					break;
@@ -198,7 +198,7 @@ public class ConfigLoader {
 			logInfo("configuration loaded.");
 		} catch (Exception ex) {
 			// display exception to the user and exit
-			System.out.println(getClass().toString() + "//" + ex.getMessage());
+			System.out.println(getClass().toString() + ", " + "ConfigLoader()/2, " + ex.getMessage());
 		}
 	}
 
@@ -359,14 +359,14 @@ public class ConfigLoader {
 		} else {
 			result = tempPath + Paths.get(filename).getFileName();
 
-			System.out.println("config file redirect: " + result);
+			System.out.println("elsu.ConfigLoader, " + "extractConfigFile(), " + result);
 		}
 		cf = new File(result);
 
 		// if the file does not exist, try to extract it from the jar resource
 		if (!cf.exists()) {
 			// notify the user we are extracting the store app.config
-			System.out.println("extracting config file: " + filename);
+			System.out.println("elsu.ConfigLoader, " + "extractConfigFile(), " + filename);
 
 			// create directories
 			cf.getParentFile().mkdirs();
@@ -399,10 +399,10 @@ public class ConfigLoader {
 					}
 
 					// notify user the status of the config file
-					System.out.println("config file extracted successfully");
+					System.out.println("elsu.ConfigLoader, " + "extractConfigFile(), config file extracted successfully");
 				} catch (Exception ex) {
 					// if exception during processing, return it to the user
-					throw new Exception("ConfigLoader:extractConfigFile//" + ex.getMessage());
+					throw new Exception("elsu.ConfigLoader:extractConfigFile()//" + ex.getMessage());
 				} finally {
 					// close the input file to prevent resource leaks
 					try {
@@ -425,7 +425,7 @@ public class ConfigLoader {
 			}
 		} else {
 			// config file already existed, notify user we are using it
-			System.out.println("using config file: " + result);
+			System.out.println("elsu.ConfigLoader, " + "extractConfigFile(), using config file: " + result);
 		}
 
 		return result;
@@ -536,7 +536,7 @@ public class ConfigLoader {
 		// if temp file created, then we need to use it
 		_log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGFILE, ConfigLoader._LOGCLASS, logFileName);
 
-		System.out.println("log file location: " + logFileName);
+		System.out.println(getClass().toString() + ", " + "initializeLogger(), log file location: " + logFileName);
 	}
 
 	public static Log4JManager initializeLogger(String logConfig, String logClass, String fileName) throws Exception {
@@ -602,7 +602,7 @@ public class ConfigLoader {
 			try {
 				getLogger().debug(info.toString());
 			} catch (Exception ex) {
-				System.out.println("ConfigLoader, logDebug(), " + ex.getMessage());
+				System.out.println(getClass().toString() + ", " + "logDebug()" + ex.getMessage());
 			}
 		}
 	}
@@ -627,7 +627,7 @@ public class ConfigLoader {
 			try {
 				getLogger().error(info.toString());
 			} catch (Exception ex) {
-				System.out.println("ConfigLoader, logError(), " + ex.getMessage());
+				System.out.println(getClass().toString() + ", " + "logError()" + ex.getMessage());
 			}
 		}
 	}
@@ -652,7 +652,7 @@ public class ConfigLoader {
 			try {
 				getLogger().info(info.toString());
 			} catch (Exception ex) {
-				System.out.println("ConfigLoader, logInfo(), " + ex.getMessage());
+				System.out.println(getClass().toString() + ", " + "logInfo()" + ex.getMessage());
 			}
 		}
 	}

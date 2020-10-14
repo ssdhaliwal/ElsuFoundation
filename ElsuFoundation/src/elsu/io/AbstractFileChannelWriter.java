@@ -111,7 +111,7 @@ public abstract class AbstractFileChannelWriter extends AbstractFileChannel {
     private void setRolloverPeriod() {
     	// compare rollover frequency and format; offset date by appropriate time
     	DateTime rollover = new DateTime();
-    	System.out.println(rollover);
+    	System.out.println(getClass().toString() + ", " + "setRolloverPeriod(), " + rollover);
     	
     	switch (getRollverPeriodicity()) {
     	case DAY:
