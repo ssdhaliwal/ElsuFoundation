@@ -358,8 +358,6 @@ public class ConfigLoader {
 			result = filename;
 		} else {
 			result = tempPath + Paths.get(filename).getFileName();
-
-			System.out.println("elsu.ConfigLoader, " + "extractConfigFile(), " + result);
 		}
 		cf = new File(result);
 
@@ -367,7 +365,7 @@ public class ConfigLoader {
 		if (!cf.exists()) {
 			// notify the user we are extracting the store app.config
 			System.out.println("elsu.ConfigLoader, " + "extractConfigFile(), " + filename);
-
+			
 			// create directories
 			cf.getParentFile().mkdirs();
 
@@ -512,6 +510,9 @@ public class ConfigLoader {
 			logPath = getProperty(ConfigLoader._LOGPATHPROPERTY).toString();
 		}
 
+		if (logConfig.startsWith(".")) {
+			ConfigLoader._LOGCONFIGFILE = getLocalPath() + "\\" + logConfig;
+		} else 
 		if (!logConfig.contains("\\") && !logConfig.contains("/")) {
 			ConfigLoader._LOGCONFIGFILE = (new File(getClass().getName().replace(".", "\\"))).getParent() + "\\"
 					+ logConfig;
@@ -520,6 +521,7 @@ public class ConfigLoader {
 		}
 
 		// extract the config file
+		System.out.println("logfile: " + ConfigLoader._LOGCONFIGFILE);
 		extractConfigFile(ConfigLoader._LOGCONFIGFILE);
 
 		// if log.filename is empty, then assign a temporary one
@@ -535,7 +537,6 @@ public class ConfigLoader {
 
 		// if temp file created, then we need to use it
 		_log4JManager = new Log4JManager(ConfigLoader._LOGCONFIGFILE, ConfigLoader._LOGCLASS, logFileName);
-
 		System.out.println(getClass().toString() + ", " + "initializeLogger(), log file location: " + logFileName);
 	}
 
